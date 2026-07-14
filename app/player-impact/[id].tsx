@@ -3,17 +3,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import Disclaimer from '@/components/Disclaimer';
 
 const stats = [
-  { label: 'Expected goals', withValue: 70, withoutValue: 38, delta: '-0.6', tone: colors.dangerText },
-  { label: 'Chance creation', withValue: 78, withoutValue: 53, delta: '-32%', tone: colors.dangerText },
-  { label: 'Pressing efficiency', withValue: 64, withoutValue: 57, delta: '-11%', tone: colors.warningText },
-];
+  { labelKey: 'expectedGoals', withValue: 70, withoutValue: 38, delta: '-0.6', tone: colors.dangerText },
+  { labelKey: 'chanceCreation', withValue: 78, withoutValue: 53, delta: '-32%', tone: colors.dangerText },
+  { labelKey: 'pressingEfficiency', withValue: 64, withoutValue: 57, delta: '-11%', tone: colors.warningText },
+] as const;
 
 export default function PlayerImpactScreen() {
+  const { t } = useTranslation();
   const [withoutPlayer, setWithoutPlayer] = useState(true);
+  const playerName = 'Saka';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -21,7 +24,7 @@ export default function PlayerImpactScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Player impact</Text>
+        <Text style={styles.headerTitle}>{t('playerImpact.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -33,17 +36,21 @@ export default function PlayerImpactScreen() {
 
         <View style={styles.toggle}>
           <Pressable style={[styles.toggleOption, !withoutPlayer && styles.toggleOptionActive]} onPress={() => setWithoutPlayer(false)}>
-            <Text style={!withoutPlayer ? styles.toggleTextActive : styles.toggleText}>With Saka</Text>
+            <Text style={!withoutPlayer ? styles.toggleTextActive : styles.toggleText}>
+              {t('playerImpact.withPlayer', { name: playerName })}
+            </Text>
           </Pressable>
           <Pressable style={[styles.toggleOption, withoutPlayer && styles.toggleOptionActive]} onPress={() => setWithoutPlayer(true)}>
-            <Text style={withoutPlayer ? styles.toggleTextActive : styles.toggleText}>Without Saka</Text>
+            <Text style={withoutPlayer ? styles.toggleTextActive : styles.toggleText}>
+              {t('playerImpact.withoutPlayer', { name: playerName })}
+            </Text>
           </Pressable>
         </View>
 
         {stats.map((s) => (
-          <View key={s.label} style={styles.statRow}>
+          <View key={s.labelKey} style={styles.statRow}>
             <View style={styles.statLabelRow}>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={styles.statLabel}>{t(`playerImpact.${s.labelKey}`)}</Text>
               <Text style={[styles.statDelta, { color: s.tone }]}>{withoutPlayer ? s.delta : '—'}</Text>
             </View>
             <View style={styles.statTracks}>
@@ -66,10 +73,7 @@ export default function PlayerImpactScreen() {
         ))}
 
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryText}>
-            Without Saka, Arsenal's chance creation drops most on the right flank, where he's involved in 34% of
-            final-third entries.
-          </Text>
+          <Text style={styles.summaryText}>{t('playerImpact.summary', { name: playerName, team: 'Arsenal' })}</Text>
         </View>
 
         <Disclaimer style={{ marginTop: spacing.lg }} />

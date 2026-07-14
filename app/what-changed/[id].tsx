@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { changeEvents } from '@/data/mockData';
 
@@ -18,17 +19,19 @@ const toneTextColor = {
 } as const;
 
 export default function WhatChangedScreen() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>What changed</Text>
+        <Text style={styles.headerTitle}>{t('whatChanged.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.matchTitle}>Arsenal vs Liverpool</Text>
+        <Text style={styles.matchTitle}>Arsenal {t('common.vs')} Liverpool</Text>
 
         {changeEvents.map((event, index) => (
           <View key={event.id} style={styles.row}>
@@ -38,7 +41,7 @@ export default function WhatChangedScreen() {
             </View>
             <View style={styles.eventBody}>
               <Text style={styles.timestamp}>{event.timestamp}</Text>
-              <Text style={styles.eventTitle}>{event.title}</Text>
+              <Text style={styles.eventTitle}>{t(`changeEvents.${event.key}`)}</Text>
               <View style={styles.deltaRow}>
                 <Text style={styles.deltaValue}>{event.from}%</Text>
                 <Feather name="arrow-right" size={10} color={colors.textFaint} />
@@ -55,7 +58,7 @@ export default function WhatChangedScreen() {
         ))}
 
         <View style={styles.noteCard}>
-          <Text style={styles.noteText}>Only material changes are shown here to avoid noise.</Text>
+          <Text style={styles.noteText}>{t('whatChanged.onlyMaterialChanges')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

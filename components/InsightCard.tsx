@@ -1,18 +1,20 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, confidenceColor, fonts } from '@/constants/theme';
 import type { Insight } from '@/data/mockData';
 
 export default function InsightCard({ insight }: { insight: Insight }) {
+  const { t } = useTranslation();
   const color = confidenceColor(insight.confidence);
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <Text style={styles.headline}>{insight.headline}</Text>
+        <Text style={styles.headline}>{t(`homeInsights.${insight.key}`)}</Text>
         <View style={[styles.chip, { backgroundColor: `${color}22` }]}>
           <Text style={[styles.chipText, { color }]}>{insight.confidence}%</Text>
         </View>
       </View>
-      <Text style={styles.disclaimer}>AI-generated analysis. Outcomes remain unpredictable.</Text>
+      <Text style={styles.disclaimer}>{t('disclaimer.short')}</Text>
     </View>
   );
 }

@@ -2,42 +2,45 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 
-type LegalLink = { icon: keyof typeof Feather.glyphMap; label: string; onPress?: () => void };
+type LegalLink = { icon: keyof typeof Feather.glyphMap; labelKey: string; onPress?: () => void };
 
 const links: LegalLink[] = [
-  { icon: 'file-text', label: 'Privacy policy' },
-  { icon: 'file', label: 'Terms of service' },
-  { icon: 'alert-circle', label: 'Disclaimer' },
-  { icon: 'shield', label: 'Responsible AI' },
-  { icon: 'heart', label: 'Responsible use' },
-  { icon: 'cpu', label: 'Methodology', onPress: () => router.push('/legal/methodology') },
-  { icon: 'code', label: 'Licences and open source' },
-  { icon: 'database', label: 'Data sources' },
+  { icon: 'file-text', labelKey: 'privacyPolicy' },
+  { icon: 'file', labelKey: 'termsOfService' },
+  { icon: 'alert-circle', labelKey: 'disclaimer' },
+  { icon: 'shield', labelKey: 'responsibleAI' },
+  { icon: 'heart', labelKey: 'responsibleUse' },
+  { icon: 'cpu', labelKey: 'methodology', onPress: () => router.push('/legal/methodology') },
+  { icon: 'code', labelKey: 'licences' },
+  { icon: 'database', labelKey: 'dataSources' },
 ];
 
 export default function LegalHubScreen() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Legal and transparency</Text>
+        <Text style={styles.headerTitle}>{t('legal.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.group}>
           {links.map((link, index) => (
             <Pressable
-              key={link.label}
+              key={link.labelKey}
               onPress={link.onPress ?? (() => {})}
               style={[styles.row, index < links.length - 1 && styles.rowBorder]}
             >
               <View style={styles.rowLeft}>
                 <Feather name={link.icon} size={15} color={colors.textSecondary} />
-                <Text style={styles.label}>{link.label}</Text>
+                <Text style={styles.label}>{t(`legal.${link.labelKey}`)}</Text>
               </View>
               <Feather name="chevron-right" size={14} color={colors.textFaint} />
             </Pressable>

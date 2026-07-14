@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts } from '@/constants/theme';
 import type { MatchFactor, Team } from '@/data/mockData';
 
@@ -11,9 +12,11 @@ export default function FactorCompareBar({
   home: Team;
   away: Team;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.row}>
-      <Text style={styles.label}>{factor.label}</Text>
+      <Text style={styles.label}>{t(`factors.${factor.key}`)}</Text>
       <View style={styles.track}>
         <View style={[styles.segment, { flex: factor.home, backgroundColor: colors.primary }]} />
         <View style={[styles.segment, { flex: factor.away, backgroundColor: '#4338CA', opacity: 0.55 }]} />

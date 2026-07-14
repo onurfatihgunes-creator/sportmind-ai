@@ -1,8 +1,10 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors, disclaimer, fonts } from '@/constants/theme';
+import { useTranslation } from 'react-i18next';
+import { colors, fonts } from '@/constants/theme';
 
 export default function Disclaimer({ style }: { style?: object }) {
-  return <Text style={[styles.text, style]}>{disclaimer}</Text>;
+  const { t } = useTranslation();
+  return <Text style={[styles.text, style]}>{t('disclaimer.full')}</Text>;
 }
 
 const styles = StyleSheet.create({

@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts } from '@/constants/theme';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import TeamCrest from './TeamCrest';
 import ConfidenceRing from './ConfidenceRing';
 
 export default function MatchCard({ match }: { match: Match }) {
+  const { t } = useTranslation();
   const favourite = favouredOutcome(match);
 
   return (
@@ -18,11 +20,12 @@ export default function MatchCard({ match }: { match: Match }) {
         <ConfidenceRing value={favourite.probability} size={30} strokeWidth={3} />
       </View>
       <Text style={styles.title}>
-        {match.home.name} vs {match.away.name}
+        {match.home.name} {t('common.vs')} {match.away.name}
       </Text>
       <Text style={styles.subtitle}>{match.kickoff}</Text>
       <Text style={styles.favourite}>
-        {favourite.team ? `${favourite.team.name} favoured` : 'Draw likely'} · {favourite.probability}%
+        {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')} ·{' '}
+        {favourite.probability}%
       </Text>
     </Pressable>
   );

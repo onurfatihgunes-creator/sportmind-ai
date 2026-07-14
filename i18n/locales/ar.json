@@ -1,0 +1,205 @@
+{
+  "common": {
+    "cancel": "إلغاء",
+    "next": "التالي",
+    "skip": "تخطي",
+    "viewFullAnalysis": "عرض التحليل الكامل",
+    "restorePurchases": "استعادة المشتريات",
+    "terms": "الشروط",
+    "privacy": "الخصوصية",
+    "vs": "ضد"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "explore": "استكشاف",
+    "insights": "تحليلات الذكاء الاصطناعي",
+    "premium": "بريميوم",
+    "profile": "الملف الشخصي"
+  },
+  "disclaimer": {
+    "full": "هذا تحليل تم إنشاؤه بواسطة الذكاء الاصطناعي استنادًا إلى بيانات إحصائية. تبقى النتائج غير مؤكدة.",
+    "short": "تحليل من الذكاء الاصطناعي. تبقى النتائج غير مؤكدة."
+  },
+  "home": {
+    "goodEvening": "مساء الخير",
+    "todaysKeyMatches": "أبرز مباريات اليوم",
+    "aiMatchHighlight": "أبرز ما رصده الذكاء الاصطناعي",
+    "threeThingsChanged": "3 أمور تغيرت الليلة الماضية",
+    "lineupsWeatherForm": "تغيرت التشكيلات والطقس والمستوى منذ الأمس",
+    "latestAiInsights": "أحدث تحليلات الذكاء الاصطناعي",
+    "unlockUnlimited": "افتح تحليلات الذكاء الاصطناعي غير المحدودة",
+    "goPremium": "الترقية إلى بريميوم"
+  },
+  "matchCard": {
+    "favoured": "{{team}} هو المرشح",
+    "drawLikely": "التعادل مرجّح"
+  },
+  "explore": {
+    "title": "استكشاف",
+    "searchPlaceholder": "جرّب \"مباريات نهاية الأسبوع\"",
+    "league": "الدوري",
+    "country": "الدولة",
+    "date": "التاريخ",
+    "thisWeeksMatches": "مباريات هذا الأسبوع",
+    "selectMatches": "اختر مباريات",
+    "trending": "الأكثر رواجًا",
+    "browseByLeague": "تصفح حسب الدوري",
+    "analyseMatches_one": "تحليل {{count}} مباراة",
+    "analyseMatches_other": "تحليل {{count}} مباريات"
+  },
+  "insights": {
+    "title": "قائمة المتابعة",
+    "slotsUsed": "تم استخدام {{used}} من أصل {{total}} أماكن مجانية",
+    "notifyMeAbout": "أبلغني بشأن",
+    "confidenceChanges": "تغيّرات نسبة الثقة",
+    "lineupsPublished": "نشر التشكيلات",
+    "newAiInsight": "تحليل جديد من الذكاء الاصطناعي",
+    "latestAiInsights": "أحدث تحليلات الذكاء الاصطناعي",
+    "compareLink": "قارن بين {{a}} و{{b}}",
+    "confidenceUpdated": "تم تحديث نسبة الثقة · منذ {{time}}",
+    "lineupAnnounced": "تم الإعلان عن التشكيلة · منذ {{time}}",
+    "stableNoChanges": "مستقر · لا تغييرات"
+  },
+  "premium": {
+    "goDeeper": "تعمّق أكثر مع الذكاء الاصطناعي",
+    "dailyLimitReached": "لقد وصلت إلى حد التحليل اليومي 4 مرات هذا الأسبوع",
+    "monthly": "شهري",
+    "yearly": "سنوي · وفّر 30٪",
+    "free": "مجاني",
+    "premiumCol": "بريميوم",
+    "dailyAnalyses": "التحليلات اليومية",
+    "advancedExplanations": "شروحات متقدمة",
+    "historicalComparisons": "مقارنات تاريخية",
+    "noAds": "بدون إعلانات",
+    "startPremiumMonthly": "ابدأ بريميوم — £6.99 شهريًا",
+    "startPremiumYearly": "ابدأ بريميوم — £69.99 سنويًا",
+    "billedYearly": "تُفوتر سنويًا بمبلغ £69.99. تتجدد تلقائيًا ما لم يتم الإلغاء قبل 24 ساعة على الأقل من نهاية المدة.",
+    "billedMonthly": "تُفوتر شهريًا بمبلغ £6.99. تتجدد تلقائيًا ما لم يتم الإلغاء قبل 24 ساعة على الأقل من نهاية المدة."
+  },
+  "profile": {
+    "premiumMember": "عضو بريميوم",
+    "savedAnalyses": "التحليلات المحفوظة",
+    "readingHistory": "سجل القراءة",
+    "favouriteClubs": "الأندية والدوريات المفضلة",
+    "subscription": "الاشتراك",
+    "legalAndMethodology": "القانونية والمنهجية",
+    "exportData": "تصدير بياناتي",
+    "deleteAccount": "حذف الحساب",
+    "language": "اللغة"
+  },
+  "matchAnalysis": {
+    "title": "تحليل المباراة",
+    "estimatedWinProbability": "احتمال الفوز التقديري",
+    "estimatedDrawProbability": "احتمال التعادل التقديري",
+    "draw": "تعادل",
+    "predictionStability": "استقرار التوقع — مستقر منذ 72 ساعة",
+    "expectedOutcomeDistribution": "توزيع النتائج المتوقعة",
+    "win": "فوز",
+    "statisticalLikelihood": "احتمال إحصائي، وليس تنبؤًا",
+    "expectedGoals": "الأهداف المتوقعة (xG)",
+    "whyDoesAiThink": "لماذا يعتقد الذكاء الاصطناعي ذلك؟",
+    "whatChangedSinceYesterday": "ما الذي تغيّر منذ الأمس؟",
+    "compareTeams": "قارن بين {{a}} و{{b}}"
+  },
+  "factors": {
+    "recentForm": "المستوى الأخير",
+    "expectedGoals": "الأهداف المتوقعة (xG)",
+    "homeAdvantage": "أفضلية أرض الملعب",
+    "injuries": "الإصابات",
+    "defensivePerformance": "الأداء الدفاعي",
+    "possession": "الاستحواذ",
+    "historicalTrends": "الاتجاهات التاريخية"
+  },
+  "teamComparison": {
+    "title": "مقارنة الفرق",
+    "axisForm": "المستوى",
+    "axisXg": "xG",
+    "axisPressing": "الضغط",
+    "axisPossession": "الاستحواذ",
+    "axisDefence": "الدفاع",
+    "axisHomeForm": "مستوى أرض الملعب",
+    "strength": "نقاط قوة {{team}}",
+    "sampleStrengthA": "كثافة الضغط أعلى بنسبة 18٪ خلال آخر 6 مباريات.",
+    "sampleStrengthB": "متوسط استحواذ أعلى في مباريات أرضه هذا الموسم."
+  },
+  "teamProfile": {
+    "title": "تحليل الفريق",
+    "recentForm": "المستوى الأخير",
+    "upcomingMatches": "المباريات القادمة",
+    "noUpcoming": "لا توجد مباريات قادمة تم تحليلها بعد.",
+    "vsPrefix": "ضد {{team}}"
+  },
+  "playerImpact": {
+    "title": "تأثير اللاعب",
+    "withPlayer": "مع {{name}}",
+    "withoutPlayer": "بدون {{name}}",
+    "expectedGoals": "الأهداف المتوقعة (xG)",
+    "chanceCreation": "صناعة الفرص",
+    "pressingEfficiency": "كفاءة الضغط",
+    "summary": "بدون {{name}}، تنخفض صناعة الفرص لدى {{team}} بشكل أكبر على الجناح الأيمن، حيث يشارك في 34٪ من الدخلات إلى الثلث الأخير."
+  },
+  "whatChanged": {
+    "title": "ما الذي تغيّر",
+    "onlyMaterialChanges": "تُعرض هنا التغييرات الجوهرية فقط لتجنب الضوضاء."
+  },
+  "homeInsights": {
+    "sample1": "النموذج يرجّح آرسنال الآن على أرضه",
+    "sample2": "ارتفعت كثافة ضغط ليفربول بنسبة 18٪ خلال 6 مباريات",
+    "sample3": "الأهداف المتوقعة لريال مدريد في اتجاه هابط"
+  },
+  "changeEvents": {
+    "weatherUpdated": "تم تحديث توقعات الطقس",
+    "lineupUpdated": "تم تحديث التشكيلة المتوقعة",
+    "goalkeeperRuledOut": "غياب حارس المرمى بداعي الإصابة"
+  },
+  "batchAnalysis": {
+    "title": "المباريات المختارة",
+    "note": "يتم تحليل كل مباراة بشكل مستقل — هذه تحليلات منفصلة، وليست نتيجة مجمّعة."
+  },
+  "legal": {
+    "title": "القانونية والشفافية",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "disclaimer": "إخلاء المسؤولية",
+    "responsibleAI": "الذكاء الاصطناعي المسؤول",
+    "responsibleUse": "الاستخدام المسؤول",
+    "methodology": "المنهجية",
+    "licences": "التراخيص والمصادر المفتوحة",
+    "dataSources": "مصادر البيانات"
+  },
+  "methodology": {
+    "title": "كيف يعمل الذكاء الاصطناعي لدينا",
+    "dataSourcesTitle": "مصادر البيانات",
+    "dataSourcesBody": "بيانات مرخّصة عن المباريات والمستوى والإصابات، يتم تحديثها باستمرار من مزوّدي إحصاءات رسميين.",
+    "confidenceTitle": "كيف يتم حساب نسبة الثقة",
+    "confidenceBody": "يقدّر نموذج إحصائي مرجّح الاحتمال بناءً على المستوى الأخير والأهداف المتوقعة وسياق المباراة. هذا تقدير وليس يقينًا.",
+    "whyChangeTitle": "لماذا تتغير التحليلات",
+    "whyChangeBody": "يمكن للبيانات الجديدة — الإصابات والتشكيلات والطقس — أن تغيّر نتيجة النموذج. يتم تسجيل كل تغيير جوهري في \"ما الذي تغيّر؟\".",
+    "cannotDoTitle": "ما لا يستطيع الذكاء الاصطناعي فعله",
+    "cannotDoBody": "لا يمكنه ضمان النتائج، أو التنبؤ بيقين، أو مراعاة كل حدث غير متوقع في المباراة.",
+    "version": "الإصدار 1.0 — تمت مراجعته هذا الأسبوع"
+  },
+  "onboarding": {
+    "step1Title": "ذكاء اصطناعي يُظهر طريقة عمله",
+    "step1Body": "آلاف الإشارات تدخل، ويخرج تحليل واضح وقابل للتفسير — دون صندوق أسود.",
+    "step2Title": "ثقة، لا يقين",
+    "step2Body": "يبقى كرة القدم غير قابل للتنبؤ. أرقامنا تُظهر احتمالًا، لا ضمانًا أبدًا.",
+    "step3Title": "تحليل، لا نصيحة",
+    "bullet1": "تحليل من الذكاء الاصطناعي فقط",
+    "bullet2": "لا ضمان لأي نتيجة",
+    "bullet3": "أنت من يتخذ قراراتك",
+    "step4Title": "اختر أنديتك",
+    "step4Subtitle": "سنخصص لك المحتوى",
+    "getNotified": "احصل على إشعارات عند التغييرات المهمة",
+    "iUnderstand": "فهمت",
+    "getStarted": "ابدأ الآن"
+  },
+  "language": {
+    "title": "اللغة",
+    "en": "الإنجليزية",
+    "tr": "التركية",
+    "de": "الألمانية",
+    "ar": "العربية",
+    "rtlNotice": "تستخدم العربية تخطيطًا من اليمين إلى اليسار. سيُعاد تحميل التطبيق لتطبيق ذلك."
+  }
+}

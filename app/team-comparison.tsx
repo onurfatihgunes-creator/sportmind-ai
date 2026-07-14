@@ -3,11 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 
-const AXES = ['Form', 'xG', 'Pressing', 'Possession', 'Defence', 'Home form'];
+const AXIS_KEYS = ['axisForm', 'axisXg', 'axisPressing', 'axisPossession', 'axisDefence', 'axisHomeForm'];
 
 function axisPoint(index: number, value: number, cx = 50, cy = 50, r = 40) {
   const angle = (Math.PI / 180) * (index * 60 - 90);
@@ -20,6 +21,7 @@ function polygonPoints(values: number[]) {
 }
 
 export default function TeamComparisonScreen() {
+  const { t } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
   const teamA = teams[a ?? 'liverpool'];
   const teamB = teams[b ?? 'chelsea'];
@@ -33,7 +35,7 @@ export default function TeamComparisonScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Team comparison</Text>
+        <Text style={styles.headerTitle}>{t('teamComparison.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -42,7 +44,7 @@ export default function TeamComparisonScreen() {
             <TeamCrest team={teamA} size={38} />
             <Text style={styles.teamName}>{teamA.name}</Text>
           </View>
-          <Text style={styles.vs}>vs</Text>
+          <Text style={styles.vs}>{t('common.vs')}</Text>
           <View style={styles.teamCol}>
             <TeamCrest team={teamB} size={38} />
             <Text style={styles.teamName}>{teamB.name}</Text>
@@ -69,12 +71,12 @@ export default function TeamComparisonScreen() {
               stroke={colors.success}
               strokeWidth={1.6}
             />
-            {AXES.map((label, i) => {
+            {AXIS_KEYS.map((key, i) => {
               const [x, y] = axisPoint(i, 1.28).split(',').map(Number);
               const anchor = i === 4 || i === 5 ? 'end' : i === 1 || i === 2 ? 'start' : 'middle';
               return (
-                <SvgText key={label} x={x} y={y} fontSize={5} fill={colors.textSecondary} textAnchor={anchor}>
-                  {label}
+                <SvgText key={key} x={x} y={y} fontSize={5} fill={colors.textSecondary} textAnchor={anchor}>
+                  {t(`teamComparison.${key}`)}
                 </SvgText>
               );
             })}
@@ -93,12 +95,16 @@ export default function TeamComparisonScreen() {
         </View>
 
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryTitle, { color: colors.successText }]}>{teamA.name} strength</Text>
-          <Text style={styles.summaryText}>Pressing intensity is 18% higher over the last 6 matches.</Text>
+          <Text style={[styles.summaryTitle, { color: colors.successText }]}>
+            {t('teamComparison.strength', { team: teamA.name })}
+          </Text>
+          <Text style={styles.summaryText}>{t('teamComparison.sampleStrengthA')}</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryTitle, { color: colors.warningText }]}>{teamB.name} strength</Text>
-          <Text style={styles.summaryText}>Higher average possession share in home fixtures this season.</Text>
+          <Text style={[styles.summaryTitle, { color: colors.warningText }]}>
+            {t('teamComparison.strength', { team: teamB.name })}
+          </Text>
+          <Text style={styles.summaryText}>{t('teamComparison.sampleStrengthB')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

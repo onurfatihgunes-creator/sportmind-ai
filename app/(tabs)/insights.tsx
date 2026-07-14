@@ -3,25 +3,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { insights, matches, teams } from '@/data/mockData';
+import { insights, teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 import InsightCard from '@/components/InsightCard';
 
 const watchlist = [
-  { team: teams.arsenal, status: 'Confidence updated · 2h ago', tone: colors.successText },
-  { team: teams.liverpool, status: 'Lineup announced · 5h ago', tone: colors.warningText },
-  { team: teams.chelsea, status: 'Stable · no changes', tone: colors.textMuted },
-];
+  { team: teams.arsenal, statusKey: 'confidenceUpdated', time: '2h', tone: colors.successText },
+  { team: teams.liverpool, statusKey: 'lineupAnnounced', time: '5h', tone: colors.warningText },
+  { team: teams.chelsea, statusKey: 'stableNoChanges', time: null, tone: colors.textMuted },
+] as const;
 
 export default function InsightsScreen() {
+  const { t } = useTranslation();
   const [toggles, setToggles] = useState({ confidence: true, lineups: true, newInsight: false });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Watchlist</Text>
-        <Text style={styles.subtitle}>3 of 3 free slots used</Text>
+        <Text style={styles.title}>{t('insights.title')}</Text>
+        <Text style={styles.subtitle}>{t('insights.slotsUsed', { used: 3, total: 3 })}</Text>
 
         {watchlist.map((w) => (
           <Pressable
@@ -32,30 +34,32 @@ export default function InsightsScreen() {
             <TeamCrest team={w.team} size={34} />
             <View style={styles.watchInfo}>
               <Text style={styles.watchName}>{w.team.name}</Text>
-              <Text style={[styles.watchStatus, { color: w.tone }]}>{w.status}</Text>
+              <Text style={[styles.watchStatus, { color: w.tone }]}>
+                {t(`insights.${w.statusKey}`, w.time ? { time: w.time } : undefined)}
+              </Text>
             </View>
             <Feather name="bell" size={16} color={colors.primaryLight} />
           </Pressable>
         ))}
 
-        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Notify me about</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>{t('insights.notifyMeAbout')}</Text>
         <ToggleRow
-          label="Confidence changes"
+          label={t('insights.confidenceChanges')}
           value={toggles.confidence}
-          onChange={(v) => setToggles((t) => ({ ...t, confidence: v }))}
+          onChange={(v) => setToggles((prev) => ({ ...prev, confidence: v }))}
         />
         <ToggleRow
-          label="Lineups published"
+          label={t('insights.lineupsPublished')}
           value={toggles.lineups}
-          onChange={(v) => setToggles((t) => ({ ...t, lineups: v }))}
+          onChange={(v) => setToggles((prev) => ({ ...prev, lineups: v }))}
         />
         <ToggleRow
-          label="New AI insight"
+          label={t('insights.newAiInsight')}
           value={toggles.newInsight}
-          onChange={(v) => setToggles((t) => ({ ...t, newInsight: v }))}
+          onChange={(v) => setToggles((prev) => ({ ...prev, newInsight: v }))}
         />
 
-        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Latest AI insights</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>{t('insights.latestAiInsights')}</Text>
         {insights.map((i) => (
           <InsightCard key={i.id} insight={i} />
         ))}
@@ -64,7 +68,9 @@ export default function InsightsScreen() {
           style={styles.compareLink}
           onPress={() => router.push({ pathname: '/team-comparison', params: { a: 'liverpool', b: 'chelsea' } })}
         >
-          <Text style={styles.compareLinkText}>Compare Liverpool and Chelsea</Text>
+          <Text style={styles.compareLinkText}>
+            {t('insights.compareLink', { a: teams.liverpool.name, b: teams.chelsea.name })}
+          </Text>
           <Feather name="arrow-right" size={14} color={colors.primaryLight} />
         </Pressable>
       </ScrollView>

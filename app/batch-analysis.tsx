@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, matches } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
@@ -9,6 +10,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function BatchAnalysisScreen() {
+  const { t } = useTranslation();
   const { ids } = useLocalSearchParams<{ ids?: string }>();
   const selectedIds = (ids ?? '').split(',').filter(Boolean);
   const selectedMatches = matches.filter((m) => selectedIds.includes(m.id));
@@ -19,13 +21,11 @@ export default function BatchAnalysisScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Selected matches</Text>
+        <Text style={styles.headerTitle}>{t('batchAnalysis.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.note}>
-          Each match is analysed independently — these are separate analyses, not a combined outcome.
-        </Text>
+        <Text style={styles.note}>{t('batchAnalysis.note')}</Text>
 
         {selectedMatches.map((m) => {
           const favourite = favouredOutcome(m);
@@ -39,13 +39,14 @@ export default function BatchAnalysisScreen() {
               <ConfidenceRing value={favourite.probability} size={34} strokeWidth={3} />
             </View>
             <Text style={styles.matchTitle}>
-              {m.home.name} vs {m.away.name}
+              {m.home.name} {t('common.vs')} {m.away.name}
             </Text>
             <Text style={styles.matchSubtitle}>
-              {m.kickoff} · {m.competition} · {favourite.team ? `${favourite.team.name} favoured` : 'Draw likely'}
+              {m.kickoff} · {m.competition} ·{' '}
+              {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
             </Text>
             <View style={styles.viewLink}>
-              <Text style={styles.viewLinkText}>View full analysis</Text>
+              <Text style={styles.viewLinkText}>{t('common.viewFullAnalysis')}</Text>
               <Feather name="arrow-right" size={12} color={colors.primaryLight} />
             </View>
           </Pressable>

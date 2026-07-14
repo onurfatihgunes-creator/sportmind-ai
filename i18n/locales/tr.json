@@ -1,0 +1,205 @@
+{
+  "common": {
+    "cancel": "Vazgeç",
+    "next": "İleri",
+    "skip": "Atla",
+    "viewFullAnalysis": "Tüm analizi görüntüle",
+    "restorePurchases": "Satın alımları geri yükle",
+    "terms": "Kullanım Koşulları",
+    "privacy": "Gizlilik",
+    "vs": "vs"
+  },
+  "tabs": {
+    "home": "Ana Sayfa",
+    "explore": "Keşfet",
+    "insights": "AI İçgörüleri",
+    "premium": "Premium",
+    "profile": "Profil"
+  },
+  "disclaimer": {
+    "full": "Bu analiz istatistiksel verilere dayanarak AI tarafından üretilmiştir. Sonuçlar tahmin edilemez kalmaya devam eder.",
+    "short": "AI tarafından üretilen analiz. Sonuçlar tahmin edilemez kalmaya devam eder."
+  },
+  "home": {
+    "goodEvening": "İyi akşamlar",
+    "todaysKeyMatches": "Bugünün öne çıkan maçları",
+    "aiMatchHighlight": "AI maç özeti",
+    "threeThingsChanged": "Gece boyunca 3 şey değişti",
+    "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
+    "latestAiInsights": "Son AI içgörüleri",
+    "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
+    "goPremium": "Premium'a geç"
+  },
+  "matchCard": {
+    "favoured": "{{team}} favori",
+    "drawLikely": "Beraberlik olası"
+  },
+  "explore": {
+    "title": "Keşfet",
+    "searchPlaceholder": "\"hafta sonu maçları\" dene",
+    "league": "Lig",
+    "country": "Ülke",
+    "date": "Tarih",
+    "thisWeeksMatches": "Bu haftanın maçları",
+    "selectMatches": "Maç seç",
+    "trending": "Trend",
+    "browseByLeague": "Lige göre gözat",
+    "analyseMatches_one": "{{count}} maçı analiz et",
+    "analyseMatches_other": "{{count}} maçı analiz et"
+  },
+  "insights": {
+    "title": "İzleme listesi",
+    "slotsUsed": "{{total}} ücretsiz slottan {{used}} tanesi kullanıldı",
+    "notifyMeAbout": "Şunlar için bildirim al",
+    "confidenceChanges": "Güven değişimleri",
+    "lineupsPublished": "Kadrolar açıklandığında",
+    "newAiInsight": "Yeni AI içgörüsü",
+    "latestAiInsights": "Son AI içgörüleri",
+    "compareLink": "{{a}} ve {{b}} karşılaştır",
+    "confidenceUpdated": "Güven güncellendi · {{time}} önce",
+    "lineupAnnounced": "Kadro açıklandı · {{time}} önce",
+    "stableNoChanges": "Stabil · değişiklik yok"
+  },
+  "premium": {
+    "goDeeper": "AI ile daha derine in",
+    "dailyLimitReached": "Bu hafta günlük analiz limitine 4 kez ulaştınız",
+    "monthly": "Aylık",
+    "yearly": "Yıllık · %30 tasarruf",
+    "free": "Ücretsiz",
+    "premiumCol": "Premium",
+    "dailyAnalyses": "Günlük analiz",
+    "advancedExplanations": "Gelişmiş açıklamalar",
+    "historicalComparisons": "Geçmiş karşılaştırmalar",
+    "noAds": "Reklamsız",
+    "startPremiumMonthly": "Premium'u Başlat — £6.99/ay",
+    "startPremiumYearly": "Premium'u Başlat — £69.99/yıl",
+    "billedYearly": "Yıllık £69.99 olarak faturalandırılır. Dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir.",
+    "billedMonthly": "Aylık £6.99 olarak faturalandırılır. Dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir."
+  },
+  "profile": {
+    "premiumMember": "Premium üye",
+    "savedAnalyses": "Kaydedilen analizler",
+    "readingHistory": "Okuma geçmişi",
+    "favouriteClubs": "Favori kulüpler ve ligler",
+    "subscription": "Abonelik",
+    "legalAndMethodology": "Yasal ve metodoloji",
+    "exportData": "Verilerimi dışa aktar",
+    "deleteAccount": "Hesabı sil",
+    "language": "Dil"
+  },
+  "matchAnalysis": {
+    "title": "Maç analizi",
+    "estimatedWinProbability": "tahmini kazanma olasılığı",
+    "estimatedDrawProbability": "tahmini beraberlik olasılığı",
+    "draw": "Beraberlik",
+    "predictionStability": "Tahmin istikrarı — son 72 saattir stabil",
+    "expectedOutcomeDistribution": "Beklenen sonuç dağılımı",
+    "win": "galibiyet",
+    "statisticalLikelihood": "İstatistiksel olasılık, tahmin değil",
+    "expectedGoals": "Beklenen gol (xG)",
+    "whyDoesAiThink": "AI bunu neden düşünüyor?",
+    "whatChangedSinceYesterday": "Dünden bu yana ne değişti?",
+    "compareTeams": "{{a}} ve {{b}} karşılaştır"
+  },
+  "factors": {
+    "recentForm": "Son form",
+    "expectedGoals": "Beklenen gol (xG)",
+    "homeAdvantage": "Ev sahibi avantajı",
+    "injuries": "Sakatlıklar",
+    "defensivePerformance": "Defansif performans",
+    "possession": "Topla oynama",
+    "historicalTrends": "Geçmiş eğilimler"
+  },
+  "teamComparison": {
+    "title": "Takım karşılaştırması",
+    "axisForm": "Form",
+    "axisXg": "xG",
+    "axisPressing": "Pres",
+    "axisPossession": "Topla oynama",
+    "axisDefence": "Defans",
+    "axisHomeForm": "Ev sahibi formu",
+    "strength": "{{team}} güçlü yönü",
+    "sampleStrengthA": "Son 6 maçta pres yoğunluğu %18 daha yüksek.",
+    "sampleStrengthB": "Bu sezon iç saha maçlarında daha yüksek ortalama topla oynama."
+  },
+  "teamProfile": {
+    "title": "Takım analizi",
+    "recentForm": "Son form",
+    "upcomingMatches": "Yaklaşan maçlar",
+    "noUpcoming": "Henüz analiz edilmiş yaklaşan maç yok.",
+    "vsPrefix": "{{team}} deplasmanda/evinde"
+  },
+  "playerImpact": {
+    "title": "Oyuncu etkisi",
+    "withPlayer": "{{name}} ile",
+    "withoutPlayer": "{{name}} olmadan",
+    "expectedGoals": "Beklenen gol (xG)",
+    "chanceCreation": "Pozisyon üretimi",
+    "pressingEfficiency": "Pres verimliliği",
+    "summary": "{{name}} olmadan, {{team}}'in pozisyon üretimi en çok sağ kanatta düşüyor — son üçte bir bölgeye girişlerin %34'ünde bu oyuncu rol alıyor."
+  },
+  "whatChanged": {
+    "title": "Ne değişti",
+    "onlyMaterialChanges": "Gürültüyü önlemek için burada yalnızca önemli değişiklikler gösterilir."
+  },
+  "homeInsights": {
+    "sample1": "Model artık iç sahada Arsenal'ı favori görüyor",
+    "sample2": "Liverpool'un pres yoğunluğu son 6 maçta %18 arttı",
+    "sample3": "Real Madrid'in beklenen gol ortalaması düşüş trendinde"
+  },
+  "changeEvents": {
+    "weatherUpdated": "Hava durumu tahmini güncellendi",
+    "lineupUpdated": "Beklenen kadro güncellendi",
+    "goalkeeperRuledOut": "Kaleci sakatlık nedeniyle kadro dışı"
+  },
+  "batchAnalysis": {
+    "title": "Seçilen maçlar",
+    "note": "Her maç bağımsız olarak analiz edilir — bunlar birleşik bir sonuç değil, ayrı analizlerdir."
+  },
+  "legal": {
+    "title": "Yasal ve şeffaflık",
+    "privacyPolicy": "Gizlilik politikası",
+    "termsOfService": "Kullanım koşulları",
+    "disclaimer": "Sorumluluk reddi",
+    "responsibleAI": "Sorumlu AI",
+    "responsibleUse": "Sorumlu kullanım",
+    "methodology": "Metodoloji",
+    "licences": "Lisanslar ve açık kaynak",
+    "dataSources": "Veri kaynakları"
+  },
+  "methodology": {
+    "title": "AI'mız nasıl çalışır",
+    "dataSourcesTitle": "Veri kaynakları",
+    "dataSourcesBody": "Resmi istatistik sağlayıcılarından sürekli güncellenen lisanslı maç, form ve sakatlık verisi.",
+    "confidenceTitle": "Güven skoru nasıl hesaplanır",
+    "confidenceBody": "Ağırlıklı bir istatistiksel model; son form, beklenen gol ve maç bağlamından olasılık tahmini üretir. Bu bir yaklaşıklıktır, kesinlik değil.",
+    "whyChangeTitle": "Analizler neden değişir",
+    "whyChangeBody": "Sakatlık, kadro ve hava durumu gibi yeni veriler modelin çıktısını değiştirebilir. Her önemli değişiklik \"Ne değişti?\" bölümünde kayıt altına alınır.",
+    "cannotDoTitle": "AI'mızın yapamadıkları",
+    "cannotDoBody": "Sonuçları garanti edemez, kesinlikle tahmin edemez veya bir maçtaki her öngörülemez olayı hesaba katamaz.",
+    "version": "Sürüm 1.0 — bu hafta gözden geçirildi"
+  },
+  "onboarding": {
+    "step1Title": "Çalışmasını gösteren bir AI",
+    "step1Body": "Binlerce sinyal içeri girer. Açık, açıklanabilir bir analiz çıkar — kara kutu yok.",
+    "step2Title": "Kesinlik değil, güven",
+    "step2Body": "Futbol öngörülemez olmaya devam eder. Rakamlarımız olasılık gösterir, asla garanti değil.",
+    "step3Title": "Tavsiye değil, analiz",
+    "bullet1": "Sadece AI tarafından üretilen analiz",
+    "bullet2": "Hiçbir sonuç garanti edilmez",
+    "bullet3": "Kararları siz verirsiniz",
+    "step4Title": "Kulüplerini seç",
+    "step4Subtitle": "Akışını sana göre kişiselleştirelim",
+    "getNotified": "Önemli değişikliklerde bildirim al",
+    "iUnderstand": "Anladım",
+    "getStarted": "Başlayalım"
+  },
+  "language": {
+    "title": "Dil",
+    "en": "İngilizce",
+    "tr": "Türkçe",
+    "de": "Almanca",
+    "ar": "Arapça",
+    "rtlNotice": "Arapça sağdan sola bir düzen kullanır. Uygulanması için uygulama yeniden başlatılacak."
+  }
+}

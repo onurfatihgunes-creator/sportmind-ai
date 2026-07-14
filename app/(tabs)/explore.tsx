@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, leagues, matches, teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
@@ -11,6 +12,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 const trending = [teams.arsenal, teams.liverpool, teams.barcelona];
 
 export default function ExploreScreen() {
+  const { t } = useTranslation();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -30,30 +32,30 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Explore</Text>
+          <Text style={styles.title}>{t('explore.title')}</Text>
           <Pressable onPress={() => (selectMode ? exitSelectMode() : setSelectMode(true))}>
-            <Text style={styles.selectToggle}>{selectMode ? 'Cancel' : 'Select matches'}</Text>
+            <Text style={styles.selectToggle}>{selectMode ? t('common.cancel') : t('explore.selectMatches')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.searchBar}>
           <Feather name="search" size={14} color={colors.textMuted} />
-          <Text style={styles.searchPlaceholder}>Try "weekend matches"</Text>
+          <Text style={styles.searchPlaceholder}>{t('explore.searchPlaceholder')}</Text>
         </View>
 
         <View style={styles.filterRow}>
           <View style={[styles.filterChip, styles.filterChipActive]}>
-            <Text style={styles.filterChipTextActive}>League</Text>
+            <Text style={styles.filterChipTextActive}>{t('explore.league')}</Text>
           </View>
           <View style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Country</Text>
+            <Text style={styles.filterChipText}>{t('explore.country')}</Text>
           </View>
           <View style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Date</Text>
+            <Text style={styles.filterChipText}>{t('explore.date')}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>This week's matches</Text>
+        <Text style={styles.sectionLabel}>{t('explore.thisWeeksMatches')}</Text>
         {matches.map((m) => {
           const isSelected = selected.includes(m.id);
           return (
@@ -73,7 +75,7 @@ export default function ExploreScreen() {
               </View>
               <View style={styles.matchInfo}>
                 <Text style={styles.matchTitle}>
-                  {m.home.name} vs {m.away.name}
+                  {m.home.name} {t('common.vs')} {m.away.name}
                 </Text>
                 <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
               </View>
@@ -82,17 +84,17 @@ export default function ExploreScreen() {
           );
         })}
 
-        <Text style={styles.sectionLabel}>Trending</Text>
+        <Text style={styles.sectionLabel}>{t('explore.trending')}</Text>
         <View style={styles.trendingRow}>
-          {trending.map((t) => (
-            <View key={t.id} style={styles.trendingItem}>
-              <TeamCrest team={t} size={40} />
-              <Text style={styles.trendingName}>{t.name}</Text>
+          {trending.map((team) => (
+            <View key={team.id} style={styles.trendingItem}>
+              <TeamCrest team={team} size={40} />
+              <Text style={styles.trendingName}>{team.name}</Text>
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Browse by league</Text>
+        <Text style={styles.sectionLabel}>{t('explore.browseByLeague')}</Text>
         <View style={styles.leagueGrid}>
           {leagues.map((league) => (
             <View key={league} style={styles.leagueCard}>
@@ -116,9 +118,7 @@ export default function ExploreScreen() {
               exitSelectMode();
             }}
           >
-            <Text style={styles.selectionCtaText}>
-              Analyse {selected.length} match{selected.length > 1 ? 'es' : ''}
-            </Text>
+            <Text style={styles.selectionCtaText}>{t('explore.analyseMatches', { count: selected.length })}</Text>
           </Pressable>
         </View>
       )}

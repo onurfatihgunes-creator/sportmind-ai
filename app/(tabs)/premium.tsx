@@ -3,16 +3,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 
-const rows = [
-  { label: 'Daily analyses', free: '1', premium: 'infinity' },
-  { label: 'Advanced explanations', free: false, premium: true },
-  { label: 'Historical comparisons', free: false, premium: true },
-  { label: 'No ads', free: false, premium: true },
-];
+const rowKeys = [
+  { labelKey: 'dailyAnalyses', free: '1', premium: 'infinity' },
+  { labelKey: 'advancedExplanations', free: false, premium: true },
+  { labelKey: 'historicalComparisons', free: false, premium: true },
+  { labelKey: 'noAds', free: false, premium: true },
+] as const;
 
 export default function PremiumScreen() {
+  const { t } = useTranslation();
   const [yearly, setYearly] = useState(true);
 
   return (
@@ -21,27 +23,29 @@ export default function PremiumScreen() {
         <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.icon}>
           <Feather name="zap" size={20} color="#fff" />
         </LinearGradient>
-        <Text style={styles.title}>Go deeper with AI</Text>
-        <Text style={styles.subtitle}>You've reached your daily analysis limit 4 times this week</Text>
+        <Text style={styles.title}>{t('premium.goDeeper')}</Text>
+        <Text style={styles.subtitle}>{t('premium.dailyLimitReached')}</Text>
 
         <View style={styles.toggle}>
           <Pressable style={[styles.toggleOption, !yearly && styles.toggleOptionActive]} onPress={() => setYearly(false)}>
-            <Text style={!yearly ? styles.toggleTextActive : styles.toggleText}>Monthly</Text>
+            <Text style={!yearly ? styles.toggleTextActive : styles.toggleText}>{t('premium.monthly')}</Text>
           </Pressable>
           <Pressable style={[styles.toggleOption, yearly && styles.toggleOptionActive]} onPress={() => setYearly(true)}>
-            <Text style={yearly ? styles.toggleTextActive : styles.toggleText}>Yearly · save 30%</Text>
+            <Text style={yearly ? styles.toggleTextActive : styles.toggleText}>{t('premium.yearly')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.tableHeaderCell} />
-            <Text style={[styles.tableHeaderCell, styles.tableHeaderCellCenter]}>Free</Text>
-            <Text style={[styles.tableHeaderCell, styles.tableHeaderCellCenter, { color: colors.primaryLight }]}>Premium</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableHeaderCellCenter]}>{t('premium.free')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableHeaderCellCenter, { color: colors.primaryLight }]}>
+              {t('premium.premiumCol')}
+            </Text>
           </View>
-          {rows.map((row) => (
-            <View key={row.label} style={styles.tableRow}>
-              <Text style={styles.tableLabel}>{row.label}</Text>
+          {rowKeys.map((row) => (
+            <View key={row.labelKey} style={styles.tableRow}>
+              <Text style={styles.tableLabel}>{t(`premium.${row.labelKey}`)}</Text>
               <View style={styles.tableCellCenter}>
                 {typeof row.free === 'string' ? (
                   <Text style={styles.tableValueMuted}>{row.free}</Text>
@@ -61,17 +65,14 @@ export default function PremiumScreen() {
         </View>
 
         <Pressable style={styles.cta}>
-          <Text style={styles.ctaText}>Start Premium — £{yearly ? '69.99/yr' : '6.99/mo'}</Text>
+          <Text style={styles.ctaText}>{yearly ? t('premium.startPremiumYearly') : t('premium.startPremiumMonthly')}</Text>
         </Pressable>
-        <Text style={styles.fineprint}>
-          {yearly ? 'Billed yearly at £69.99.' : 'Billed monthly at £6.99.'} Auto-renews unless cancelled at least 24h
-          before the period ends.
-        </Text>
+        <Text style={styles.fineprint}>{yearly ? t('premium.billedYearly') : t('premium.billedMonthly')}</Text>
 
         <View style={styles.linksRow}>
-          <Text style={styles.link}>Restore purchases</Text>
-          <Text style={styles.link}>Terms</Text>
-          <Text style={styles.link}>Privacy</Text>
+          <Text style={styles.link}>{t('common.restorePurchases')}</Text>
+          <Text style={styles.link}>{t('common.terms')}</Text>
+          <Text style={styles.link}>{t('common.privacy')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

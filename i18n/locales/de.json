@@ -1,0 +1,205 @@
+{
+  "common": {
+    "cancel": "Abbrechen",
+    "next": "Weiter",
+    "skip": "Überspringen",
+    "viewFullAnalysis": "Vollständige Analyse ansehen",
+    "restorePurchases": "Käufe wiederherstellen",
+    "terms": "AGB",
+    "privacy": "Datenschutz",
+    "vs": "gegen"
+  },
+  "tabs": {
+    "home": "Start",
+    "explore": "Entdecken",
+    "insights": "KI-Insights",
+    "premium": "Premium",
+    "profile": "Profil"
+  },
+  "disclaimer": {
+    "full": "KI-generierte Analyse auf Basis statistischer Daten. Ergebnisse bleiben unvorhersehbar.",
+    "short": "KI-generierte Analyse. Ergebnisse bleiben unvorhersehbar."
+  },
+  "home": {
+    "goodEvening": "Guten Abend",
+    "todaysKeyMatches": "Die wichtigsten Spiele heute",
+    "aiMatchHighlight": "KI-Spiel-Highlight",
+    "threeThingsChanged": "3 Dinge haben sich über Nacht geändert",
+    "lineupsWeatherForm": "Aufstellungen, Wetter und Form haben sich seit gestern verändert",
+    "latestAiInsights": "Neueste KI-Insights",
+    "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
+    "goPremium": "Zu Premium wechseln"
+  },
+  "matchCard": {
+    "favoured": "{{team}} favorisiert",
+    "drawLikely": "Unentschieden wahrscheinlich"
+  },
+  "explore": {
+    "title": "Entdecken",
+    "searchPlaceholder": "Probiere \"Spiele am Wochenende\"",
+    "league": "Liga",
+    "country": "Land",
+    "date": "Datum",
+    "thisWeeksMatches": "Spiele dieser Woche",
+    "selectMatches": "Spiele auswählen",
+    "trending": "Im Trend",
+    "browseByLeague": "Nach Liga durchsuchen",
+    "analyseMatches_one": "{{count}} Spiel analysieren",
+    "analyseMatches_other": "{{count}} Spiele analysieren"
+  },
+  "insights": {
+    "title": "Beobachtungsliste",
+    "slotsUsed": "{{used}} von {{total}} kostenlosen Plätzen belegt",
+    "notifyMeAbout": "Benachrichtige mich über",
+    "confidenceChanges": "Änderungen der Modellsicherheit",
+    "lineupsPublished": "Veröffentlichte Aufstellungen",
+    "newAiInsight": "Neue KI-Erkenntnis",
+    "latestAiInsights": "Neueste KI-Insights",
+    "compareLink": "{{a}} und {{b}} vergleichen",
+    "confidenceUpdated": "Sicherheit aktualisiert · vor {{time}}",
+    "lineupAnnounced": "Aufstellung bekanntgegeben · vor {{time}}",
+    "stableNoChanges": "Stabil · keine Änderungen"
+  },
+  "premium": {
+    "goDeeper": "Tiefer einsteigen mit KI",
+    "dailyLimitReached": "Du hast dein tägliches Analyse-Limit diese Woche 4-mal erreicht",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich · 30 % sparen",
+    "free": "Kostenlos",
+    "premiumCol": "Premium",
+    "dailyAnalyses": "Tägliche Analysen",
+    "advancedExplanations": "Erweiterte Erklärungen",
+    "historicalComparisons": "Historische Vergleiche",
+    "noAds": "Keine Werbung",
+    "startPremiumMonthly": "Premium starten — 6,99 £/Monat",
+    "startPremiumYearly": "Premium starten — 69,99 £/Jahr",
+    "billedYearly": "Jährliche Abrechnung von 69,99 £. Verlängert sich automatisch, sofern nicht mindestens 24 Std. vor Ablauf gekündigt wird.",
+    "billedMonthly": "Monatliche Abrechnung von 6,99 £. Verlängert sich automatisch, sofern nicht mindestens 24 Std. vor Ablauf gekündigt wird."
+  },
+  "profile": {
+    "premiumMember": "Premium-Mitglied",
+    "savedAnalyses": "Gespeicherte Analysen",
+    "readingHistory": "Leseverlauf",
+    "favouriteClubs": "Lieblingsvereine und -ligen",
+    "subscription": "Abonnement",
+    "legalAndMethodology": "Rechtliches und Methodik",
+    "exportData": "Meine Daten exportieren",
+    "deleteAccount": "Konto löschen",
+    "language": "Sprache"
+  },
+  "matchAnalysis": {
+    "title": "Spielanalyse",
+    "estimatedWinProbability": "geschätzte Siegwahrscheinlichkeit",
+    "estimatedDrawProbability": "geschätzte Unentschieden-Wahrscheinlichkeit",
+    "draw": "Unentschieden",
+    "predictionStability": "Prognosestabilität — seit 72 Std. stabil",
+    "expectedOutcomeDistribution": "Erwartete Ergebnisverteilung",
+    "win": "Sieg",
+    "statisticalLikelihood": "Statistische Wahrscheinlichkeit, keine Vorhersage",
+    "expectedGoals": "Erwartete Tore (xG)",
+    "whyDoesAiThink": "Warum denkt die KI das?",
+    "whatChangedSinceYesterday": "Was hat sich seit gestern geändert?",
+    "compareTeams": "{{a}} und {{b}} vergleichen"
+  },
+  "factors": {
+    "recentForm": "Aktuelle Form",
+    "expectedGoals": "Erwartete Tore (xG)",
+    "homeAdvantage": "Heimvorteil",
+    "injuries": "Verletzungen",
+    "defensivePerformance": "Defensivleistung",
+    "possession": "Ballbesitz",
+    "historicalTrends": "Historische Trends"
+  },
+  "teamComparison": {
+    "title": "Teamvergleich",
+    "axisForm": "Form",
+    "axisXg": "xG",
+    "axisPressing": "Pressing",
+    "axisPossession": "Ballbesitz",
+    "axisDefence": "Abwehr",
+    "axisHomeForm": "Heimform",
+    "strength": "Stärke von {{team}}",
+    "sampleStrengthA": "Die Pressing-Intensität ist in den letzten 6 Spielen um 18 % höher.",
+    "sampleStrengthB": "Höherer durchschnittlicher Ballbesitzanteil bei Heimspielen in dieser Saison."
+  },
+  "teamProfile": {
+    "title": "Team-Analyse",
+    "recentForm": "Aktuelle Form",
+    "upcomingMatches": "Kommende Spiele",
+    "noUpcoming": "Noch keine analysierten kommenden Spiele.",
+    "vsPrefix": "gegen {{team}}"
+  },
+  "playerImpact": {
+    "title": "Spielereinfluss",
+    "withPlayer": "Mit {{name}}",
+    "withoutPlayer": "Ohne {{name}}",
+    "expectedGoals": "Erwartete Tore (xG)",
+    "chanceCreation": "Chancenkreation",
+    "pressingEfficiency": "Pressing-Effizienz",
+    "summary": "Ohne {{name}} sinkt die Chancenkreation von {{team}} am stärksten auf dem rechten Flügel, wo er an 34 % der Ballaktionen im letzten Drittel beteiligt ist."
+  },
+  "whatChanged": {
+    "title": "Was sich geändert hat",
+    "onlyMaterialChanges": "Hier werden nur wesentliche Änderungen angezeigt, um Rauschen zu vermeiden."
+  },
+  "homeInsights": {
+    "sample1": "Das Modell favorisiert Arsenal jetzt zu Hause",
+    "sample2": "Liverpools Pressing-Intensität um 18 % über 6 Spiele gestiegen",
+    "sample3": "Real Madrids erwartete Tore tendieren nach unten"
+  },
+  "changeEvents": {
+    "weatherUpdated": "Wettervorhersage aktualisiert",
+    "lineupUpdated": "Erwartete Aufstellung aktualisiert",
+    "goalkeeperRuledOut": "Torwart verletzungsbedingt ausgefallen"
+  },
+  "batchAnalysis": {
+    "title": "Ausgewählte Spiele",
+    "note": "Jedes Spiel wird unabhängig analysiert — dies sind separate Analysen, kein kombiniertes Ergebnis."
+  },
+  "legal": {
+    "title": "Recht und Transparenz",
+    "privacyPolicy": "Datenschutzerklärung",
+    "termsOfService": "Nutzungsbedingungen",
+    "disclaimer": "Haftungsausschluss",
+    "responsibleAI": "Verantwortungsvolle KI",
+    "responsibleUse": "Verantwortungsvolle Nutzung",
+    "methodology": "Methodik",
+    "licences": "Lizenzen und Open Source",
+    "dataSources": "Datenquellen"
+  },
+  "methodology": {
+    "title": "Wie unsere KI funktioniert",
+    "dataSourcesTitle": "Datenquellen",
+    "dataSourcesBody": "Lizenzierte Spiel-, Form- und Verletzungsdaten, laufend aktualisiert von offiziellen Statistikanbietern.",
+    "confidenceTitle": "Wie die Modellsicherheit berechnet wird",
+    "confidenceBody": "Ein gewichtetes statistisches Modell schätzt die Wahrscheinlichkeit aus aktueller Form, erwarteten Toren und Spielkontext. Das ist eine Annäherung, keine Gewissheit.",
+    "whyChangeTitle": "Warum sich Analysen ändern",
+    "whyChangeBody": "Neue Daten — Verletzungen, Aufstellungen, Wetter — können das Modellergebnis verschieben. Jede wesentliche Änderung wird unter \"Was hat sich geändert?\" protokolliert.",
+    "cannotDoTitle": "Was unsere KI nicht kann",
+    "cannotDoBody": "Sie kann keine Ergebnisse garantieren, keine Gewissheit vorhersagen oder jedes unvorhersehbare Ereignis in einem Spiel berücksichtigen.",
+    "version": "Version 1.0 — diese Woche überprüft"
+  },
+  "onboarding": {
+    "step1Title": "KI, die ihre Arbeit zeigt",
+    "step1Body": "Tausende Signale fließen ein. Eine klare, erklärbare Analyse kommt heraus — keine Blackbox.",
+    "step2Title": "Sicherheit, keine Gewissheit",
+    "step2Body": "Fußball bleibt unvorhersehbar. Unsere Zahlen zeigen Wahrscheinlichkeit, nie eine Garantie.",
+    "step3Title": "Analyse, kein Rat",
+    "bullet1": "Nur KI-generierte Analyse",
+    "bullet2": "Kein Ergebnis wird garantiert",
+    "bullet3": "Du triffst deine eigenen Entscheidungen",
+    "step4Title": "Wähle deine Vereine",
+    "step4Subtitle": "Wir personalisieren deinen Feed",
+    "getNotified": "Bei wichtigen Änderungen benachrichtigt werden",
+    "iUnderstand": "Verstanden",
+    "getStarted": "Loslegen"
+  },
+  "language": {
+    "title": "Sprache",
+    "en": "Englisch",
+    "tr": "Türkisch",
+    "de": "Deutsch",
+    "ar": "Arabisch",
+    "rtlNotice": "Arabisch verwendet ein Layout von rechts nach links. Die App wird neu geladen, um dies anzuwenden."
+  }
+}

@@ -8,9 +8,10 @@ import {
 import { Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { colors } from '@/constants/theme';
+import { initI18n } from '@/i18n';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -33,25 +34,30 @@ const navTheme = {
 };
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Sora_600SemiBold,
     Sora_700Bold,
   });
+  const [i18nReady, setI18nReady] = useState(false);
 
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    initI18n().finally(() => setI18nReady(true));
+  }, []);
 
   useEffect(() => {
-    if (loaded) {
+    if (fontError) throw fontError;
+  }, [fontError]);
+
+  useEffect(() => {
+    if (fontsLoaded && i18nReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded, i18nReady]);
 
-  if (!loaded) {
+  if (!fontsLoaded || !i18nReady) {
     return null;
   }
 
@@ -74,6 +80,7 @@ export default function RootLayout() {
         <Stack.Screen name="what-changed/[id]" />
         <Stack.Screen name="legal/index" />
         <Stack.Screen name="legal/methodology" />
+        <Stack.Screen name="language" />
       </Stack>
     </ThemeProvider>
   );

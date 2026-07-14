@@ -1,0 +1,205 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "next": "Next",
+    "skip": "Skip",
+    "viewFullAnalysis": "View full analysis",
+    "restorePurchases": "Restore purchases",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "vs": "vs"
+  },
+  "tabs": {
+    "home": "Home",
+    "explore": "Explore",
+    "insights": "AI Insights",
+    "premium": "Premium",
+    "profile": "Profile"
+  },
+  "disclaimer": {
+    "full": "AI-generated analysis based on statistical data. Outcomes remain unpredictable.",
+    "short": "AI-generated analysis. Outcomes remain unpredictable."
+  },
+  "home": {
+    "goodEvening": "Good evening",
+    "todaysKeyMatches": "Today's key matches",
+    "aiMatchHighlight": "AI match highlight",
+    "threeThingsChanged": "3 things changed overnight",
+    "lineupsWeatherForm": "Lineups, weather and form all shifted since yesterday",
+    "latestAiInsights": "Latest AI insights",
+    "unlockUnlimited": "Unlock unlimited AI analysis",
+    "goPremium": "Go Premium"
+  },
+  "matchCard": {
+    "favoured": "{{team}} favoured",
+    "drawLikely": "Draw likely"
+  },
+  "explore": {
+    "title": "Explore",
+    "searchPlaceholder": "Try \"weekend matches\"",
+    "league": "League",
+    "country": "Country",
+    "date": "Date",
+    "thisWeeksMatches": "This week's matches",
+    "selectMatches": "Select matches",
+    "trending": "Trending",
+    "browseByLeague": "Browse by league",
+    "analyseMatches_one": "Analyse {{count}} match",
+    "analyseMatches_other": "Analyse {{count}} matches"
+  },
+  "insights": {
+    "title": "Watchlist",
+    "slotsUsed": "{{used}} of {{total}} free slots used",
+    "notifyMeAbout": "Notify me about",
+    "confidenceChanges": "Confidence changes",
+    "lineupsPublished": "Lineups published",
+    "newAiInsight": "New AI insight",
+    "latestAiInsights": "Latest AI insights",
+    "compareLink": "Compare {{a}} and {{b}}",
+    "confidenceUpdated": "Confidence updated · {{time}} ago",
+    "lineupAnnounced": "Lineup announced · {{time}} ago",
+    "stableNoChanges": "Stable · no changes"
+  },
+  "premium": {
+    "goDeeper": "Go deeper with AI",
+    "dailyLimitReached": "You've reached your daily analysis limit 4 times this week",
+    "monthly": "Monthly",
+    "yearly": "Yearly · save 30%",
+    "free": "Free",
+    "premiumCol": "Premium",
+    "dailyAnalyses": "Daily analyses",
+    "advancedExplanations": "Advanced explanations",
+    "historicalComparisons": "Historical comparisons",
+    "noAds": "No ads",
+    "startPremiumMonthly": "Start Premium — £6.99/mo",
+    "startPremiumYearly": "Start Premium — £69.99/yr",
+    "billedYearly": "Billed yearly at £69.99. Auto-renews unless cancelled at least 24h before the period ends.",
+    "billedMonthly": "Billed monthly at £6.99. Auto-renews unless cancelled at least 24h before the period ends."
+  },
+  "profile": {
+    "premiumMember": "Premium member",
+    "savedAnalyses": "Saved analyses",
+    "readingHistory": "Reading history",
+    "favouriteClubs": "Favourite clubs and leagues",
+    "subscription": "Subscription",
+    "legalAndMethodology": "Legal and methodology",
+    "exportData": "Export my data",
+    "deleteAccount": "Delete account",
+    "language": "Language"
+  },
+  "matchAnalysis": {
+    "title": "Match analysis",
+    "estimatedWinProbability": "estimated win probability",
+    "estimatedDrawProbability": "estimated draw probability",
+    "draw": "Draw",
+    "predictionStability": "Prediction stability — stable over 72h",
+    "expectedOutcomeDistribution": "Expected outcome distribution",
+    "win": "win",
+    "statisticalLikelihood": "Statistical likelihood, not a prediction",
+    "expectedGoals": "Expected goals",
+    "whyDoesAiThink": "Why does the AI think this?",
+    "whatChangedSinceYesterday": "What changed since yesterday?",
+    "compareTeams": "Compare {{a}} and {{b}}"
+  },
+  "factors": {
+    "recentForm": "Recent form",
+    "expectedGoals": "Expected goals",
+    "homeAdvantage": "Home advantage",
+    "injuries": "Injuries",
+    "defensivePerformance": "Defensive performance",
+    "possession": "Possession",
+    "historicalTrends": "Historical trends"
+  },
+  "teamComparison": {
+    "title": "Team comparison",
+    "axisForm": "Form",
+    "axisXg": "xG",
+    "axisPressing": "Pressing",
+    "axisPossession": "Possession",
+    "axisDefence": "Defence",
+    "axisHomeForm": "Home form",
+    "strength": "{{team}} strength",
+    "sampleStrengthA": "Pressing intensity is 18% higher over the last 6 matches.",
+    "sampleStrengthB": "Higher average possession share in home fixtures this season."
+  },
+  "teamProfile": {
+    "title": "Team analysis",
+    "recentForm": "Recent form",
+    "upcomingMatches": "Upcoming matches",
+    "noUpcoming": "No upcoming analysed matches yet.",
+    "vsPrefix": "vs {{team}}"
+  },
+  "playerImpact": {
+    "title": "Player impact",
+    "withPlayer": "With {{name}}",
+    "withoutPlayer": "Without {{name}}",
+    "expectedGoals": "Expected goals",
+    "chanceCreation": "Chance creation",
+    "pressingEfficiency": "Pressing efficiency",
+    "summary": "Without {{name}}, {{team}}'s chance creation drops most on the right flank, where he's involved in 34% of final-third entries."
+  },
+  "whatChanged": {
+    "title": "What changed",
+    "onlyMaterialChanges": "Only material changes are shown here to avoid noise."
+  },
+  "homeInsights": {
+    "sample1": "Model now favours Arsenal at home",
+    "sample2": "Liverpool pressing intensity up 18% over 6 matches",
+    "sample3": "Real Madrid expected goals trending down"
+  },
+  "changeEvents": {
+    "weatherUpdated": "Weather forecast updated",
+    "lineupUpdated": "Expected lineup updated",
+    "goalkeeperRuledOut": "Goalkeeper ruled out"
+  },
+  "batchAnalysis": {
+    "title": "Selected matches",
+    "note": "Each match is analysed independently — these are separate analyses, not a combined outcome."
+  },
+  "legal": {
+    "title": "Legal and transparency",
+    "privacyPolicy": "Privacy policy",
+    "termsOfService": "Terms of service",
+    "disclaimer": "Disclaimer",
+    "responsibleAI": "Responsible AI",
+    "responsibleUse": "Responsible use",
+    "methodology": "Methodology",
+    "licences": "Licences and open source",
+    "dataSources": "Data sources"
+  },
+  "methodology": {
+    "title": "How our AI works",
+    "dataSourcesTitle": "Data sources",
+    "dataSourcesBody": "Licensed match, form, and injury data updated continuously from official statistics providers.",
+    "confidenceTitle": "How confidence is calculated",
+    "confidenceBody": "A weighted statistical model estimates likelihood from recent form, expected goals, and matchup context. It is an approximation, not a certainty.",
+    "whyChangeTitle": "Why analyses change",
+    "whyChangeBody": "New data — injuries, lineups, weather — can shift the model's output. Every material change is logged in \"What changed?\".",
+    "cannotDoTitle": "What our AI cannot do",
+    "cannotDoBody": "It cannot guarantee outcomes, predict with certainty, or account for every unpredictable event in a match.",
+    "version": "Version 1.0 — last reviewed this week"
+  },
+  "onboarding": {
+    "step1Title": "AI that shows its work",
+    "step1Body": "Thousands of signals go in. A clear, explainable analysis comes out — no black box.",
+    "step2Title": "Confidence, not certainty",
+    "step2Body": "Football stays unpredictable. Our numbers show likelihood, never a guarantee.",
+    "step3Title": "Analysis, not advice",
+    "bullet1": "AI-generated analysis only",
+    "bullet2": "No outcome is guaranteed",
+    "bullet3": "You make your own decisions",
+    "step4Title": "Pick your clubs",
+    "step4Subtitle": "We'll personalize your feed",
+    "getNotified": "Get notified on key changes",
+    "iUnderstand": "I understand",
+    "getStarted": "Get started"
+  },
+  "language": {
+    "title": "Language",
+    "en": "English",
+    "tr": "Turkish",
+    "de": "German",
+    "ar": "Arabic",
+    "rtlNotice": "Arabic uses a right-to-left layout. The app will reload to apply it."
+  }
+}

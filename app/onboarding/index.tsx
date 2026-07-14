@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
@@ -11,6 +12,7 @@ import TeamCrest from '@/components/TeamCrest';
 const clubs = [teams.arsenal, teams.liverpool, teams.barcelona, teams.chelsea];
 
 export default function OnboardingScreen() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<string[]>(['arsenal', 'barcelona']);
 
@@ -31,10 +33,8 @@ export default function OnboardingScreen() {
             <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.iconCircle}>
               <Feather name="cpu" size={22} color="#fff" />
             </LinearGradient>
-            <Text style={styles.title}>AI that shows its work</Text>
-            <Text style={styles.subtitle}>
-              Thousands of signals go in. A clear, explainable analysis comes out — no black box.
-            </Text>
+            <Text style={styles.title}>{t('onboarding.step1Title')}</Text>
+            <Text style={styles.subtitle}>{t('onboarding.step1Body')}</Text>
           </View>
         )}
         {step === 1 && (
@@ -42,10 +42,8 @@ export default function OnboardingScreen() {
             <LinearGradient colors={[colors.warning, colors.primary]} style={styles.iconCircle}>
               <Feather name="trending-up" size={22} color="#fff" />
             </LinearGradient>
-            <Text style={styles.title}>Confidence, not certainty</Text>
-            <Text style={styles.subtitle}>
-              Football stays unpredictable. Our numbers show likelihood, never a guarantee.
-            </Text>
+            <Text style={styles.title}>{t('onboarding.step2Title')}</Text>
+            <Text style={styles.subtitle}>{t('onboarding.step2Body')}</Text>
           </View>
         )}
         {step === 2 && (
@@ -53,18 +51,18 @@ export default function OnboardingScreen() {
             <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.iconCircle}>
               <Feather name="shield" size={22} color="#fff" />
             </LinearGradient>
-            <Text style={styles.title}>Analysis, not advice</Text>
+            <Text style={styles.title}>{t('onboarding.step3Title')}</Text>
             <View style={styles.bulletList}>
-              <Text style={styles.bullet}>•  AI-generated analysis only</Text>
-              <Text style={styles.bullet}>•  No outcome is guaranteed</Text>
-              <Text style={styles.bullet}>•  You make your own decisions</Text>
+              <Text style={styles.bullet}>•  {t('onboarding.bullet1')}</Text>
+              <Text style={styles.bullet}>•  {t('onboarding.bullet2')}</Text>
+              <Text style={styles.bullet}>•  {t('onboarding.bullet3')}</Text>
             </View>
           </View>
         )}
         {step === 3 && (
           <View style={styles.step4}>
-            <Text style={styles.title}>Pick your clubs</Text>
-            <Text style={[styles.subtitle, { marginBottom: spacing.xl }]}>We'll personalize your feed</Text>
+            <Text style={styles.title}>{t('onboarding.step4Title')}</Text>
+            <Text style={[styles.subtitle, { marginBottom: spacing.xl }]}>{t('onboarding.step4Subtitle')}</Text>
             <View style={styles.clubGrid}>
               {clubs.map((club) => {
                 const active = selected.includes(club.id);
@@ -82,7 +80,7 @@ export default function OnboardingScreen() {
             </View>
             <View style={styles.notifyRow}>
               <Feather name="bell" size={14} color={colors.primaryLight} />
-              <Text style={styles.notifyText}>Get notified on key changes</Text>
+              <Text style={styles.notifyText}>{t('onboarding.getNotified')}</Text>
             </View>
           </View>
         )}
@@ -95,11 +93,13 @@ export default function OnboardingScreen() {
           ))}
         </View>
         <Pressable style={styles.cta} onPress={next}>
-          <Text style={styles.ctaText}>{step === 2 ? 'I understand' : step === 3 ? 'Get started' : 'Next'}</Text>
+          <Text style={styles.ctaText}>
+            {step === 2 ? t('onboarding.iUnderstand') : step === 3 ? t('onboarding.getStarted') : t('common.next')}
+          </Text>
         </Pressable>
         {step < 2 && (
           <Pressable onPress={() => router.replace('/(tabs)')}>
-            <Text style={styles.skip}>Skip</Text>
+            <Text style={styles.skip}>{t('common.skip')}</Text>
           </Pressable>
         )}
       </View>

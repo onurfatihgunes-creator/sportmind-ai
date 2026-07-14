@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, matches, teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
@@ -10,6 +11,7 @@ import Disclaimer from '@/components/Disclaimer';
 const formColor = { W: colors.success, D: colors.warning, L: colors.danger } as const;
 
 export default function TeamProfileScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const team = teams[id ?? 'arsenal'] ?? teams.arsenal;
   const upcoming = matches.filter((m) => m.home.id === team.id || m.away.id === team.id);
@@ -20,7 +22,7 @@ export default function TeamProfileScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Team analysis</Text>
+        <Text style={styles.headerTitle}>{t('teamProfile.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -29,7 +31,7 @@ export default function TeamProfileScreen() {
           <Text style={styles.teamName}>{team.name}</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Recent form</Text>
+        <Text style={styles.sectionLabel}>{t('teamProfile.recentForm')}</Text>
         <View style={styles.formRow}>
           {team.form.map((result, index) => (
             <View key={index} style={[styles.formPill, { backgroundColor: `${formColor[result]}22` }]}>
@@ -38,7 +40,7 @@ export default function TeamProfileScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Upcoming matches</Text>
+        <Text style={styles.sectionLabel}>{t('teamProfile.upcomingMatches')}</Text>
         {upcoming.map((m) => {
           const opponent = m.home.id === team.id ? m.away : m.home;
           const favourite = favouredOutcome(m);
@@ -47,16 +49,16 @@ export default function TeamProfileScreen() {
             <Pressable key={m.id} style={styles.matchRow} onPress={() => router.push(`/match/${m.id}`)}>
               <TeamCrest team={opponent} size={28} />
               <View style={styles.matchInfo}>
-                <Text style={styles.matchTitle}>vs {opponent.name}</Text>
+                <Text style={styles.matchTitle}>{t('teamProfile.vsPrefix', { team: opponent.name })}</Text>
                 <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
               </View>
               <Text style={[styles.matchTag, favoursThisTeam ? styles.matchTagPositive : styles.matchTagNeutral]}>
-                {favourite.team ? `${favourite.team.name} favoured` : 'Draw likely'}
+                {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
               </Text>
             </Pressable>
           );
         })}
-        {upcoming.length === 0 && <Text style={styles.emptyText}>No upcoming analysed matches yet.</Text>}
+        {upcoming.length === 0 && <Text style={styles.emptyText}>{t('teamProfile.noUpcoming')}</Text>}
 
         <Disclaimer style={{ marginTop: spacing.lg }} />
       </ScrollView>

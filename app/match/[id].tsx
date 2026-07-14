@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, matches } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
@@ -10,6 +11,7 @@ import FactorCompareBar from '@/components/FactorCompareBar';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function MatchAnalysisScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const match = matches.find((m) => m.id === id) ?? matches[0];
   const favourite = favouredOutcome(match);
@@ -20,7 +22,7 @@ export default function MatchAnalysisScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="chevron-left" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Match analysis</Text>
+        <Text style={styles.headerTitle}>{t('matchAnalysis.title')}</Text>
         <Feather name="share" size={16} color={colors.textSecondary} />
       </View>
 
@@ -31,7 +33,7 @@ export default function MatchAnalysisScreen() {
               <TeamCrest team={match.home} size={38} />
               <Text style={styles.teamName}>{match.home.name}</Text>
             </Pressable>
-            <Text style={styles.vs}>vs</Text>
+            <Text style={styles.vs}>{t('common.vs')}</Text>
             <Pressable style={styles.teamCol} onPress={() => router.push(`/team/${match.away.id}`)}>
               <TeamCrest team={match.away} size={38} />
               <Text style={styles.teamName}>{match.away.name}</Text>
@@ -41,15 +43,15 @@ export default function MatchAnalysisScreen() {
 
           <View style={styles.ringWrap}>
             <ConfidenceRing value={favourite.probability} size={92} strokeWidth={8} />
-            <Text style={styles.confidenceTeam}>{favourite.team ? favourite.team.name : 'Draw'}</Text>
+            <Text style={styles.confidenceTeam}>{favourite.team ? favourite.team.name : t('matchAnalysis.draw')}</Text>
             <Text style={styles.confidenceCaption}>
-              {favourite.team ? 'estimated win probability' : 'estimated draw probability'}
+              {favourite.team ? t('matchAnalysis.estimatedWinProbability') : t('matchAnalysis.estimatedDrawProbability')}
             </Text>
           </View>
-          <Text style={styles.stabilityCaption}>Prediction stability — stable over 72h</Text>
+          <Text style={styles.stabilityCaption}>{t('matchAnalysis.predictionStability')}</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Expected outcome distribution</Text>
+        <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedOutcomeDistribution')}</Text>
         <View style={styles.outcomeBar}>
           <View style={[styles.outcomeSegment, { flex: match.outcomes.home, backgroundColor: colors.success }]}>
             <Text style={styles.outcomeSegmentText}>{match.outcomes.home}</Text>
@@ -62,13 +64,17 @@ export default function MatchAnalysisScreen() {
           </View>
         </View>
         <View style={styles.outcomeLegendRow}>
-          <Text style={styles.outcomeLegendText}>{match.home.name} win</Text>
-          <Text style={styles.outcomeLegendText}>Draw</Text>
-          <Text style={styles.outcomeLegendText}>{match.away.name} win</Text>
+          <Text style={styles.outcomeLegendText}>
+            {match.home.name} {t('matchAnalysis.win')}
+          </Text>
+          <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>
+          <Text style={styles.outcomeLegendText}>
+            {match.away.name} {t('matchAnalysis.win')}
+          </Text>
         </View>
-        <Text style={styles.outcomeCaption}>Statistical likelihood, not a prediction</Text>
+        <Text style={styles.outcomeCaption}>{t('matchAnalysis.statisticalLikelihood')}</Text>
 
-        <Text style={styles.sectionLabel}>Expected goals</Text>
+        <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedGoals')}</Text>
         <View style={styles.xgRow}>
           <Text style={styles.xgValue}>{match.xgHome}</Text>
           <View style={styles.xgTrack}>
@@ -92,16 +98,16 @@ export default function MatchAnalysisScreen() {
 
         <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
           <View style={styles.whyHeader}>
-            <Text style={styles.whyTitle}>Why does the AI think this?</Text>
+            <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
             <Feather name="chevron-right" size={14} color={colors.textMuted} />
           </View>
           {match.factors.slice(0, 2).map((factor) => (
-            <FactorCompareBar key={factor.label} factor={factor} home={match.home} away={match.away} />
+            <FactorCompareBar key={factor.key} factor={factor} home={match.home} away={match.away} />
           ))}
         </Pressable>
 
         <Pressable style={styles.linkRow} onPress={() => router.push(`/what-changed/${match.id}`)}>
-          <Text style={styles.linkText}>What changed since yesterday?</Text>
+          <Text style={styles.linkText}>{t('matchAnalysis.whatChangedSinceYesterday')}</Text>
           <Feather name="arrow-right" size={13} color={colors.primaryLight} />
         </Pressable>
         <Pressable
@@ -113,7 +119,9 @@ export default function MatchAnalysisScreen() {
             })
           }
         >
-          <Text style={styles.linkText}>Compare {match.home.name} and {match.away.name}</Text>
+          <Text style={styles.linkText}>
+            {t('matchAnalysis.compareTeams', { a: match.home.name, b: match.away.name })}
+          </Text>
           <Feather name="arrow-right" size={13} color={colors.primaryLight} />
         </Pressable>
 

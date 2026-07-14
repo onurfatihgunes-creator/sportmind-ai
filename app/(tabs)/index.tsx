@@ -3,18 +3,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { insights, matches } from '@/data/mockData';
 import MatchCard from '@/components/MatchCard';
 import InsightCard from '@/components/InsightCard';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greetingSmall}>Good evening</Text>
+            <Text style={styles.greetingSmall}>{t('home.goodEvening')}</Text>
             <Text style={styles.greetingName}>Onur</Text>
           </View>
           <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.avatar}>
@@ -22,7 +25,7 @@ export default function HomeScreen() {
           </LinearGradient>
         </View>
 
-        <Text style={styles.sectionLabel}>Today's key matches</Text>
+        <Text style={styles.sectionLabel}>{t('home.todaysKeyMatches')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -42,21 +45,21 @@ export default function HomeScreen() {
         >
           <View style={styles.highlightLabelRow}>
             <Feather name="zap" size={12} color={colors.primaryLight} />
-            <Text style={styles.highlightLabel}>AI match highlight</Text>
+            <Text style={styles.highlightLabel}>{t('home.aiMatchHighlight')}</Text>
           </View>
-          <Text style={styles.highlightTitle}>3 things changed overnight</Text>
-          <Text style={styles.highlightSubtitle}>Lineups, weather and form all shifted since yesterday</Text>
+          <Text style={styles.highlightTitle}>{t('home.threeThingsChanged')}</Text>
+          <Text style={styles.highlightSubtitle}>{t('home.lineupsWeatherForm')}</Text>
         </LinearGradient>
 
-        <Text style={styles.sectionLabel}>Latest AI insights</Text>
+        <Text style={styles.sectionLabel}>{t('home.latestAiInsights')}</Text>
         {insights.map((i) => (
           <InsightCard key={i.id} insight={i} />
         ))}
 
         <Pressable style={styles.premiumBanner} onPress={() => router.push('/(tabs)/premium')}>
           <View>
-            <Text style={styles.premiumTitle}>Unlock unlimited AI analysis</Text>
-            <Text style={styles.premiumSubtitle}>Go Premium</Text>
+            <Text style={styles.premiumTitle}>{t('home.unlockUnlimited')}</Text>
+            <Text style={styles.premiumSubtitle}>{t('home.goPremium')}</Text>
           </View>
           <Feather name="lock" size={18} color={colors.primaryLight} />
         </Pressable>

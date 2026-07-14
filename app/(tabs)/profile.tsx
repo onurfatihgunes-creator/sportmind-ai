@@ -3,21 +3,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 
-const groupOne = [
-  { icon: 'bookmark', label: 'Saved analyses' },
-  { icon: 'clock', label: 'Reading history' },
-  { icon: 'heart', label: 'Favourite clubs and leagues' },
-] as const;
-
-const groupTwo = [
-  { icon: 'award', label: 'Subscription', onPress: () => router.push('/(tabs)/premium') },
-  { icon: 'shield', label: 'Legal and methodology', onPress: () => router.push('/legal') },
-  { icon: 'download', label: 'Export my data' },
-] as const;
-
 export default function ProfileScreen() {
+  const { t } = useTranslation();
+
+  const groupOne = [
+    { icon: 'bookmark' as const, label: t('profile.savedAnalyses') },
+    { icon: 'clock' as const, label: t('profile.readingHistory') },
+    { icon: 'heart' as const, label: t('profile.favouriteClubs') },
+  ];
+
+  const groupTwo = [
+    { icon: 'award' as const, label: t('profile.subscription'), onPress: () => router.push('/(tabs)/premium') },
+    { icon: 'shield' as const, label: t('profile.legalAndMethodology'), onPress: () => router.push('/legal') },
+    { icon: 'globe' as const, label: t('profile.language'), onPress: () => router.push('/language') },
+    { icon: 'download' as const, label: t('profile.exportData') },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -26,7 +30,7 @@ export default function ProfileScreen() {
             <Text style={styles.avatarText}>O</Text>
           </LinearGradient>
           <Text style={styles.name}>Onur</Text>
-          <Text style={styles.membership}>Premium member</Text>
+          <Text style={styles.membership}>{t('profile.premiumMember')}</Text>
         </View>
 
         <Group items={groupOne} />
@@ -34,14 +38,14 @@ export default function ProfileScreen() {
 
         <Pressable style={styles.deleteRow}>
           <Feather name="trash-2" size={14} color={colors.dangerText} />
-          <Text style={styles.deleteText}>Delete account</Text>
+          <Text style={styles.deleteText}>{t('profile.deleteAccount')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Group({ items }: { items: readonly { icon: any; label: string; onPress?: () => void }[] }) {
+function Group({ items }: { items: { icon: React.ComponentProps<typeof Feather>['name']; label: string; onPress?: () => void }[] }) {
   return (
     <View style={styles.group}>
       {items.map((item, index) => (
