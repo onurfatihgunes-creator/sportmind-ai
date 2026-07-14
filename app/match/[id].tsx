@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { matches } from '@/data/mockData';
+import { favouredOutcome, matches } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
@@ -11,6 +11,7 @@ import Disclaimer from '@/components/Disclaimer';
 export default function MatchAnalysisScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const match = matches.find((m) => m.id === id) ?? matches[0];
+  const favourite = favouredOutcome(match);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -25,49 +26,66 @@ export default function MatchAnalysisScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.teamsRow}>
-            <View style={styles.teamCol}>
+            <Pressable style={styles.teamCol} onPress={() => router.push(`/team/${match.home.id}`)}>
               <TeamCrest team={match.home} size={38} />
               <Text style={styles.teamName}>{match.home.name}</Text>
-            </View>
+            </Pressable>
             <Text style={styles.vs}>vs</Text>
-            <View style={styles.teamCol}>
+            <Pressable style={styles.teamCol} onPress={() => router.push(`/team/${match.away.id}`)}>
               <TeamCrest team={match.away} size={38} />
               <Text style={styles.teamName}>{match.away.name}</Text>
-            </View>
+            </Pressable>
           </View>
           <Text style={styles.kickoff}>{match.kickoff}</Text>
 
           <View style={styles.ringWrap}>
-            <ConfidenceRing value={match.confidence} size={92} strokeWidth={8} />
-            <Text style={styles.confidenceCaption}>confidence</Text>
+            <ConfidenceRing value={favourite.probability} size={92} strokeWidth={8} />
+            <Text style={styles.confidenceCaption}>
+              {favourite.team ? `${favourite.team.name} win likelihood` : 'Draw likelihood'}
+            </Text>
           </View>
           <Text style={styles.stabilityCaption}>Prediction stability — stable over 72h</Text>
         </View>
 
         <Text style={styles.sectionLabel}>Expected outcome distribution</Text>
         <View style={styles.outcomeBar}>
-          <View style={[styles.outcomeSegment, { flex: 58, backgroundColor: colors.success }]}>
-            <Text style={styles.outcomeSegmentText}>58</Text>
+          <View style={[styles.outcomeSegment, { flex: match.outcomes.home, backgroundColor: colors.success }]}>
+            <Text style={styles.outcomeSegmentText}>{match.outcomes.home}</Text>
           </View>
-          <View style={[styles.outcomeSegment, { flex: 22, backgroundColor: colors.warning }]}>
-            <Text style={styles.outcomeSegmentText}>22</Text>
+          <View style={[styles.outcomeSegment, { flex: match.outcomes.draw, backgroundColor: colors.warning }]}>
+            <Text style={styles.outcomeSegmentText}>{match.outcomes.draw}</Text>
           </View>
-          <View style={[styles.outcomeSegment, { flex: 20, backgroundColor: colors.danger }]}>
-            <Text style={styles.outcomeSegmentText}>20</Text>
+          <View style={[styles.outcomeSegment, { flex: match.outcomes.away, backgroundColor: colors.danger }]}>
+            <Text style={styles.outcomeSegmentText}>{match.outcomes.away}</Text>
           </View>
+        </View>
+        <View style={styles.outcomeLegendRow}>
+          <Text style={styles.outcomeLegendText}>{match.home.name} win</Text>
+          <Text style={styles.outcomeLegendText}>Draw</Text>
+          <Text style={styles.outcomeLegendText}>{match.away.name} win</Text>
         </View>
         <Text style={styles.outcomeCaption}>Statistical likelihood, not a prediction</Text>
 
         <Text style={styles.sectionLabel}>Expected goals</Text>
         <View style={styles.xgRow}>
-          <Text style={styles.xgValue}>2.1</Text>
+          <Text style={styles.xgValue}>{match.xgHome}</Text>
           <View style={styles.xgTrack}>
-            <View style={[styles.xgFill, { width: '72%', backgroundColor: colors.primary }]} />
+            <View
+              style={[
+                styles.xgFill,
+                { width: `${(match.xgHome / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.primary },
+              ]}
+            />
           </View>
           <View style={styles.xgTrack}>
-            <View style={[styles.xgFill, { width: '44%', backgroundColor: '#4338CA' }]} />
+            <View
+              style={[
+                styles.xgFill,
+                { width: `${(match.xgAway / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: '#4338CA' },
+              ]}
+            />
           </View>
-          <Text style={styles.xgValue}>1.3</Text>
+          <Text style={styles.xgValue}>{match.xgAway}</Text>
         </View>
 
         <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
@@ -75,8 +93,8 @@ export default function MatchAnalysisScreen() {
             <Text style={styles.whyTitle}>Why does the AI think this?</Text>
             <Feather name="chevron-right" size={14} color={colors.textMuted} />
           </View>
-          <MiniSignal label="Recent form" value={82} />
-          <MiniSignal label="Expected goals" value={58} />
+          <MiniSignal label="Recent form" value={31 * 3} />
+          <MiniSignal label="Expected goals" value={22 * 3} />
         </Pressable>
 
         <Pressable style={styles.linkRow} onPress={() => router.push(`/what-changed/${match.id}`)}>
@@ -107,7 +125,7 @@ function MiniSignal({ label, value }: { label: string; value: number }) {
     <View style={styles.miniSignalRow}>
       <Text style={styles.miniSignalLabel}>{label}</Text>
       <View style={styles.miniSignalTrack}>
-        <View style={[styles.miniSignalFill, { width: `${value}%` }]} />
+        <View style={[styles.miniSignalFill, { width: `${Math.min(100, value)}%` }]} />
       </View>
     </View>
   );
@@ -125,12 +143,14 @@ const styles = StyleSheet.create({
   vs: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
   kickoff: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted, marginBottom: spacing.md },
   ringWrap: { alignItems: 'center', marginTop: 4 },
-  confidenceCaption: { fontFamily: fonts.body, fontSize: 9, color: colors.textMuted, marginTop: 6 },
+  confidenceCaption: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 8 },
   stabilityCaption: { fontFamily: fonts.body, fontSize: 10, color: colors.textMuted, marginTop: 8 },
   sectionLabel: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textSecondary, marginBottom: 6 },
   outcomeBar: { flexDirection: 'row', height: 22, borderRadius: 8, overflow: 'hidden', marginBottom: 4 },
   outcomeSegment: { alignItems: 'center', justifyContent: 'center' },
   outcomeSegmentText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: '#0A0A0F' },
+  outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  outcomeLegendText: { fontFamily: fonts.body, fontSize: 9, color: colors.textMuted },
   outcomeCaption: { fontFamily: fonts.body, fontSize: 10, color: colors.textFaint, marginBottom: spacing.xl },
   xgRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.xl },
   xgValue: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary, width: 26 },

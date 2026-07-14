@@ -66,6 +66,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding/index" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="match/[id]" />
+        <Stack.Screen name="team/[id]" />
         <Stack.Screen name="batch-analysis" />
         <Stack.Screen name="explainability/[id]" />
         <Stack.Screen name="team-comparison" />

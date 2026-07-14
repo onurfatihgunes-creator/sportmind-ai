@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { matches } from '@/data/mockData';
+import { favouredOutcome, matches } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
@@ -27,27 +27,30 @@ export default function BatchAnalysisScreen() {
           Each match is analysed independently — these are separate analyses, not a combined outcome.
         </Text>
 
-        {selectedMatches.map((m) => (
+        {selectedMatches.map((m) => {
+          const favourite = favouredOutcome(m);
+          return (
           <Pressable key={m.id} style={styles.card} onPress={() => router.push(`/match/${m.id}`)}>
             <View style={styles.cardTop}>
               <View style={styles.crests}>
                 <TeamCrest team={m.home} size={28} />
                 <TeamCrest team={m.away} size={28} overlap />
               </View>
-              <ConfidenceRing value={m.confidence} size={34} strokeWidth={3} />
+              <ConfidenceRing value={favourite.probability} size={34} strokeWidth={3} />
             </View>
             <Text style={styles.matchTitle}>
               {m.home.name} vs {m.away.name}
             </Text>
             <Text style={styles.matchSubtitle}>
-              {m.kickoff} · {m.competition}
+              {m.kickoff} · {m.competition} · {favourite.team ? `${favourite.team.name} favoured` : 'Draw likely'}
             </Text>
             <View style={styles.viewLink}>
               <Text style={styles.viewLinkText}>View full analysis</Text>
               <Feather name="arrow-right" size={12} color={colors.primaryLight} />
             </View>
           </Pressable>
-        ))}
+          );
+        })}
 
         <Disclaimer style={{ marginTop: spacing.md }} />
       </ScrollView>

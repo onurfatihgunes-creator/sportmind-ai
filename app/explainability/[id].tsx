@@ -4,13 +4,14 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import { colors, fonts, spacing } from '@/constants/theme';
-import { matches, signalWeights } from '@/data/mockData';
+import { favouredOutcome, matches, signalWeights } from '@/data/mockData';
 import SignalBar from '@/components/SignalBar';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function ExplainabilityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const match = matches.find((m) => m.id === id) ?? matches[0];
+  const favourite = favouredOutcome(match);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -25,7 +26,10 @@ export default function ExplainabilityScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroText}>
-          <Text style={styles.confidence}>{match.confidence}%</Text>
+          <Text style={styles.confidence}>{favourite.probability}%</Text>
+          <Text style={styles.confidenceCaption}>
+            {favourite.team ? `${favourite.team.name} win likelihood` : 'Draw likelihood'}
+          </Text>
           <Text style={styles.question}>Why does the AI think this?</Text>
         </View>
 
@@ -46,5 +50,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
   heroText: { alignItems: 'center', marginBottom: spacing.xxl },
   confidence: { fontFamily: fonts.headlineBold, fontSize: 40, color: colors.textPrimary },
-  question: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginTop: 2 },
+  confidenceCaption: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textMuted, marginTop: 2 },
+  question: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginTop: 10 },
 });

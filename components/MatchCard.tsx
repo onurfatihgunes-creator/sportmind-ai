@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { colors, fonts } from '@/constants/theme';
-import type { Match } from '@/data/mockData';
+import { favouredOutcome, type Match } from '@/data/mockData';
 import TeamCrest from './TeamCrest';
 import ConfidenceRing from './ConfidenceRing';
 
 export default function MatchCard({ match }: { match: Match }) {
+  const favourite = favouredOutcome(match);
+
   return (
     <Pressable style={styles.card} onPress={() => router.push(`/match/${match.id}`)}>
       <View style={styles.row}>
@@ -13,12 +15,15 @@ export default function MatchCard({ match }: { match: Match }) {
           <TeamCrest team={match.home} size={24} />
           <TeamCrest team={match.away} size={24} overlap />
         </View>
-        <ConfidenceRing value={match.confidence} size={30} strokeWidth={3} />
+        <ConfidenceRing value={favourite.probability} size={30} strokeWidth={3} />
       </View>
       <Text style={styles.title}>
         {match.home.name} vs {match.away.name}
       </Text>
       <Text style={styles.subtitle}>{match.kickoff}</Text>
+      <Text style={styles.favourite}>
+        {favourite.team ? `${favourite.team.name} favoured` : 'Draw likely'} · {favourite.probability}%
+      </Text>
     </Pressable>
   );
 }
@@ -35,4 +40,5 @@ const styles = StyleSheet.create({
   crests: { flexDirection: 'row', alignItems: 'center' },
   title: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textPrimary },
   subtitle: { fontFamily: fonts.body, fontSize: 9, color: colors.textMuted, marginTop: 3 },
+  favourite: { fontFamily: fonts.body, fontSize: 9, color: colors.textSecondary, marginTop: 4 },
 });

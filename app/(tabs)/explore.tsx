@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { leagues, matches, teams } from '@/data/mockData';
+import { favouredOutcome, leagues, matches, teams } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 
@@ -77,7 +77,7 @@ export default function ExploreScreen() {
                 </Text>
                 <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
               </View>
-              <ConfidenceRing value={m.confidence} size={28} strokeWidth={3} />
+              <ConfidenceRing value={favouredOutcome(m).probability} size={28} strokeWidth={3} />
             </Pressable>
           );
         })}
