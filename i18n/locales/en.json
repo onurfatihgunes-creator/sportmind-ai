@@ -22,7 +22,8 @@
   },
   "home": {
     "goodEvening": "Good evening",
-    "todaysKeyMatches": "Today's key matches",
+    "todaysKeyMatches": "Top matches today",
+    "allMatches": "All matches",
     "aiMatchHighlight": "AI match highlight",
     "threeThingsChanged": "3 things changed overnight",
     "lineupsWeatherForm": "Lineups, weather and form all shifted since yesterday",
@@ -97,9 +98,18 @@
     "win": "win",
     "statisticalLikelihood": "Statistical likelihood, not a prediction",
     "expectedGoals": "Expected goals",
+    "combinedExpectedGoals": "Combined expected goals",
+    "recentAverageGoals": "Recent average goals",
+    "aiCommentary": "AI commentary",
     "whyDoesAiThink": "Why does the AI think this?",
+    "viewAllReasons": "View all reasons",
     "whatChangedSinceYesterday": "What changed since yesterday?",
     "compareTeams": "Compare {{a}} and {{b}}"
+  },
+  "aiSummaries": {
+    "arsMci": "Arsenal's strong home form and recent expected-goals dominance make them the clear favourite, though Man City's pressing keeps the race closer than the headline number suggests.",
+    "rmaBar": "This is one of the tightest analyses on the board — Real Madrid's home advantage offsets Barcelona's slightly better recent form, leaving the model close to a genuine toss-up.",
+    "arsLiv": "Arsenal's home advantage and steadier recent form give them the edge, but Liverpool's attacking output keeps their win probability firmly in play."
   },
   "factors": {
     "recentForm": "Recent form",

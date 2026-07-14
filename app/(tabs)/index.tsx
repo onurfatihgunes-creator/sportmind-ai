@@ -5,9 +5,11 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { insights, matches } from '@/data/mockData';
+import { favouredOutcome, insights, matches } from '@/data/mockData';
 import MatchCard from '@/components/MatchCard';
 import InsightCard from '@/components/InsightCard';
+import TeamCrest from '@/components/TeamCrest';
+import ConfidenceRing from '@/components/ConfidenceRing';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -32,10 +34,34 @@ export default function HomeScreen() {
           style={styles.matchRow}
           contentContainerStyle={{ paddingRight: spacing.xxl }}
         >
-          {matches.slice(0, 2).map((m) => (
+          {matches.slice(0, 10).map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
         </ScrollView>
+
+        <Text style={styles.sectionLabel}>{t('home.allMatches')}</Text>
+        <View style={styles.allMatchesList}>
+        {matches.map((m) => {
+          const favourite = favouredOutcome(m);
+          return (
+            <Pressable key={m.id} style={styles.allMatchRow} onPress={() => router.push(`/match/${m.id}`)}>
+              <View style={styles.allMatchCrests}>
+                <TeamCrest team={m.home} size={26} />
+                <TeamCrest team={m.away} size={26} overlap />
+              </View>
+              <View style={styles.allMatchInfo}>
+                <Text style={styles.allMatchTitle}>
+                  {m.home.name} {t('common.vs')} {m.away.name}
+                </Text>
+                <Text style={styles.allMatchSubtitle}>
+                  {m.kickoff} · {m.competition}
+                </Text>
+              </View>
+              <ConfidenceRing value={favourite.probability} size={28} strokeWidth={3} />
+            </Pressable>
+          );
+        })}
+        </View>
 
         <LinearGradient
           colors={['#1E1B4B', colors.surface]}
@@ -84,6 +110,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   matchRow: { marginBottom: spacing.xl },
+  allMatchesList: { marginBottom: spacing.xl },
+  allMatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: spacing.sm,
+  },
+  allMatchCrests: { flexDirection: 'row', alignItems: 'center' },
+  allMatchInfo: { flex: 1 },
+  allMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary },
+  allMatchSubtitle: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
   highlightCard: { borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.xl, borderWidth: 1, borderColor: '#2E2A5C' },
   highlightLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },
   highlightLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },

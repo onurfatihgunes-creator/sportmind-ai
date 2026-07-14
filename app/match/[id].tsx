@@ -51,6 +51,27 @@ export default function MatchAnalysisScreen() {
           <Text style={styles.stabilityCaption}>{t('matchAnalysis.predictionStability')}</Text>
         </View>
 
+        <View style={styles.aiCommentaryCard}>
+          <View style={styles.aiCommentaryHeader}>
+            <Feather name="zap" size={12} color={colors.primaryLight} />
+            <Text style={styles.aiCommentaryLabel}>{t('matchAnalysis.aiCommentary')}</Text>
+          </View>
+          <Text style={styles.aiCommentaryText}>{t(`aiSummaries.${match.aiSummaryKey}`)}</Text>
+        </View>
+
+        <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
+          <View style={styles.whyHeader}>
+            <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
+          </View>
+          {match.factors.slice(0, 4).map((factor) => (
+            <FactorCompareBar key={factor.key} factor={factor} home={match.home} away={match.away} />
+          ))}
+          <View style={styles.viewAllRow}>
+            <Text style={styles.viewAllText}>{t('matchAnalysis.viewAllReasons')}</Text>
+            <Feather name="arrow-right" size={12} color={colors.primaryLight} />
+          </View>
+        </Pressable>
+
         <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedOutcomeDistribution')}</Text>
         <View style={styles.outcomeBar}>
           <View style={[styles.outcomeSegment, { flex: match.outcomes.home, backgroundColor: colors.success }]}>
@@ -96,15 +117,18 @@ export default function MatchAnalysisScreen() {
           <Text style={styles.xgValue}>{match.xgAway}</Text>
         </View>
 
-        <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
-          <View style={styles.whyHeader}>
-            <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
-            <Feather name="chevron-right" size={14} color={colors.textMuted} />
+        <View style={styles.statPairRow}>
+          <View style={styles.statPairCard}>
+            <Text style={styles.statPairLabel}>{t('matchAnalysis.combinedExpectedGoals')}</Text>
+            <Text style={styles.statPairValue}>{(match.xgHome + match.xgAway).toFixed(1)}</Text>
           </View>
-          {match.factors.slice(0, 2).map((factor) => (
-            <FactorCompareBar key={factor.key} factor={factor} home={match.home} away={match.away} />
-          ))}
-        </Pressable>
+          <View style={styles.statPairCard}>
+            <Text style={styles.statPairLabel}>{t('matchAnalysis.recentAverageGoals')}</Text>
+            <Text style={styles.statPairValue}>
+              {match.recentAvgGoalsHome.toFixed(1)} – {match.recentAvgGoalsAway.toFixed(1)}
+            </Text>
+          </View>
+        </View>
 
         <Pressable style={styles.linkRow} onPress={() => router.push(`/what-changed/${match.id}`)}>
           <Text style={styles.linkText}>{t('matchAnalysis.whatChangedSinceYesterday')}</Text>
@@ -157,9 +181,26 @@ const styles = StyleSheet.create({
   xgValue: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary, width: 26 },
   xgTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.surface, overflow: 'hidden' },
   xgFill: { height: '100%', borderRadius: 4 },
-  whyCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  aiCommentaryCard: {
+    backgroundColor: colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: '#312E81',
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  aiCommentaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 },
+  aiCommentaryLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
+  aiCommentaryText: { fontFamily: fonts.body, fontSize: 12.5, color: '#E5E7EB', lineHeight: 19 },
+  whyCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.lg },
   whyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   whyTitle: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary },
+  viewAllRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingTop: 6 },
+  viewAllText: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.primaryLight },
+  statPairRow: { flexDirection: 'row', gap: 10, marginBottom: spacing.xl },
+  statPairCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: 12 },
+  statPairLabel: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginBottom: 5 },
+  statPairValue: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   linkRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border },
   linkText: { fontFamily: fonts.body, fontSize: 12, color: '#E5E7EB', flex: 1, marginRight: 8 },
 });

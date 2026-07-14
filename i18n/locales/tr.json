@@ -22,7 +22,8 @@
   },
   "home": {
     "goodEvening": "İyi akşamlar",
-    "todaysKeyMatches": "Bugünün öne çıkan maçları",
+    "todaysKeyMatches": "Bugünün en iyi maçları",
+    "allMatches": "Tüm maçlar",
     "aiMatchHighlight": "AI maç özeti",
     "threeThingsChanged": "Gece boyunca 3 şey değişti",
     "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
@@ -97,9 +98,18 @@
     "win": "galibiyet",
     "statisticalLikelihood": "İstatistiksel olasılık, tahmin değil",
     "expectedGoals": "Beklenen gol (xG)",
+    "combinedExpectedGoals": "Toplam beklenen gol",
+    "recentAverageGoals": "Son maçlarda ortalama gol",
+    "aiCommentary": "AI yorumu",
     "whyDoesAiThink": "AI bunu neden düşünüyor?",
+    "viewAllReasons": "Tüm nedenleri gör",
     "whatChangedSinceYesterday": "Dünden bu yana ne değişti?",
     "compareTeams": "{{a}} ve {{b}} karşılaştır"
+  },
+  "aiSummaries": {
+    "arsMci": "Arsenal'in güçlü ev sahibi formu ve son maçlardaki beklenen gol üstünlüğü onları net favori yapıyor; yine de Man City'nin presi farkın göründüğünden daha yakın olmasını sağlıyor.",
+    "rmaBar": "Bu, tablodaki en dengeli analizlerden biri — Real Madrid'in ev sahibi avantajı, Barcelona'nın hafif daha iyi son form durumunu dengeliyor ve model neredeyse yazı-tura noktasında kalıyor.",
+    "arsLiv": "Arsenal'in ev sahibi avantajı ve daha istikrarlı son form durumu onlara üstünlük sağlıyor; ama Liverpool'un hücum üretimi kazanma olasılığını canlı tutuyor."
   },
   "factors": {
     "recentForm": "Son form",
