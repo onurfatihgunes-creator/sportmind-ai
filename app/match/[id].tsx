@@ -6,6 +6,7 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, matches } from '@/data/mockData';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
+import FactorCompareBar from '@/components/FactorCompareBar';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function MatchAnalysisScreen() {
@@ -40,8 +41,9 @@ export default function MatchAnalysisScreen() {
 
           <View style={styles.ringWrap}>
             <ConfidenceRing value={favourite.probability} size={92} strokeWidth={8} />
+            <Text style={styles.confidenceTeam}>{favourite.team ? favourite.team.name : 'Draw'}</Text>
             <Text style={styles.confidenceCaption}>
-              {favourite.team ? `${favourite.team.name} win likelihood` : 'Draw likelihood'}
+              {favourite.team ? 'estimated win probability' : 'estimated draw probability'}
             </Text>
           </View>
           <Text style={styles.stabilityCaption}>Prediction stability — stable over 72h</Text>
@@ -93,8 +95,9 @@ export default function MatchAnalysisScreen() {
             <Text style={styles.whyTitle}>Why does the AI think this?</Text>
             <Feather name="chevron-right" size={14} color={colors.textMuted} />
           </View>
-          <MiniSignal label="Recent form" value={31 * 3} />
-          <MiniSignal label="Expected goals" value={22 * 3} />
+          {match.factors.slice(0, 2).map((factor) => (
+            <FactorCompareBar key={factor.label} factor={factor} home={match.home} away={match.away} />
+          ))}
         </Pressable>
 
         <Pressable style={styles.linkRow} onPress={() => router.push(`/what-changed/${match.id}`)}>
@@ -120,17 +123,6 @@ export default function MatchAnalysisScreen() {
   );
 }
 
-function MiniSignal({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.miniSignalRow}>
-      <Text style={styles.miniSignalLabel}>{label}</Text>
-      <View style={styles.miniSignalTrack}>
-        <View style={[styles.miniSignalFill, { width: `${Math.min(100, value)}%` }]} />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
@@ -143,7 +135,8 @@ const styles = StyleSheet.create({
   vs: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
   kickoff: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted, marginBottom: spacing.md },
   ringWrap: { alignItems: 'center', marginTop: 4 },
-  confidenceCaption: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 8 },
+  confidenceTeam: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary, marginTop: 8 },
+  confidenceCaption: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
   stabilityCaption: { fontFamily: fonts.body, fontSize: 10, color: colors.textMuted, marginTop: 8 },
   sectionLabel: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textSecondary, marginBottom: 6 },
   outcomeBar: { flexDirection: 'row', height: 22, borderRadius: 8, overflow: 'hidden', marginBottom: 4 },
@@ -159,10 +152,6 @@ const styles = StyleSheet.create({
   whyCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
   whyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   whyTitle: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary },
-  miniSignalRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  miniSignalLabel: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textSecondary, width: 82 },
-  miniSignalTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
-  miniSignalFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
   linkRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border },
   linkText: { fontFamily: fonts.body, fontSize: 12, color: '#E5E7EB', flex: 1, marginRight: 8 },
 });

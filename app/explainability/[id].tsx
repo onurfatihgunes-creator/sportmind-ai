@@ -3,9 +3,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
-import { colors, fonts, spacing } from '@/constants/theme';
-import { favouredOutcome, matches, signalWeights } from '@/data/mockData';
-import SignalBar from '@/components/SignalBar';
+import { colors, confidenceColor, fonts, spacing } from '@/constants/theme';
+import { favouredOutcome, matches } from '@/data/mockData';
+import FactorCompareBar from '@/components/FactorCompareBar';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function ExplainabilityScreen() {
@@ -26,15 +26,18 @@ export default function ExplainabilityScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroText}>
-          <Text style={styles.confidence}>{favourite.probability}%</Text>
+          <Text style={styles.confidence}>
+            <Text style={{ color: confidenceColor(favourite.probability) }}>{favourite.probability}%</Text>{' '}
+            {favourite.team ? favourite.team.name : 'Draw'}
+          </Text>
           <Text style={styles.confidenceCaption}>
-            {favourite.team ? `${favourite.team.name} win likelihood` : 'Draw likelihood'}
+            {favourite.team ? 'estimated win probability' : 'estimated draw probability'}
           </Text>
           <Text style={styles.question}>Why does the AI think this?</Text>
         </View>
 
-        {signalWeights.map((s) => (
-          <SignalBar key={s.label} label={s.label} value={s.value} />
+        {match.factors.map((factor) => (
+          <FactorCompareBar key={factor.label} factor={factor} home={match.home} away={match.away} />
         ))}
 
         <Disclaimer style={{ marginTop: spacing.lg }} />
@@ -49,7 +52,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textSecondary },
   content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
   heroText: { alignItems: 'center', marginBottom: spacing.xxl },
-  confidence: { fontFamily: fonts.headlineBold, fontSize: 40, color: colors.textPrimary },
-  confidenceCaption: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textMuted, marginTop: 2 },
-  question: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginTop: 10 },
+  confidence: { fontFamily: fonts.headlineBold, fontSize: 32, color: colors.textPrimary },
+  confidenceCaption: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textMuted, marginTop: 3 },
+  question: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginTop: 14 },
 });

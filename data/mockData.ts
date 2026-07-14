@@ -18,6 +18,9 @@ export const teams: Record<string, Team> = {
 
 export type Outcomes = { home: number; draw: number; away: number };
 
+/** A single reason behind the prediction, expressed as a head-to-head split between the two teams (home % + away % = 100). Ordered from most to least influential. */
+export type MatchFactor = { label: string; home: number; away: number };
+
 export type Match = {
   id: string;
   home: Team;
@@ -27,6 +30,7 @@ export type Match = {
   outcomes: Outcomes;
   xgHome: number;
   xgAway: number;
+  factors: MatchFactor[];
 };
 
 export const matches: Match[] = [
@@ -39,6 +43,15 @@ export const matches: Match[] = [
     outcomes: { home: 58, draw: 22, away: 20 },
     xgHome: 2.1,
     xgAway: 1.3,
+    factors: [
+      { label: 'Recent form', home: 65, away: 35 },
+      { label: 'Expected goals', home: 61, away: 39 },
+      { label: 'Home advantage', home: 68, away: 32 },
+      { label: 'Injuries', home: 54, away: 46 },
+      { label: 'Defensive performance', home: 57, away: 43 },
+      { label: 'Possession', home: 52, away: 48 },
+      { label: 'Historical trends', home: 59, away: 41 },
+    ],
   },
   {
     id: 'rma-bar',
@@ -49,6 +62,15 @@ export const matches: Match[] = [
     outcomes: { home: 39, draw: 24, away: 37 },
     xgHome: 1.7,
     xgAway: 1.6,
+    factors: [
+      { label: 'Recent form', home: 52, away: 48 },
+      { label: 'Expected goals', home: 51, away: 49 },
+      { label: 'Home advantage', home: 60, away: 40 },
+      { label: 'Injuries', home: 47, away: 53 },
+      { label: 'Defensive performance', home: 49, away: 51 },
+      { label: 'Possession', home: 44, away: 56 },
+      { label: 'Historical trends', home: 51, away: 49 },
+    ],
   },
   {
     id: 'ars-liv',
@@ -59,6 +81,15 @@ export const matches: Match[] = [
     outcomes: { home: 45, draw: 25, away: 30 },
     xgHome: 1.8,
     xgAway: 1.5,
+    factors: [
+      { label: 'Recent form', home: 55, away: 45 },
+      { label: 'Expected goals', home: 54, away: 46 },
+      { label: 'Home advantage', home: 66, away: 34 },
+      { label: 'Injuries', home: 48, away: 52 },
+      { label: 'Defensive performance', home: 51, away: 49 },
+      { label: 'Possession', home: 47, away: 53 },
+      { label: 'Historical trends', home: 53, away: 47 },
+    ],
   },
 ];
 
@@ -69,18 +100,6 @@ export function favouredOutcome(match: Match): { label: 'home' | 'draw' | 'away'
   if (away >= draw && away >= home) return { label: 'away', team: match.away, probability: away };
   return { label: 'draw', team: null, probability: draw };
 }
-
-export type SignalWeight = { label: string; value: number };
-
-export const signalWeights: SignalWeight[] = [
-  { label: 'Recent form', value: 31 },
-  { label: 'Expected goals', value: 22 },
-  { label: 'Home advantage', value: 15 },
-  { label: 'Injuries', value: 11 },
-  { label: 'Defensive performance', value: 10 },
-  { label: 'Possession', value: 6 },
-  { label: 'Historical trends', value: 5 },
-];
 
 export type ChangeEvent = {
   id: string;
