@@ -33,8 +33,6 @@ export type Match = {
   /** Recent average goals scored by each team, used for the scoring-trend stat (not a betting line). */
   recentAvgGoalsHome: number;
   recentAvgGoalsAway: number;
-  /** Maps to a translation in i18n/locales/*.json under "aiSummaries". */
-  aiSummaryKey: string;
   factors: MatchFactor[];
 };
 
@@ -50,7 +48,6 @@ export const matches: Match[] = [
     xgAway: 1.3,
     recentAvgGoalsHome: 2.4,
     recentAvgGoalsAway: 1.6,
-    aiSummaryKey: 'arsMci',
     factors: [
       { key: 'recentForm', home: 65, away: 35 },
       { key: 'expectedGoals', home: 61, away: 39 },
@@ -72,7 +69,6 @@ export const matches: Match[] = [
     xgAway: 1.6,
     recentAvgGoalsHome: 1.9,
     recentAvgGoalsAway: 1.8,
-    aiSummaryKey: 'rmaBar',
     factors: [
       { key: 'recentForm', home: 52, away: 48 },
       { key: 'expectedGoals', home: 51, away: 49 },
@@ -94,7 +90,6 @@ export const matches: Match[] = [
     xgAway: 1.5,
     recentAvgGoalsHome: 2.0,
     recentAvgGoalsAway: 1.7,
-    aiSummaryKey: 'arsLiv',
     factors: [
       { key: 'recentForm', home: 55, away: 45 },
       { key: 'expectedGoals', home: 54, away: 46 },

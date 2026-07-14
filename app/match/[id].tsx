@@ -51,14 +51,6 @@ export default function MatchAnalysisScreen() {
           <Text style={styles.stabilityCaption}>{t('matchAnalysis.predictionStability')}</Text>
         </View>
 
-        <View style={styles.aiCommentaryCard}>
-          <View style={styles.aiCommentaryHeader}>
-            <Feather name="zap" size={12} color={colors.primaryLight} />
-            <Text style={styles.aiCommentaryLabel}>{t('matchAnalysis.aiCommentary')}</Text>
-          </View>
-          <Text style={styles.aiCommentaryText}>{t(`aiSummaries.${match.aiSummaryKey}`)}</Text>
-        </View>
-
         <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
           <View style={styles.whyHeader}>
             <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
@@ -181,17 +173,6 @@ const styles = StyleSheet.create({
   xgValue: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary, width: 26 },
   xgTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.surface, overflow: 'hidden' },
   xgFill: { height: '100%', borderRadius: 4 },
-  aiCommentaryCard: {
-    backgroundColor: colors.primaryMuted,
-    borderWidth: 1,
-    borderColor: '#312E81',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  aiCommentaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 },
-  aiCommentaryLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
-  aiCommentaryText: { fontFamily: fonts.body, fontSize: 12.5, color: '#E5E7EB', lineHeight: 19 },
   whyCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.lg },
   whyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   whyTitle: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary },

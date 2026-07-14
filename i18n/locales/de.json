@@ -100,16 +100,10 @@
     "expectedGoals": "Erwartete Tore (xG)",
     "combinedExpectedGoals": "Kombinierte erwartete Tore",
     "recentAverageGoals": "Durchschnittliche Tore zuletzt",
-    "aiCommentary": "KI-Kommentar",
     "whyDoesAiThink": "Warum denkt die KI das?",
     "viewAllReasons": "Alle Gründe ansehen",
     "whatChangedSinceYesterday": "Was hat sich seit gestern geändert?",
     "compareTeams": "{{a}} und {{b}} vergleichen"
-  },
-  "aiSummaries": {
-    "arsMci": "Arsenals starke Heimform und die zuletzt überlegenen erwarteten Tore machen sie zum klaren Favoriten, auch wenn Man Citys Pressing das Rennen enger hält, als es die Kopfzahl vermuten lässt.",
-    "rmaBar": "Dies ist eine der ausgeglichensten Analysen auf dem Board — Real Madrids Heimvorteil gleicht Barcelonas etwas bessere jüngste Form aus, sodass das Modell nahezu bei einem echten Kopf-an-Kopf-Rennen bleibt.",
-    "arsLiv": "Arsenals Heimvorteil und die stabilere jüngste Form geben ihnen die Nase vorn, aber Liverpools Offensivleistung hält ihre Siegwahrscheinlichkeit klar im Spiel."
   },
   "factors": {
     "recentForm": "Aktuelle Form",
