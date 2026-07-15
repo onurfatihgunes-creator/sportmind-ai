@@ -1,4 +1,4 @@
-import { ACTIVE_WINDOW_DAYS, COMPETITIONS } from './config.js';
+import { ACTIVE_WINDOW_DAYS, COMPETITIONS, FORM_LOOKBACK_DAYS } from './config.js';
 import { getCompetitionMatches, sleep, type FdMatch, type FdTeam } from './footballData.js';
 import { supabase } from './supabaseClient.js';
 
@@ -63,15 +63,15 @@ async function recordFormIfFinished(match: FdMatch) {
 
 /**
  * Pulls, per competition: the upcoming active-window fixtures (to analyse) plus the last
- * ~45 days of finished matches (to keep team_form current for the recent-form calculation).
- * Run on a schedule via GitHub Actions — see .github/workflows/data-pipeline.yml.
+ * FORM_LOOKBACK_DAYS of finished matches (to keep team_form current for the recent-form
+ * calculation). Run on a schedule via GitHub Actions — see .github/workflows/data-pipeline.yml.
  */
 export async function fetchFixtures() {
   const today = new Date();
   const windowEnd = new Date(today);
   windowEnd.setDate(windowEnd.getDate() + ACTIVE_WINDOW_DAYS);
   const formStart = new Date(today);
-  formStart.setDate(formStart.getDate() - 45);
+  formStart.setDate(formStart.getDate() - FORM_LOOKBACK_DAYS);
 
   for (const competition of COMPETITIONS) {
     console.log(`Fetching ${competition.name}...`);

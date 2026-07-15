@@ -29,5 +29,13 @@ export const COMPETITIONS = [
  * window is preferable in-season since predictions close to kickoff are more reliable. */
 export const ACTIVE_WINDOW_DAYS = 40;
 
+/** How far back to pull finished matches for team_form. Widened from 45 to cover the
+ * summer break — the 2025/26 season ended in May, so a 45-day lookback from mid-July
+ * landed entirely in the gap and returned zero finished matches, forcing every team
+ * onto the same neutral baseline (see computePredictions.ts's getFormStats fallback).
+ * Reaching back ~200 days pulls in last season's closing matches instead. Once the new
+ * season has produced 5+ finished matches per team, this can shrink back down. */
+export const FORM_LOOKBACK_DAYS = 200;
+
 /** A prediction change below this many percentage points is not material enough to log/notify on. */
 export const MATERIALITY_THRESHOLD_PCT = 3;
