@@ -29,7 +29,9 @@
     "lineupsWeatherForm": "Lineups, weather and form all shifted since yesterday",
     "latestAiInsights": "Latest AI insights",
     "unlockUnlimited": "Unlock unlimited AI analysis",
-    "goPremium": "Go Premium"
+    "goPremium": "Go Premium",
+    "liveData": "Live data",
+    "demoData": "Demo data"
   },
   "matchCard": {
     "favoured": "{{team}} favoured",
@@ -149,7 +151,9 @@
   "homeInsights": {
     "sample1": "Model now favours Arsenal at home",
     "sample2": "Liverpool pressing intensity up 18% over 6 matches",
-    "sample3": "Real Madrid expected goals trending down"
+    "sample3": "Real Madrid expected goals trending down",
+    "liveFavoured": "{{team}} favoured by the model at {{pct}}%",
+    "liveCloseMatch": "{{home}} vs {{away}} rated close to even ({{pct}}%)"
   },
   "changeEvents": {
     "weatherUpdated": "Weather forecast updated",

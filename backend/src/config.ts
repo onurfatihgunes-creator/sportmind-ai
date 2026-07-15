@@ -22,8 +22,12 @@ export const COMPETITIONS = [
   { code: 'CL', name: 'Champions League' },
 ] as const;
 
-/** Only fetch/recompute matches kicking off within this many days — the "active window". */
-export const ACTIVE_WINDOW_DAYS = 7;
+/** Only fetch/recompute matches kicking off within this many days — the "active window".
+ * Temporarily widened from 7 to cover the summer break (all 6 competitions are on
+ * hiatus in July) so the season-opening fixtures show up now instead of the tables
+ * staying empty until kickoff. Revert to 7 once the season is under way — a short
+ * window is preferable in-season since predictions close to kickoff are more reliable. */
+export const ACTIVE_WINDOW_DAYS = 40;
 
 /** A prediction change below this many percentage points is not material enough to log/notify on. */
 export const MATERIALITY_THRESHOLD_PCT = 3;

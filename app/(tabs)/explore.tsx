@@ -5,7 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, leagues, matches, teams } from '@/data/mockData';
+import { favouredOutcome, leagues, teams } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 
@@ -13,6 +14,7 @@ const trending = [teams.arsenal, teams.liverpool, teams.barcelona];
 
 export default function ExploreScreen() {
   const { t } = useTranslation();
+  const { matches } = useAppData();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 

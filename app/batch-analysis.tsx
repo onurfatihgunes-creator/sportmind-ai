@@ -4,7 +4,8 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, matches } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
@@ -12,6 +13,7 @@ import Disclaimer from '@/components/Disclaimer';
 export default function BatchAnalysisScreen() {
   const { t } = useTranslation();
   const { ids } = useLocalSearchParams<{ ids?: string }>();
+  const { matches } = useAppData();
   const selectedIds = (ids ?? '').split(',').filter(Boolean);
   const selectedMatches = matches.filter((m) => selectedIds.includes(m.id));
 

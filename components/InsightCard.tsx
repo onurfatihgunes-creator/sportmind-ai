@@ -9,7 +9,7 @@ export default function InsightCard({ insight }: { insight: Insight }) {
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <Text style={styles.headline}>{t(`homeInsights.${insight.key}`)}</Text>
+        <Text style={styles.headline}>{t(`homeInsights.${insight.key}`, insight.params)}</Text>
         <View style={[styles.chip, { backgroundColor: `${color}22` }]}>
           <Text style={[styles.chipText, { color }]}>{insight.confidence}%</Text>
         </View>

@@ -5,7 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, insights, matches } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import MatchCard from '@/components/MatchCard';
 import InsightCard from '@/components/InsightCard';
 import TeamCrest from '@/components/TeamCrest';
@@ -13,6 +14,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { matches, insights, isLive, loading } = useAppData();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -26,6 +28,13 @@ export default function HomeScreen() {
             <Feather name="zap" size={16} color="#fff" />
           </LinearGradient>
         </View>
+
+        {!loading && (
+          <View style={[styles.dataBadge, isLive ? styles.dataBadgeLive : styles.dataBadgeDemo]}>
+            <View style={[styles.dataBadgeDot, { backgroundColor: isLive ? colors.success : colors.warning }]} />
+            <Text style={styles.dataBadgeText}>{isLive ? t('home.liveData') : t('home.demoData')}</Text>
+          </View>
+        )}
 
         <Text style={styles.sectionLabel}>{t('home.todaysKeyMatches')}</Text>
         <ScrollView
@@ -101,6 +110,21 @@ const styles = StyleSheet.create({
   greetingSmall: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   greetingName: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: 1 },
   avatar: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  dataBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  dataBadgeLive: { backgroundColor: `${colors.success}18`, borderColor: `${colors.success}40` },
+  dataBadgeDemo: { backgroundColor: `${colors.warning}18`, borderColor: `${colors.warning}40` },
+  dataBadgeDot: { width: 6, height: 6, borderRadius: 3 },
+  dataBadgeText: { fontFamily: fonts.bodyMedium, fontSize: 10, color: colors.textSecondary },
   sectionLabel: {
     fontFamily: fonts.headline,
     fontSize: 11,

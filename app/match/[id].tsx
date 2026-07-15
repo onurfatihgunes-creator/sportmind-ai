@@ -4,7 +4,8 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, matches } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import FactorCompareBar from '@/components/FactorCompareBar';
@@ -13,6 +14,7 @@ import Disclaimer from '@/components/Disclaimer';
 export default function MatchAnalysisScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { matches } = useAppData();
   const match = matches.find((m) => m.id === id) ?? matches[0];
   const favourite = favouredOutcome(match);
 

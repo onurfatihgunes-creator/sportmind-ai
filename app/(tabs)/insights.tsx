@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { insights, teams } from '@/data/mockData';
+import { teams } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import TeamCrest from '@/components/TeamCrest';
 import InsightCard from '@/components/InsightCard';
 
@@ -17,6 +18,7 @@ const watchlist = [
 
 export default function InsightsScreen() {
   const { t } = useTranslation();
+  const { insights } = useAppData();
   const [toggles, setToggles] = useState({ confidence: true, lineups: true, newInsight: false });
 
   return (

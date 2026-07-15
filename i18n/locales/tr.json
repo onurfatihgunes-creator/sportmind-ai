@@ -29,7 +29,9 @@
     "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
     "latestAiInsights": "Son AI içgörüleri",
     "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
-    "goPremium": "Premium'a geç"
+    "goPremium": "Premium'a geç",
+    "liveData": "Canlı veri",
+    "demoData": "Örnek veri"
   },
   "matchCard": {
     "favoured": "{{team}} favori",
@@ -149,7 +151,9 @@
   "homeInsights": {
     "sample1": "Model artık iç sahada Arsenal'ı favori görüyor",
     "sample2": "Liverpool'un pres yoğunluğu son 6 maçta %18 arttı",
-    "sample3": "Real Madrid'in beklenen gol ortalaması düşüş trendinde"
+    "sample3": "Real Madrid'in beklenen gol ortalaması düşüş trendinde",
+    "liveFavoured": "Model {{team}}'i %{{pct}} ile favori görüyor",
+    "liveCloseMatch": "{{home}} - {{away}} modele göre çok yakın (%{{pct}})"
   },
   "changeEvents": {
     "weatherUpdated": "Hava durumu tahmini güncellendi",

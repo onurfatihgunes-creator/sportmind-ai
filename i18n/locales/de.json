@@ -29,7 +29,9 @@
     "lineupsWeatherForm": "Aufstellungen, Wetter und Form haben sich seit gestern verändert",
     "latestAiInsights": "Neueste KI-Insights",
     "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
-    "goPremium": "Zu Premium wechseln"
+    "goPremium": "Zu Premium wechseln",
+    "liveData": "Live-Daten",
+    "demoData": "Demo-Daten"
   },
   "matchCard": {
     "favoured": "{{team}} favorisiert",
@@ -149,7 +151,9 @@
   "homeInsights": {
     "sample1": "Das Modell favorisiert Arsenal jetzt zu Hause",
     "sample2": "Liverpools Pressing-Intensität um 18 % über 6 Spiele gestiegen",
-    "sample3": "Real Madrids erwartete Tore tendieren nach unten"
+    "sample3": "Real Madrids erwartete Tore tendieren nach unten",
+    "liveFavoured": "{{team}} wird vom Modell mit {{pct}}% favorisiert",
+    "liveCloseMatch": "{{home}} gegen {{away}} gilt als sehr ausgeglichen ({{pct}}%)"
   },
   "changeEvents": {
     "weatherUpdated": "Wettervorhersage aktualisiert",

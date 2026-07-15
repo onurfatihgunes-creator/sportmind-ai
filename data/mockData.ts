@@ -131,6 +131,8 @@ export type Insight = {
   id: string;
   key: string;
   confidence: number;
+  /** Interpolation values for the i18n template at `homeInsights.${key}` — only set for dynamically generated (live) insights. */
+  params?: Record<string, string | number>;
 };
 
 export const insights: Insight[] = [

@@ -5,13 +5,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, confidenceColor, fonts, spacing } from '@/constants/theme';
-import { favouredOutcome, matches } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import FactorCompareBar from '@/components/FactorCompareBar';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function ExplainabilityScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { matches } = useAppData();
   const match = matches.find((m) => m.id === id) ?? matches[0];
   const favourite = favouredOutcome(match);
 

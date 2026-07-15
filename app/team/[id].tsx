@@ -4,7 +4,8 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, matches, teams } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 import TeamCrest from '@/components/TeamCrest';
 import Disclaimer from '@/components/Disclaimer';
 
@@ -13,7 +14,8 @@ const formColor = { W: colors.success, D: colors.warning, L: colors.danger } as 
 export default function TeamProfileScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const team = teams[id ?? 'arsenal'] ?? teams.arsenal;
+  const { teams, matches } = useAppData();
+  const team = (id && teams[id]) || Object.values(teams)[0];
   const upcoming = matches.filter((m) => m.home.id === team.id || m.away.id === team.id);
 
   return (

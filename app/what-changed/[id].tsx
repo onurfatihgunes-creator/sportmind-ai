@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { changeEvents } from '@/data/mockData';
+import { useAppData } from '@/contexts/DataContext';
 
 const toneColor = {
   success: colors.success,
@@ -20,6 +20,7 @@ const toneTextColor = {
 
 export default function WhatChangedScreen() {
   const { t } = useTranslation();
+  const { changeEvents } = useAppData();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
