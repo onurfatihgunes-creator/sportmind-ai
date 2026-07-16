@@ -33,7 +33,12 @@
     "goPremium": "الترقية إلى بريميوم",
     "liveData": "بيانات حقيقية",
     "demoData": "بيانات تجريبية",
-    "myMatches": "مبارياتي ({{count}})"
+    "myMatches": "مبارياتي ({{count}})",
+    "football": "كرة القدم",
+    "basketball": "كرة السلة",
+    "tennis": "التنس",
+    "soon": "قريبًا",
+    "noMatchesForSport": "لا توجد مباريات محللة لهذه الرياضة حاليًا."
   },
   "matchCard": {
     "favoured": "{{team}} هو المرشح",
@@ -104,6 +109,9 @@
     "expectedGoals": "الأهداف المتوقعة (xG)",
     "combinedExpectedGoals": "إجمالي الأهداف المتوقعة",
     "recentAverageGoals": "متوسط الأهداف في المباريات الأخيرة",
+    "expectedPoints": "النقاط المتوقعة",
+    "combinedExpectedPoints": "إجمالي النقاط المتوقعة",
+    "recentAveragePoints": "متوسط النقاط في المباريات الأخيرة",
     "whyDoesAiThink": "لماذا يعتقد الذكاء الاصطناعي ذلك؟",
     "viewAllReasons": "عرض كل الأسباب",
     "whatChangedSinceYesterday": "ما الذي تغيّر منذ الأمس؟",
@@ -116,7 +124,9 @@
     "injuries": "الإصابات",
     "defensivePerformance": "الأداء الدفاعي",
     "possession": "الاستحواذ",
-    "historicalTrends": "الاتجاهات التاريخية"
+    "historicalTrends": "الاتجاهات التاريخية",
+    "pointsScored": "متوسط النقاط",
+    "homeCourtAdvantage": "أفضلية الملعب"
   },
   "teamComparison": {
     "title": "مقارنة الفرق",

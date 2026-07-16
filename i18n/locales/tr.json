@@ -33,7 +33,12 @@
     "goPremium": "Premium'a geç",
     "liveData": "Canlı veri",
     "demoData": "Örnek veri",
-    "myMatches": "Maçlarım ({{count}})"
+    "myMatches": "Maçlarım ({{count}})",
+    "football": "Futbol",
+    "basketball": "Basketbol",
+    "tennis": "Tenis",
+    "soon": "Yakında",
+    "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok."
   },
   "matchCard": {
     "favoured": "{{team}} favori",
@@ -104,6 +109,9 @@
     "expectedGoals": "Beklenen gol (xG)",
     "combinedExpectedGoals": "Toplam beklenen gol",
     "recentAverageGoals": "Son maçlarda ortalama gol",
+    "expectedPoints": "Beklenen sayı",
+    "combinedExpectedPoints": "Toplam beklenen sayı",
+    "recentAveragePoints": "Son maçlarda ortalama sayı",
     "whyDoesAiThink": "AI bunu neden düşünüyor?",
     "viewAllReasons": "Tüm nedenleri gör",
     "whatChangedSinceYesterday": "Dünden bu yana ne değişti?",
@@ -116,7 +124,9 @@
     "injuries": "Sakatlıklar",
     "defensivePerformance": "Defansif performans",
     "possession": "Topla oynama",
-    "historicalTrends": "Geçmiş eğilimler"
+    "historicalTrends": "Geçmiş eğilimler",
+    "pointsScored": "Sayı ortalaması",
+    "homeCourtAdvantage": "Ev sahibi saha avantajı"
   },
   "teamComparison": {
     "title": "Takım karşılaştırması",

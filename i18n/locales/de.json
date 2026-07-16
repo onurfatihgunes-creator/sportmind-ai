@@ -33,7 +33,12 @@
     "goPremium": "Zu Premium wechseln",
     "liveData": "Live-Daten",
     "demoData": "Demo-Daten",
-    "myMatches": "Meine Spiele ({{count}})"
+    "myMatches": "Meine Spiele ({{count}})",
+    "football": "Fußball",
+    "basketball": "Basketball",
+    "tennis": "Tennis",
+    "soon": "Bald",
+    "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele."
   },
   "matchCard": {
     "favoured": "{{team}} favorisiert",
@@ -104,6 +109,9 @@
     "expectedGoals": "Erwartete Tore (xG)",
     "combinedExpectedGoals": "Kombinierte erwartete Tore",
     "recentAverageGoals": "Durchschnittliche Tore zuletzt",
+    "expectedPoints": "Erwartete Punkte",
+    "combinedExpectedPoints": "Kombinierte erwartete Punkte",
+    "recentAveragePoints": "Durchschnittliche Punkte zuletzt",
     "whyDoesAiThink": "Warum denkt die KI das?",
     "viewAllReasons": "Alle Gründe ansehen",
     "whatChangedSinceYesterday": "Was hat sich seit gestern geändert?",
@@ -116,7 +124,9 @@
     "injuries": "Verletzungen",
     "defensivePerformance": "Defensivleistung",
     "possession": "Ballbesitz",
-    "historicalTrends": "Historische Trends"
+    "historicalTrends": "Historische Trends",
+    "pointsScored": "Erzielte Punkte",
+    "homeCourtAdvantage": "Heimvorteil (Halle)"
   },
   "teamComparison": {
     "title": "Teamvergleich",

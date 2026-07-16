@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ChangeEvent, Insight, Match, MatchFactor, Team } from './mockData';
+import type { ChangeEvent, Insight, Match, MatchFactor, Sport, Team } from './mockData';
 
 const PALETTE = [
   { bg: '#7F1D1D', fg: '#FEE2E2' },
@@ -60,7 +60,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
 
     const { data: matchRows, error: matchErr } = await supabase
       .from('matches')
-      .select('id, competition, home_team_id, away_team_id, kickoff_at, status')
+      .select('id, competition, sport, home_team_id, away_team_id, kickoff_at, status')
       .gte('kickoff_at', windowStart)
       .order('kickoff_at', { ascending: true })
       .limit(30);
@@ -70,7 +70,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     const teamIds = Array.from(new Set(matchRows.flatMap((m) => [m.home_team_id, m.away_team_id])));
 
     const [{ data: teamRows }, { data: predictionRows }, { data: formRows }] = await Promise.all([
-      supabase.from('teams').select('id, name, short_code').in('id', teamIds),
+      supabase.from('teams').select('id, name, short_code, sport').in('id', teamIds),
       supabase.from('predictions').select('*').in('match_id', matchIds),
       supabase
         .from('team_form')
@@ -98,6 +98,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
         bg: palette.bg,
         fg: palette.fg,
         form: formByTeam[row.id] ?? [],
+        sport: (row.sport as Sport) ?? 'football',
       };
     }
 
@@ -116,6 +117,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
         away,
         kickoff: formatKickoff(m.kickoff_at),
         competition: m.competition,
+        sport: (m.sport as Sport) ?? 'football',
         outcomes: { home: pred.home_win_pct, draw: pred.draw_pct, away: pred.away_win_pct },
         xgHome: Number(pred.xg_home),
         xgAway: Number(pred.xg_away),

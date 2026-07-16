@@ -17,6 +17,8 @@ export default function MatchAnalysisScreen() {
   const { matches } = useAppData();
   const match = matches.find((m) => m.id === id) ?? matches[0];
   const favourite = favouredOutcome(match);
+  const isBasketball = match.sport === 'basketball';
+  const formatStat = (value: number) => (isBasketball ? Math.round(value).toString() : value.toFixed(1));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -60,9 +62,11 @@ export default function MatchAnalysisScreen() {
           <View style={[styles.outcomeSegment, { flex: match.outcomes.home, backgroundColor: colors.success }]}>
             <Text style={styles.outcomeSegmentText}>{match.outcomes.home}</Text>
           </View>
-          <View style={[styles.outcomeSegment, { flex: match.outcomes.draw, backgroundColor: colors.warning }]}>
-            <Text style={styles.outcomeSegmentText}>{match.outcomes.draw}</Text>
-          </View>
+          {!isBasketball && (
+            <View style={[styles.outcomeSegment, { flex: match.outcomes.draw, backgroundColor: colors.warning }]}>
+              <Text style={styles.outcomeSegmentText}>{match.outcomes.draw}</Text>
+            </View>
+          )}
           <View style={[styles.outcomeSegment, { flex: match.outcomes.away, backgroundColor: colors.danger }]}>
             <Text style={styles.outcomeSegmentText}>{match.outcomes.away}</Text>
           </View>
@@ -71,7 +75,7 @@ export default function MatchAnalysisScreen() {
           <Text style={styles.outcomeLegendText}>
             {match.home.name} {t('matchAnalysis.win')}
           </Text>
-          <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>
+          {!isBasketball && <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>}
           <Text style={styles.outcomeLegendText}>
             {match.away.name} {t('matchAnalysis.win')}
           </Text>
@@ -91,9 +95,9 @@ export default function MatchAnalysisScreen() {
           </View>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedGoals')}</Text>
+        <Text style={styles.sectionLabel}>{t(isBasketball ? 'matchAnalysis.expectedPoints' : 'matchAnalysis.expectedGoals')}</Text>
         <View style={styles.xgRow}>
-          <Text style={styles.xgValue}>{match.xgHome}</Text>
+          <Text style={styles.xgValue}>{formatStat(match.xgHome)}</Text>
           <View style={styles.xgTrack}>
             <View
               style={[
@@ -110,18 +114,22 @@ export default function MatchAnalysisScreen() {
               ]}
             />
           </View>
-          <Text style={styles.xgValue}>{match.xgAway}</Text>
+          <Text style={styles.xgValue}>{formatStat(match.xgAway)}</Text>
         </View>
 
         <View style={styles.statPairRow}>
           <View style={styles.statPairCard}>
-            <Text style={styles.statPairLabel}>{t('matchAnalysis.combinedExpectedGoals')}</Text>
-            <Text style={styles.statPairValue}>{(match.xgHome + match.xgAway).toFixed(1)}</Text>
+            <Text style={styles.statPairLabel}>
+              {t(isBasketball ? 'matchAnalysis.combinedExpectedPoints' : 'matchAnalysis.combinedExpectedGoals')}
+            </Text>
+            <Text style={styles.statPairValue}>{formatStat(match.xgHome + match.xgAway)}</Text>
           </View>
           <View style={styles.statPairCard}>
-            <Text style={styles.statPairLabel}>{t('matchAnalysis.recentAverageGoals')}</Text>
+            <Text style={styles.statPairLabel}>
+              {t(isBasketball ? 'matchAnalysis.recentAveragePoints' : 'matchAnalysis.recentAverageGoals')}
+            </Text>
             <Text style={styles.statPairValue}>
-              {match.recentAvgGoalsHome.toFixed(1)} – {match.recentAvgGoalsAway.toFixed(1)}
+              {formatStat(match.recentAvgGoalsHome)} – {formatStat(match.recentAvgGoalsAway)}
             </Text>
           </View>
         </View>

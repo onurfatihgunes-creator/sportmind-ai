@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -5,7 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome } from '@/data/mockData';
+import { favouredOutcome, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import MatchCard from '@/components/MatchCard';
@@ -17,9 +18,11 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { matches, insights, isLive, loading } = useAppData();
   const { matchIds, isWatched, toggle } = useWatchlist();
+  const [selectedSport, setSelectedSport] = useState<Sport>('football');
+  const sportMatches = matches.filter((m) => m.sport === selectedSport);
   // "Key" matches = the ones the model is most decisive about (highest predicted
   // probability), not an editorial pick — we have no real popularity signal to rank on.
-  const topMatches = [...matches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 5);
+  const topMatches = [...sportMatches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 5);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -33,6 +36,39 @@ export default function HomeScreen() {
             <Feather name="zap" size={16} color="#fff" />
           </LinearGradient>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryRow}
+          contentContainerStyle={{ gap: 8 }}
+        >
+          <Pressable
+            style={[styles.categoryPill, selectedSport === 'football' && styles.categoryPillActive]}
+            onPress={() => setSelectedSport('football')}
+          >
+            <Text style={styles.categoryEmoji}>⚽</Text>
+            <Text style={selectedSport === 'football' ? styles.categoryTextActive : styles.categoryTextDisabled}>
+              {t('home.football')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.categoryPill, selectedSport === 'basketball' && styles.categoryPillActive]}
+            onPress={() => setSelectedSport('basketball')}
+          >
+            <Text style={styles.categoryEmoji}>🏀</Text>
+            <Text style={selectedSport === 'basketball' ? styles.categoryTextActive : styles.categoryTextDisabled}>
+              {t('home.basketball')}
+            </Text>
+          </Pressable>
+          <View style={styles.categoryPill}>
+            <Text style={[styles.categoryEmoji, styles.categoryEmojiDisabled]}>🎾</Text>
+            <Text style={styles.categoryTextDisabled}>{t('home.tennis')}</Text>
+            <View style={styles.soonTag}>
+              <Text style={styles.soonTagText}>{t('home.soon')}</Text>
+            </View>
+          </View>
+        </ScrollView>
 
         {!loading && (
           <View style={[styles.dataBadge, isLive ? styles.dataBadgeLive : styles.dataBadgeDemo]}>
@@ -48,16 +84,20 @@ export default function HomeScreen() {
             <Feather name="arrow-right" size={11} color={colors.primaryLight} />
           </Pressable>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.matchRow}
-          contentContainerStyle={{ paddingRight: spacing.xxl }}
-        >
-          {topMatches.map((m) => (
-            <MatchCard key={m.id} match={m} />
-          ))}
-        </ScrollView>
+        {topMatches.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.matchRow}
+            contentContainerStyle={{ paddingRight: spacing.xxl }}
+          >
+            {topMatches.map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
+        )}
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>{t('home.allMatches')}</Text>
@@ -67,7 +107,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={styles.allMatchesList}>
-        {matches.map((m) => {
+        {sportMatches.map((m) => {
           const favourite = favouredOutcome(m);
           const watched = isWatched(m.id);
           return (
@@ -131,6 +171,23 @@ const styles = StyleSheet.create({
   greetingSmall: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   greetingName: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: 1 },
   avatar: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  categoryRow: { marginBottom: spacing.md },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+  },
+  categoryPillActive: { backgroundColor: colors.primaryMuted },
+  categoryEmoji: { fontSize: 13 },
+  categoryEmojiDisabled: { opacity: 0.4 },
+  categoryTextActive: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, color: colors.primaryLight },
+  categoryTextDisabled: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textFaint },
+  soonTag: { backgroundColor: colors.surfaceElevated, borderRadius: radius.pill, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 2 },
+  soonTagText: { fontFamily: fonts.bodySemiBold, fontSize: 8, color: colors.textMuted, textTransform: 'uppercase' },
   dataBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -160,6 +217,7 @@ const styles = StyleSheet.create({
   viewAllLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.md },
   viewAllLinkText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
   matchRow: { marginBottom: spacing.xl },
+  emptySportText: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, marginBottom: spacing.xl },
   allMatchesList: { marginBottom: spacing.xl },
   allMatchRow: {
     flexDirection: 'row',

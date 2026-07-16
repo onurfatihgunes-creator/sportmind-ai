@@ -33,7 +33,12 @@
     "goPremium": "Go Premium",
     "liveData": "Live data",
     "demoData": "Demo data",
-    "myMatches": "My matches ({{count}})"
+    "myMatches": "My matches ({{count}})",
+    "football": "Football",
+    "basketball": "Basketball",
+    "tennis": "Tennis",
+    "soon": "Soon",
+    "noMatchesForSport": "No analysed matches in this sport right now."
   },
   "matchCard": {
     "favoured": "{{team}} favoured",
@@ -104,6 +109,9 @@
     "expectedGoals": "Expected goals",
     "combinedExpectedGoals": "Combined expected goals",
     "recentAverageGoals": "Recent average goals",
+    "expectedPoints": "Expected points",
+    "combinedExpectedPoints": "Combined expected points",
+    "recentAveragePoints": "Recent average points",
     "whyDoesAiThink": "Why does the AI think this?",
     "viewAllReasons": "View all reasons",
     "whatChangedSinceYesterday": "What changed since yesterday?",
@@ -116,7 +124,9 @@
     "injuries": "Injuries",
     "defensivePerformance": "Defensive performance",
     "possession": "Possession",
-    "historicalTrends": "Historical trends"
+    "historicalTrends": "Historical trends",
+    "pointsScored": "Points scored",
+    "homeCourtAdvantage": "Home court advantage"
   },
   "teamComparison": {
     "title": "Team comparison",

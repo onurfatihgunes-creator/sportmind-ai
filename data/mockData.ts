@@ -1,3 +1,5 @@
+export type Sport = 'football' | 'basketball';
+
 export type Team = {
   id: string;
   name: string;
@@ -5,15 +7,20 @@ export type Team = {
   bg: string;
   fg: string;
   form: ('W' | 'D' | 'L')[];
+  sport: Sport;
 };
 
 export const teams: Record<string, Team> = {
-  arsenal: { id: 'arsenal', name: 'Arsenal', code: 'ARS', bg: '#7F1D1D', fg: '#FEE2E2', form: ['W', 'W', 'D', 'W', 'W'] },
-  liverpool: { id: 'liverpool', name: 'Liverpool', code: 'LIV', bg: '#7F1D1D', fg: '#FCA5A5', form: ['W', 'W', 'W', 'D', 'W'] },
-  mancity: { id: 'mancity', name: 'Man City', code: 'MCI', bg: '#0C4A6E', fg: '#7DD3FC', form: ['D', 'W', 'L', 'W', 'D'] },
-  realmadrid: { id: 'realmadrid', name: 'Real Madrid', code: 'RMA', bg: '#7C2D12', fg: '#FDBA74', form: ['W', 'D', 'W', 'W', 'L'] },
-  barcelona: { id: 'barcelona', name: 'Barcelona', code: 'BAR', bg: '#4C1D95', fg: '#C4B5FD', form: ['W', 'L', 'W', 'D', 'W'] },
-  chelsea: { id: 'chelsea', name: 'Chelsea', code: 'CHE', bg: '#1E3A8A', fg: '#BFDBFE', form: ['D', 'D', 'W', 'L', 'W'] },
+  arsenal: { id: 'arsenal', name: 'Arsenal', code: 'ARS', bg: '#7F1D1D', fg: '#FEE2E2', form: ['W', 'W', 'D', 'W', 'W'], sport: 'football' },
+  liverpool: { id: 'liverpool', name: 'Liverpool', code: 'LIV', bg: '#7F1D1D', fg: '#FCA5A5', form: ['W', 'W', 'W', 'D', 'W'], sport: 'football' },
+  mancity: { id: 'mancity', name: 'Man City', code: 'MCI', bg: '#0C4A6E', fg: '#7DD3FC', form: ['D', 'W', 'L', 'W', 'D'], sport: 'football' },
+  realmadrid: { id: 'realmadrid', name: 'Real Madrid', code: 'RMA', bg: '#7C2D12', fg: '#FDBA74', form: ['W', 'D', 'W', 'W', 'L'], sport: 'football' },
+  barcelona: { id: 'barcelona', name: 'Barcelona', code: 'BAR', bg: '#4C1D95', fg: '#C4B5FD', form: ['W', 'L', 'W', 'D', 'W'], sport: 'football' },
+  chelsea: { id: 'chelsea', name: 'Chelsea', code: 'CHE', bg: '#1E3A8A', fg: '#BFDBFE', form: ['D', 'D', 'W', 'L', 'W'], sport: 'football' },
+  lakers: { id: 'lakers', name: 'Lakers', code: 'LAL', bg: '#4C1D95', fg: '#FDE047', form: ['W', 'W', 'L', 'W', 'W'], sport: 'basketball' },
+  celtics: { id: 'celtics', name: 'Celtics', code: 'BOS', bg: '#14532D', fg: '#BBF7D0', form: ['W', 'L', 'W', 'W', 'W'], sport: 'basketball' },
+  warriors: { id: 'warriors', name: 'Warriors', code: 'GSW', bg: '#1E3A8A', fg: '#FDE68A', form: ['L', 'W', 'W', 'L', 'W'], sport: 'basketball' },
+  nuggets: { id: 'nuggets', name: 'Nuggets', code: 'DEN', bg: '#7C2D12', fg: '#FDBA74', form: ['W', 'W', 'W', 'L', 'W'], sport: 'basketball' },
 };
 
 export type Outcomes = { home: number; draw: number; away: number };
@@ -27,10 +34,12 @@ export type Match = {
   away: Team;
   kickoff: string;
   competition: string;
+  sport: Sport;
   outcomes: Outcomes;
   xgHome: number;
   xgAway: number;
-  /** Recent average goals scored by each team, used for the scoring-trend stat (not a betting line). */
+  /** Recent average goals scored by each team, used for the scoring-trend stat (not a betting line).
+   * For basketball matches this holds points, not goals — see sport-aware labelling in match/[id].tsx. */
   recentAvgGoalsHome: number;
   recentAvgGoalsAway: number;
   factors: MatchFactor[];
@@ -43,6 +52,7 @@ export const matches: Match[] = [
     away: teams.mancity,
     kickoff: 'Today, 18:30',
     competition: 'Premier League',
+    sport: 'football',
     outcomes: { home: 58, draw: 22, away: 20 },
     xgHome: 2.1,
     xgAway: 1.3,
@@ -64,6 +74,7 @@ export const matches: Match[] = [
     away: teams.barcelona,
     kickoff: 'Today, 21:00',
     competition: 'La Liga',
+    sport: 'football',
     outcomes: { home: 39, draw: 24, away: 37 },
     xgHome: 1.7,
     xgAway: 1.6,
@@ -85,6 +96,7 @@ export const matches: Match[] = [
     away: teams.liverpool,
     kickoff: 'Saturday, 18:30',
     competition: 'Premier League',
+    sport: 'football',
     outcomes: { home: 45, draw: 25, away: 30 },
     xgHome: 1.8,
     xgAway: 1.5,
@@ -98,6 +110,42 @@ export const matches: Match[] = [
       { key: 'defensivePerformance', home: 51, away: 49 },
       { key: 'possession', home: 47, away: 53 },
       { key: 'historicalTrends', home: 53, away: 47 },
+    ],
+  },
+  {
+    id: 'lal-bos',
+    home: teams.lakers,
+    away: teams.celtics,
+    kickoff: 'Today, 20:30',
+    competition: 'NBA',
+    sport: 'basketball',
+    outcomes: { home: 61, draw: 0, away: 39 },
+    xgHome: 114,
+    xgAway: 108,
+    recentAvgGoalsHome: 112,
+    recentAvgGoalsAway: 106,
+    factors: [
+      { key: 'recentForm', home: 63, away: 37 },
+      { key: 'pointsScored', home: 58, away: 42 },
+      { key: 'homeCourtAdvantage', home: 60, away: 40 },
+    ],
+  },
+  {
+    id: 'gsw-den',
+    home: teams.warriors,
+    away: teams.nuggets,
+    kickoff: 'Saturday, 21:00',
+    competition: 'NBA',
+    sport: 'basketball',
+    outcomes: { home: 47, draw: 0, away: 53 },
+    xgHome: 109,
+    xgAway: 112,
+    recentAvgGoalsHome: 107,
+    recentAvgGoalsAway: 111,
+    factors: [
+      { key: 'recentForm', home: 46, away: 54 },
+      { key: 'pointsScored', home: 45, away: 55 },
+      { key: 'homeCourtAdvantage', home: 58, away: 42 },
     ],
   },
 ];
