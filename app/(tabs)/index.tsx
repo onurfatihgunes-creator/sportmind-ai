@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
+import { useWatchlist } from '@/contexts/WatchlistContext';
 import MatchCard from '@/components/MatchCard';
 import InsightCard from '@/components/InsightCard';
 import TeamCrest from '@/components/TeamCrest';
@@ -15,6 +16,10 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { matches, insights, isLive, loading } = useAppData();
+  const { matchIds, isWatched, toggle } = useWatchlist();
+  // "Key" matches = the ones the model is most decisive about (highest predicted
+  // probability), not an editorial pick — we have no real popularity signal to rank on.
+  const topMatches = [...matches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 5);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -36,27 +41,40 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionLabel}>{t('home.todaysKeyMatches')}</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>{t('home.todaysKeyMatches')}</Text>
+          <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
+            <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
+            <Feather name="arrow-right" size={11} color={colors.primaryLight} />
+          </Pressable>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.matchRow}
           contentContainerStyle={{ paddingRight: spacing.xxl }}
         >
-          {matches.slice(0, 10).map((m) => (
+          {topMatches.map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionLabel}>{t('home.allMatches')}</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>{t('home.allMatches')}</Text>
+          <Pressable style={styles.myMatchesLink} onPress={() => router.push('/my-matches')}>
+            <Feather name="bookmark" size={12} color={colors.primaryLight} />
+            <Text style={styles.myMatchesLinkText}>{t('home.myMatches', { count: matchIds.length })}</Text>
+          </Pressable>
+        </View>
         <View style={styles.allMatchesList}>
         {matches.map((m) => {
           const favourite = favouredOutcome(m);
+          const watched = isWatched(m.id);
           return (
             <Pressable key={m.id} style={styles.allMatchRow} onPress={() => router.push(`/match/${m.id}`)}>
               <View style={styles.allMatchCrests}>
-                <TeamCrest team={m.home} size={26} />
-                <TeamCrest team={m.away} size={26} overlap />
+                <TeamCrest team={m.home} size={28} />
+                <TeamCrest team={m.away} size={28} overlap />
               </View>
               <View style={styles.allMatchInfo}>
                 <Text style={styles.allMatchTitle}>
@@ -66,7 +84,10 @@ export default function HomeScreen() {
                   {m.kickoff} · {m.competition}
                 </Text>
               </View>
-              <ConfidenceRing value={favourite.probability} size={28} strokeWidth={3} />
+              <Pressable hitSlop={10} onPress={() => toggle(m.id)}>
+                <Feather name="bookmark" size={16} color={watched ? colors.primaryLight : colors.textFaint} />
+              </Pressable>
+              <ConfidenceRing value={favourite.probability} size={30} strokeWidth={3.5} />
             </Pressable>
           );
         })}
@@ -133,6 +154,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: spacing.md,
   },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  myMatchesLink: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md },
+  myMatchesLinkText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
+  viewAllLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.md },
+  viewAllLinkText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
   matchRow: { marginBottom: spacing.xl },
   allMatchesList: { marginBottom: spacing.xl },
   allMatchRow: {
@@ -141,12 +167,14 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 13,
     marginBottom: spacing.sm,
   },
   allMatchCrests: { flexDirection: 'row', alignItems: 'center' },
   allMatchInfo: { flex: 1 },
-  allMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary },
+  allMatchTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.textPrimary },
   allMatchSubtitle: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
   highlightCard: { borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.xl, borderWidth: 1, borderColor: '#2E2A5C' },
   highlightLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },

@@ -4,6 +4,7 @@
     "next": "Weiter",
     "skip": "Überspringen",
     "viewFullAnalysis": "Vollständige Analyse ansehen",
+    "viewAll": "Alle anzeigen",
     "restorePurchases": "Käufe wiederherstellen",
     "terms": "AGB",
     "privacy": "Datenschutz",
@@ -31,7 +32,8 @@
     "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
     "goPremium": "Zu Premium wechseln",
     "liveData": "Live-Daten",
-    "demoData": "Demo-Daten"
+    "demoData": "Demo-Daten",
+    "myMatches": "Meine Spiele ({{count}})"
   },
   "matchCard": {
     "favoured": "{{team}} favorisiert",
@@ -163,6 +165,13 @@
   "batchAnalysis": {
     "title": "Ausgewählte Spiele",
     "note": "Jedes Spiel wird unabhängig analysiert — dies sind separate Analysen, kein kombiniertes Ergebnis."
+  },
+  "myMatches": {
+    "title": "Meine Spiele",
+    "note": "Jedes Spiel wird unabhängig analysiert — dies sind separate Analysen, kein kombiniertes Ergebnis.",
+    "emptyTitle": "Noch keine gespeicherten Spiele",
+    "emptyBody": "Tippe auf das Lesezeichen-Symbol bei einem Spiel, um es hier zu speichern.",
+    "browseMatches": "Spiele durchsuchen"
   },
   "legal": {
     "title": "Recht und Transparenz",

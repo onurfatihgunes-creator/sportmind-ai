@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, leagues, teams } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
+import { useWatchlist } from '@/contexts/WatchlistContext';
 import TeamCrest from '@/components/TeamCrest';
 import ConfidenceRing from '@/components/ConfidenceRing';
 
@@ -15,6 +16,7 @@ const trending = [teams.arsenal, teams.liverpool, teams.barcelona];
 export default function ExploreScreen() {
   const { t } = useTranslation();
   const { matches } = useAppData();
+  const { isWatched, toggle: toggleWatch } = useWatchlist();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -81,6 +83,11 @@ export default function ExploreScreen() {
                 </Text>
                 <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
               </View>
+              {!selectMode && (
+                <Pressable hitSlop={10} onPress={() => toggleWatch(m.id)}>
+                  <Feather name="bookmark" size={16} color={isWatched(m.id) ? colors.primaryLight : colors.textFaint} />
+                </Pressable>
+              )}
               <ConfidenceRing value={favouredOutcome(m).probability} size={28} strokeWidth={3} />
             </Pressable>
           );

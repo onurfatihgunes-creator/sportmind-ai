@@ -13,6 +13,7 @@ import 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import { initI18n } from '@/i18n';
 import { DataProvider } from '@/contexts/DataContext';
+import { WatchlistProvider } from '@/contexts/WatchlistContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -65,25 +66,28 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={navTheme}>
       <DataProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="onboarding/index" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="match/[id]" />
-          <Stack.Screen name="team/[id]" />
-          <Stack.Screen name="batch-analysis" />
-          <Stack.Screen name="explainability/[id]" />
-          <Stack.Screen name="team-comparison" />
-          <Stack.Screen name="player-impact/[id]" />
-          <Stack.Screen name="what-changed/[id]" />
-          <Stack.Screen name="legal/index" />
-          <Stack.Screen name="legal/methodology" />
-          <Stack.Screen name="language" />
-        </Stack>
+        <WatchlistProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="onboarding/index" options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="match/[id]" />
+            <Stack.Screen name="team/[id]" />
+            <Stack.Screen name="batch-analysis" />
+            <Stack.Screen name="my-matches" />
+            <Stack.Screen name="explainability/[id]" />
+            <Stack.Screen name="team-comparison" />
+            <Stack.Screen name="player-impact/[id]" />
+            <Stack.Screen name="what-changed/[id]" />
+            <Stack.Screen name="legal/index" />
+            <Stack.Screen name="legal/methodology" />
+            <Stack.Screen name="language" />
+          </Stack>
+        </WatchlistProvider>
       </DataProvider>
     </ThemeProvider>
   );

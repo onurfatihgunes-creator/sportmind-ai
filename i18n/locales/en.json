@@ -4,6 +4,7 @@
     "next": "Next",
     "skip": "Skip",
     "viewFullAnalysis": "View full analysis",
+    "viewAll": "View all",
     "restorePurchases": "Restore purchases",
     "terms": "Terms",
     "privacy": "Privacy",
@@ -31,7 +32,8 @@
     "unlockUnlimited": "Unlock unlimited AI analysis",
     "goPremium": "Go Premium",
     "liveData": "Live data",
-    "demoData": "Demo data"
+    "demoData": "Demo data",
+    "myMatches": "My matches ({{count}})"
   },
   "matchCard": {
     "favoured": "{{team}} favoured",
@@ -163,6 +165,13 @@
   "batchAnalysis": {
     "title": "Selected matches",
     "note": "Each match is analysed independently — these are separate analyses, not a combined outcome."
+  },
+  "myMatches": {
+    "title": "My matches",
+    "note": "Each match is analysed independently — these are separate analyses, not a combined outcome.",
+    "emptyTitle": "No saved matches yet",
+    "emptyBody": "Tap the bookmark icon on any match to save it here for quick access.",
+    "browseMatches": "Browse matches"
   },
   "legal": {
     "title": "Legal and transparency",

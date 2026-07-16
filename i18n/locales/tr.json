@@ -4,6 +4,7 @@
     "next": "İleri",
     "skip": "Atla",
     "viewFullAnalysis": "Tüm analizi görüntüle",
+    "viewAll": "Tümünü gör",
     "restorePurchases": "Satın alımları geri yükle",
     "terms": "Kullanım Koşulları",
     "privacy": "Gizlilik",
@@ -31,7 +32,8 @@
     "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
     "goPremium": "Premium'a geç",
     "liveData": "Canlı veri",
-    "demoData": "Örnek veri"
+    "demoData": "Örnek veri",
+    "myMatches": "Maçlarım ({{count}})"
   },
   "matchCard": {
     "favoured": "{{team}} favori",
@@ -163,6 +165,13 @@
   "batchAnalysis": {
     "title": "Seçilen maçlar",
     "note": "Her maç bağımsız olarak analiz edilir — bunlar birleşik bir sonuç değil, ayrı analizlerdir."
+  },
+  "myMatches": {
+    "title": "Maçlarım",
+    "note": "Her maç bağımsız olarak analiz edilir — bunlar birleşik bir sonuç değil, ayrı analizlerdir.",
+    "emptyTitle": "Henüz kaydedilen maç yok",
+    "emptyBody": "Herhangi bir maçtaki yer imi ikonuna dokunarak buraya kaydedebilirsin.",
+    "browseMatches": "Maçlara göz at"
   },
   "legal": {
     "title": "Yasal ve şeffaflık",

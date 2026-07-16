@@ -45,26 +45,15 @@ export default function MatchAnalysisScreen() {
 
           <View style={styles.ringWrap}>
             <ConfidenceRing value={favourite.probability} size={92} strokeWidth={8} />
-            <Text style={styles.confidenceTeam}>{favourite.team ? favourite.team.name : t('matchAnalysis.draw')}</Text>
+            <Text style={styles.confidenceTeam}>
+              {favourite.team ? favourite.team.name : t('matchAnalysis.draw')} %{favourite.probability}
+            </Text>
             <Text style={styles.confidenceCaption}>
               {favourite.team ? t('matchAnalysis.estimatedWinProbability') : t('matchAnalysis.estimatedDrawProbability')}
             </Text>
           </View>
           <Text style={styles.stabilityCaption}>{t('matchAnalysis.predictionStability')}</Text>
         </View>
-
-        <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
-          <View style={styles.whyHeader}>
-            <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
-          </View>
-          {match.factors.slice(0, 4).map((factor) => (
-            <FactorCompareBar key={factor.key} factor={factor} home={match.home} away={match.away} />
-          ))}
-          <View style={styles.viewAllRow}>
-            <Text style={styles.viewAllText}>{t('matchAnalysis.viewAllReasons')}</Text>
-            <Feather name="arrow-right" size={12} color={colors.primaryLight} />
-          </View>
-        </Pressable>
 
         <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedOutcomeDistribution')}</Text>
         <View style={styles.outcomeBar}>
@@ -88,6 +77,19 @@ export default function MatchAnalysisScreen() {
           </Text>
         </View>
         <Text style={styles.outcomeCaption}>{t('matchAnalysis.statisticalLikelihood')}</Text>
+
+        <Pressable style={styles.whyCard} onPress={() => router.push(`/explainability/${match.id}`)}>
+          <View style={styles.whyHeader}>
+            <Text style={styles.whyTitle}>{t('matchAnalysis.whyDoesAiThink')}</Text>
+          </View>
+          {match.factors.slice(0, 4).map((factor) => (
+            <FactorCompareBar key={factor.key} factor={factor} home={match.home} away={match.away} />
+          ))}
+          <View style={styles.viewAllRow}>
+            <Text style={styles.viewAllText}>{t('matchAnalysis.viewAllReasons')}</Text>
+            <Feather name="arrow-right" size={12} color={colors.primaryLight} />
+          </View>
+        </Pressable>
 
         <Text style={styles.sectionLabel}>{t('matchAnalysis.expectedGoals')}</Text>
         <View style={styles.xgRow}>
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
   outcomeSegment: { alignItems: 'center', justifyContent: 'center' },
   outcomeSegmentText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: '#0A0A0F' },
   outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  outcomeLegendText: { fontFamily: fonts.body, fontSize: 9, color: colors.textMuted },
+  outcomeLegendText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, color: colors.textPrimary },
   outcomeCaption: { fontFamily: fonts.body, fontSize: 10, color: colors.textFaint, marginBottom: spacing.xl },
   xgRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.xl },
   xgValue: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary, width: 26 },
