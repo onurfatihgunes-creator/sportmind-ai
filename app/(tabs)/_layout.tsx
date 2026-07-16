@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, PREMIUM_ENABLED } from '@/constants/theme';
 
 function TabIcon({ name, color }: { name: React.ComponentProps<typeof Feather>['name']; color: string }) {
   return <Feather name={name} size={22} color={color} />;
@@ -38,7 +38,13 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="premium"
-        options={{ title: t('tabs.premium'), tabBarIcon: ({ color }) => <TabIcon name="award" color={color} /> }}
+        options={{
+          title: t('tabs.premium'),
+          tabBarIcon: ({ color }) => <TabIcon name="award" color={color} />,
+          // Everything is free for now — hidden from the tab bar without deleting the
+          // screen. Flip PREMIUM_ENABLED in constants/theme.ts to bring pricing back.
+          href: PREMIUM_ENABLED ? undefined : null,
+        }}
       />
       <Tabs.Screen
         name="profile"

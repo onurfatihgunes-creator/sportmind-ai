@@ -53,6 +53,10 @@ export const fonts = {
   bodySemiBold: 'Inter_600SemiBold',
 } as const;
 
+/** Everything is free for now — flip this back on (and remove `href: null` from the
+ * premium tab in app/(tabs)/_layout.tsx) to bring back the paywall/pricing surfaces. */
+export const PREMIUM_ENABLED = false;
+
 export const disclaimer =
   'AI-generated analysis based on statistical data. Outcomes remain unpredictable.';
 

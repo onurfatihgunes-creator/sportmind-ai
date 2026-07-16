@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
@@ -152,13 +152,15 @@ export default function HomeScreen() {
           <InsightCard key={i.id} insight={i} />
         ))}
 
-        <Pressable style={styles.premiumBanner} onPress={() => router.push('/(tabs)/premium')}>
-          <View>
-            <Text style={styles.premiumTitle}>{t('home.unlockUnlimited')}</Text>
-            <Text style={styles.premiumSubtitle}>{t('home.goPremium')}</Text>
-          </View>
-          <Feather name="lock" size={18} color={colors.primaryLight} />
-        </Pressable>
+        {PREMIUM_ENABLED && (
+          <Pressable style={styles.premiumBanner} onPress={() => router.push('/(tabs)/premium')}>
+            <View>
+              <Text style={styles.premiumTitle}>{t('home.unlockUnlimited')}</Text>
+              <Text style={styles.premiumSubtitle}>{t('home.goPremium')}</Text>
+            </View>
+            <Feather name="lock" size={18} color={colors.primaryLight} />
+          </Pressable>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
