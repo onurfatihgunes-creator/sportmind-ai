@@ -39,5 +39,10 @@ export const ACTIVE_WINDOW_DAYS = 40;
  * season has produced 5+ finished matches per team, this can shrink back down. */
 export const FORM_LOOKBACK_DAYS = 200;
 
+/** Basketball's own active window — the NBA season ended mid-June 2026 and doesn't
+ * resume until mid-October, a ~120-day gap that ACTIVE_WINDOW_DAYS (40) doesn't reach.
+ * Once the season is under way this can shrink to match ACTIVE_WINDOW_DAYS. */
+export const BASKETBALL_ACTIVE_WINDOW_DAYS = 110;
+
 /** A prediction change below this many percentage points is not material enough to log/notify on. */
 export const MATERIALITY_THRESHOLD_PCT = 3;

@@ -1,4 +1,4 @@
-import { ACTIVE_WINDOW_DAYS, FORM_LOOKBACK_DAYS } from './config.js';
+import { BASKETBALL_ACTIVE_WINDOW_DAYS, FORM_LOOKBACK_DAYS } from './config.js';
 import { getAllTeams, getGamesInRange, sleep, type BdlGame, type BdlTeam } from './balldontlie.js';
 import { supabase } from './supabaseClient.js';
 
@@ -77,7 +77,7 @@ export async function fetchBasketballFixtures() {
 
   const today = new Date();
   const windowEnd = new Date(today);
-  windowEnd.setDate(windowEnd.getDate() + ACTIVE_WINDOW_DAYS);
+  windowEnd.setDate(windowEnd.getDate() + BASKETBALL_ACTIVE_WINDOW_DAYS);
   const formStart = new Date(today);
   formStart.setDate(formStart.getDate() - FORM_LOOKBACK_DAYS);
 
