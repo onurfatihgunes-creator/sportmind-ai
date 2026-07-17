@@ -1,15 +1,18 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 
+const PRIVACY_POLICY_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/privacy-policy.html';
+const TERMS_OF_SERVICE_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/terms-of-service.html';
+
 type LegalLink = { icon: keyof typeof Feather.glyphMap; labelKey: string; onPress?: () => void };
 
 const links: LegalLink[] = [
-  { icon: 'file-text', labelKey: 'privacyPolicy' },
-  { icon: 'file', labelKey: 'termsOfService' },
+  { icon: 'file-text', labelKey: 'privacyPolicy', onPress: () => Linking.openURL(PRIVACY_POLICY_URL) },
+  { icon: 'file', labelKey: 'termsOfService', onPress: () => Linking.openURL(TERMS_OF_SERVICE_URL) },
   { icon: 'alert-circle', labelKey: 'disclaimer' },
   { icon: 'shield', labelKey: 'responsibleAI' },
   { icon: 'heart', labelKey: 'responsibleUse' },
