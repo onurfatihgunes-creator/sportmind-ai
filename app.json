@@ -32,10 +32,20 @@
     "plugins": [
       "expo-router",
       "expo-asset",
-      "expo-localization"
+      "expo-localization",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "f8423b9a-97a5-4fb7-8f08-7cb01f708191"
+      }
     }
   }
 }
