@@ -88,6 +88,7 @@
   },
   "profile": {
     "premiumMember": "عضو بريميوم",
+    "namePlaceholder": "اسمك",
     "savedAnalyses": "التحليلات المحفوظة",
     "readingHistory": "سجل القراءة",
     "favouriteClubs": "الأندية والدوريات المفضلة",

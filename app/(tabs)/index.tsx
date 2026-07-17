@@ -9,6 +9,7 @@ import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/the
 import { favouredOutcome, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useProfile } from '@/contexts/ProfileContext';
 import MatchCard from '@/components/MatchCard';
 import InsightCard from '@/components/InsightCard';
 import TeamCrest from '@/components/TeamCrest';
@@ -18,6 +19,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { matches, insights, isLive, loading } = useAppData();
   const { matchIds, isWatched, toggle } = useWatchlist();
+  const { name } = useProfile();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const sportMatches = matches.filter((m) => m.sport === selectedSport);
   // "Key" matches = the ones the model is most decisive about (highest predicted
@@ -30,7 +32,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greetingSmall}>{t('home.goodEvening')}</Text>
-            <Text style={styles.greetingName}>Onur</Text>
+            <Text style={styles.greetingName}>{name}</Text>
           </View>
           <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.avatar}>
             <Feather name="zap" size={16} color="#fff" />

@@ -1,13 +1,23 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const { name, setName } = useProfile();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+
+  const saveName = () => {
+    setName(draft);
+    setEditing(false);
+  };
 
   const groupOne = [
     { icon: 'bookmark' as const, label: t('profile.savedAnalyses') },
@@ -29,9 +39,26 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.avatarWrap}>
           <LinearGradient colors={[colors.primary, '#7C3AED']} style={styles.avatar}>
-            <Text style={styles.avatarText}>O</Text>
+            <Text style={styles.avatarText}>{name.charAt(0).toUpperCase()}</Text>
           </LinearGradient>
-          <Text style={styles.name}>Onur</Text>
+          {editing ? (
+            <TextInput
+              style={styles.nameInput}
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={saveName}
+              onBlur={saveName}
+              autoFocus
+              maxLength={24}
+              placeholder={t('profile.namePlaceholder')}
+              placeholderTextColor={colors.textFaint}
+            />
+          ) : (
+            <Pressable style={styles.nameRow} onPress={() => { setDraft(name); setEditing(true); }}>
+              <Text style={styles.name}>{name}</Text>
+              <Feather name="edit-2" size={12} color={colors.textFaint} />
+            </Pressable>
+          )}
           {PREMIUM_ENABLED && <Text style={styles.membership}>{t('profile.premiumMember')}</Text>}
         </View>
 
@@ -73,7 +100,18 @@ const styles = StyleSheet.create({
   avatarWrap: { alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.xxl },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 9 },
   avatarText: { fontFamily: fonts.headline, fontSize: 18, color: '#fff' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  nameInput: {
+    fontFamily: fonts.headline,
+    fontSize: 15,
+    color: colors.textPrimary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    paddingVertical: 2,
+    minWidth: 120,
+    textAlign: 'center',
+  },
   membership: { fontFamily: fonts.body, fontSize: 10.5, color: colors.successText, marginTop: 3 },
   group: {
     backgroundColor: colors.surface,
