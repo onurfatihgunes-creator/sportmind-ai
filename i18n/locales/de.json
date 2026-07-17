@@ -26,7 +26,8 @@
     "todaysKeyMatches": "Top-Spiele heute",
     "allMatches": "Alle Spiele",
     "aiMatchHighlight": "KI-Spiel-Highlight",
-    "threeThingsChanged": "3 Dinge haben sich über Nacht geändert",
+    "thingsChanged_one": "1 Ding hat sich über Nacht geändert",
+    "thingsChanged_other": "{{count}} Dinge haben sich über Nacht geändert",
     "lineupsWeatherForm": "Aufstellungen, Wetter und Form haben sich seit gestern verändert",
     "latestAiInsights": "Neueste KI-Insights",
     "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
@@ -159,7 +160,8 @@
   },
   "whatChanged": {
     "title": "Was sich geändert hat",
-    "onlyMaterialChanges": "Hier werden nur wesentliche Änderungen angezeigt, um Rauschen zu vermeiden."
+    "onlyMaterialChanges": "Hier werden nur wesentliche Änderungen angezeigt, um Rauschen zu vermeiden.",
+    "empty": "Noch keine Änderungen protokolliert."
   },
   "homeInsights": {
     "sample1": "Das Modell favorisiert Arsenal jetzt zu Hause",
@@ -171,7 +173,8 @@
   "changeEvents": {
     "weatherUpdated": "Wettervorhersage aktualisiert",
     "lineupUpdated": "Erwartete Aufstellung aktualisiert",
-    "goalkeeperRuledOut": "Torwart verletzungsbedingt ausgefallen"
+    "goalkeeperRuledOut": "Torwart verletzungsbedingt ausgefallen",
+    "modelRecalculated": "Konfidenz neu berechnet"
   },
   "batchAnalysis": {
     "title": "Ausgewählte Spiele",

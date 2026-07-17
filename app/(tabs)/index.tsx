@@ -17,7 +17,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { matches, insights, isLive, loading } = useAppData();
+  const { matches, insights, changeEvents, isLive, loading } = useAppData();
   const { matchIds, isWatched, toggle } = useWatchlist();
   const { name } = useProfile();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
@@ -135,19 +135,23 @@ export default function HomeScreen() {
         })}
         </View>
 
-        <LinearGradient
-          colors={['#1E1B4B', colors.surface]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0.3 }}
-          style={styles.highlightCard}
-        >
-          <View style={styles.highlightLabelRow}>
-            <Feather name="zap" size={12} color={colors.primaryLight} />
-            <Text style={styles.highlightLabel}>{t('home.aiMatchHighlight')}</Text>
-          </View>
-          <Text style={styles.highlightTitle}>{t('home.threeThingsChanged')}</Text>
-          <Text style={styles.highlightSubtitle}>{t('home.lineupsWeatherForm')}</Text>
-        </LinearGradient>
+        {changeEvents.length > 0 && (
+        <Pressable onPress={() => router.push('/what-changed/overview')}>
+          <LinearGradient
+            colors={['#1E1B4B', colors.surface]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0.3 }}
+            style={styles.highlightCard}
+          >
+            <View style={styles.highlightLabelRow}>
+              <Feather name="zap" size={12} color={colors.primaryLight} />
+              <Text style={styles.highlightLabel}>{t('home.aiMatchHighlight')}</Text>
+            </View>
+            <Text style={styles.highlightTitle}>{t('home.thingsChanged', { count: changeEvents.length })}</Text>
+            <Text style={styles.highlightSubtitle}>{t('home.lineupsWeatherForm')}</Text>
+          </LinearGradient>
+        </Pressable>
+        )}
 
         <Text style={styles.sectionLabel}>{t('home.latestAiInsights')}</Text>
         {insights.map((i) => (

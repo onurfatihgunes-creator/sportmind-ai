@@ -26,7 +26,8 @@
     "todaysKeyMatches": "Top matches today",
     "allMatches": "All matches",
     "aiMatchHighlight": "AI match highlight",
-    "threeThingsChanged": "3 things changed overnight",
+    "thingsChanged_one": "1 thing changed overnight",
+    "thingsChanged_other": "{{count}} things changed overnight",
     "lineupsWeatherForm": "Lineups, weather and form all shifted since yesterday",
     "latestAiInsights": "Latest AI insights",
     "unlockUnlimited": "Unlock unlimited AI analysis",
@@ -159,7 +160,8 @@
   },
   "whatChanged": {
     "title": "What changed",
-    "onlyMaterialChanges": "Only material changes are shown here to avoid noise."
+    "onlyMaterialChanges": "Only material changes are shown here to avoid noise.",
+    "empty": "No changes logged yet."
   },
   "homeInsights": {
     "sample1": "Model now favours Arsenal at home",
@@ -171,7 +173,8 @@
   "changeEvents": {
     "weatherUpdated": "Weather forecast updated",
     "lineupUpdated": "Expected lineup updated",
-    "goalkeeperRuledOut": "Goalkeeper ruled out"
+    "goalkeeperRuledOut": "Goalkeeper ruled out",
+    "modelRecalculated": "Confidence recalculated"
   },
   "batchAnalysis": {
     "title": "Selected matches",

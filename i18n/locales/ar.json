@@ -26,7 +26,8 @@
     "todaysKeyMatches": "أفضل مباريات اليوم",
     "allMatches": "كل المباريات",
     "aiMatchHighlight": "أبرز ما رصده الذكاء الاصطناعي",
-    "threeThingsChanged": "3 أمور تغيرت الليلة الماضية",
+    "thingsChanged_one": "تغير أمر واحد الليلة الماضية",
+    "thingsChanged_other": "تغيرت {{count}} أمور الليلة الماضية",
     "lineupsWeatherForm": "تغيرت التشكيلات والطقس والمستوى منذ الأمس",
     "latestAiInsights": "أحدث تحليلات الذكاء الاصطناعي",
     "unlockUnlimited": "افتح تحليلات الذكاء الاصطناعي غير المحدودة",
@@ -159,7 +160,8 @@
   },
   "whatChanged": {
     "title": "ما الذي تغيّر",
-    "onlyMaterialChanges": "تُعرض هنا التغييرات الجوهرية فقط لتجنب الضوضاء."
+    "onlyMaterialChanges": "تُعرض هنا التغييرات الجوهرية فقط لتجنب الضوضاء.",
+    "empty": "لم يتم تسجيل أي تغييرات بعد."
   },
   "homeInsights": {
     "sample1": "النموذج يرجّح آرسنال الآن على أرضه",
@@ -171,7 +173,8 @@
   "changeEvents": {
     "weatherUpdated": "تم تحديث توقعات الطقس",
     "lineupUpdated": "تم تحديث التشكيلة المتوقعة",
-    "goalkeeperRuledOut": "غياب حارس المرمى بداعي الإصابة"
+    "goalkeeperRuledOut": "غياب حارس المرمى بداعي الإصابة",
+    "modelRecalculated": "أعيد حساب نسبة الثقة"
   },
   "batchAnalysis": {
     "title": "المباريات المختارة",

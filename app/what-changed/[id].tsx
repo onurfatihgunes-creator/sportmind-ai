@@ -32,7 +32,7 @@ export default function WhatChangedScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.matchTitle}>Arsenal {t('common.vs')} Liverpool</Text>
+        {changeEvents.length === 0 && <Text style={styles.emptyText}>{t('whatChanged.empty')}</Text>}
 
         {changeEvents.map((event, index) => (
           <View key={event.id} style={styles.row}>
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
   headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
   content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
-  matchTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginBottom: spacing.lg },
+  emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, marginBottom: spacing.lg },
   row: { flexDirection: 'row', gap: 12 },
   timelineCol: { alignItems: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },

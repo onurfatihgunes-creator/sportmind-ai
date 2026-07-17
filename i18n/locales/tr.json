@@ -26,7 +26,8 @@
     "todaysKeyMatches": "Bugünün en iyi maçları",
     "allMatches": "Tüm maçlar",
     "aiMatchHighlight": "AI maç özeti",
-    "threeThingsChanged": "Gece boyunca 3 şey değişti",
+    "thingsChanged_one": "Gece boyunca 1 şey değişti",
+    "thingsChanged_other": "Gece boyunca {{count}} şey değişti",
     "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
     "latestAiInsights": "Son AI içgörüleri",
     "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
@@ -159,7 +160,8 @@
   },
   "whatChanged": {
     "title": "Ne değişti",
-    "onlyMaterialChanges": "Gürültüyü önlemek için burada yalnızca önemli değişiklikler gösterilir."
+    "onlyMaterialChanges": "Gürültüyü önlemek için burada yalnızca önemli değişiklikler gösterilir.",
+    "empty": "Henüz kaydedilen bir değişiklik yok."
   },
   "homeInsights": {
     "sample1": "Model artık iç sahada Arsenal'ı favori görüyor",
@@ -171,7 +173,8 @@
   "changeEvents": {
     "weatherUpdated": "Hava durumu tahmini güncellendi",
     "lineupUpdated": "Beklenen kadro güncellendi",
-    "goalkeeperRuledOut": "Kaleci sakatlık nedeniyle kadro dışı"
+    "goalkeeperRuledOut": "Kaleci sakatlık nedeniyle kadro dışı",
+    "modelRecalculated": "Güven oranı yeniden hesaplandı"
   },
   "batchAnalysis": {
     "title": "Seçilen maçlar",
