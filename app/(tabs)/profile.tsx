@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -16,7 +16,9 @@ export default function ProfileScreen() {
   ];
 
   const groupTwo = [
-    { icon: 'award' as const, label: t('profile.subscription'), onPress: () => router.push('/(tabs)/premium') },
+    ...(PREMIUM_ENABLED
+      ? [{ icon: 'award' as const, label: t('profile.subscription'), onPress: () => router.push('/(tabs)/premium') }]
+      : []),
     { icon: 'shield' as const, label: t('profile.legalAndMethodology'), onPress: () => router.push('/legal') },
     { icon: 'globe' as const, label: t('profile.language'), onPress: () => router.push('/language') },
     { icon: 'download' as const, label: t('profile.exportData') },
@@ -30,7 +32,7 @@ export default function ProfileScreen() {
             <Text style={styles.avatarText}>O</Text>
           </LinearGradient>
           <Text style={styles.name}>Onur</Text>
-          <Text style={styles.membership}>{t('profile.premiumMember')}</Text>
+          {PREMIUM_ENABLED && <Text style={styles.membership}>{t('profile.premiumMember')}</Text>}
         </View>
 
         <Group items={groupOne} />
@@ -73,11 +75,28 @@ const styles = StyleSheet.create({
   avatarText: { fontFamily: fonts.headline, fontSize: 18, color: '#fff' },
   name: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   membership: { fontFamily: fonts.body, fontSize: 10.5, color: colors.successText, marginTop: 3 },
-  group: { backgroundColor: colors.surface, borderRadius: radius.lg, marginBottom: spacing.md, overflow: 'hidden' },
+  group: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
   groupRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13 },
   groupRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   groupRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  groupLabel: { fontFamily: fonts.body, fontSize: 12.5, color: '#E5E7EB' },
-  deleteRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 13 },
+  groupLabel: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: '#E5E7EB' },
+  deleteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
   deleteText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.dangerText },
 });

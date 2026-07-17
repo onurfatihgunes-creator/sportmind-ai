@@ -74,21 +74,23 @@ export default function ExploreScreen() {
                 </View>
               )}
               <View style={styles.matchCrests}>
-                <TeamCrest team={m.home} size={26} />
-                <TeamCrest team={m.away} size={26} overlap />
+                <TeamCrest team={m.home} size={28} />
+                <TeamCrest team={m.away} size={28} overlap />
               </View>
               <View style={styles.matchInfo}>
                 <Text style={styles.matchTitle}>
                   {m.home.name} {t('common.vs')} {m.away.name}
                 </Text>
-                <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
+                <Text style={styles.matchSubtitle}>
+                  {m.kickoff} · {m.competition}
+                </Text>
               </View>
               {!selectMode && (
                 <Pressable hitSlop={10} onPress={() => toggleWatch(m.id)}>
                   <Feather name="bookmark" size={16} color={isWatched(m.id) ? colors.primaryLight : colors.textFaint} />
                 </Pressable>
               )}
-              <ConfidenceRing value={favouredOutcome(m).probability} size={28} strokeWidth={3} />
+              <ConfidenceRing value={favouredOutcome(m).probability} size={30} strokeWidth={3.5} />
             </Pressable>
           );
         })}
@@ -171,7 +173,9 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 13,
     marginBottom: spacing.sm,
   },
   checkbox: {
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   matchCrests: { flexDirection: 'row', alignItems: 'center' },
   matchInfo: { flex: 1 },
-  matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary },
+  matchTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.textPrimary },
   matchSubtitle: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
   trendingRow: { flexDirection: 'row', gap: 14, marginBottom: spacing.xl },
   trendingItem: { alignItems: 'center', width: 64 },
@@ -199,9 +203,11 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 13,
   },
-  leagueName: { fontFamily: fonts.body, fontSize: 11.5, color: '#E5E7EB', flexShrink: 1 },
+  leagueName: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: '#E5E7EB', flexShrink: 1 },
   selectionBar: {
     position: 'absolute',
     left: 0,
