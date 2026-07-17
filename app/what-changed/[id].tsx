@@ -83,6 +83,6 @@ const styles = StyleSheet.create({
   deltaValue: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, color: colors.textMuted },
   deltaChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
   deltaChipText: { fontFamily: fonts.bodyMedium, fontSize: 10 },
-  noteCard: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 12, marginTop: spacing.sm },
+  noteCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: 12, marginTop: spacing.sm },
   noteText: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textMuted },
 });
