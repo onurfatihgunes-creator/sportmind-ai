@@ -101,6 +101,8 @@
     "title": "Spielanalyse",
     "estimatedWinProbability": "geschätzte Siegwahrscheinlichkeit",
     "estimatedDrawProbability": "geschätzte Unentschieden-Wahrscheinlichkeit",
+    "teamWinProbability": "{{team}} Siegwahrscheinlichkeit {{pct}}%",
+    "drawProbabilityLine": "Unentschieden-Wahrscheinlichkeit {{pct}}%",
     "draw": "Unentschieden",
     "predictionStability": "Prognosestabilität — seit 72 Std. stabil",
     "expectedOutcomeDistribution": "Erwartete Ergebnisverteilung",
@@ -172,7 +174,7 @@
     "weatherUpdated": "Wettervorhersage aktualisiert",
     "lineupUpdated": "Erwartete Aufstellung aktualisiert",
     "goalkeeperRuledOut": "Torwart verletzungsbedingt ausgefallen",
-    "modelRecalculated": "Konfidenz neu berechnet"
+    "recentResultsUpdated": "Aktuelle Ergebnisse haben die Analyse aktualisiert"
   },
   "batchAnalysis": {
     "title": "Ausgewählte Spiele",

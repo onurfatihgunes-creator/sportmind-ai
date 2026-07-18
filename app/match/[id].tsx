@@ -48,10 +48,9 @@ export default function MatchAnalysisScreen() {
           <View style={styles.ringWrap}>
             <ConfidenceRing value={favourite.probability} size={92} strokeWidth={8} />
             <Text style={styles.confidenceTeam}>
-              {favourite.team ? favourite.team.name : t('matchAnalysis.draw')} %{favourite.probability}
-            </Text>
-            <Text style={styles.confidenceCaption}>
-              {favourite.team ? t('matchAnalysis.estimatedWinProbability') : t('matchAnalysis.estimatedDrawProbability')}
+              {favourite.team
+                ? t('matchAnalysis.teamWinProbability', { team: favourite.team.name, pct: favourite.probability })
+                : t('matchAnalysis.drawProbabilityLine', { pct: favourite.probability })}
             </Text>
           </View>
           <Text style={styles.stabilityCaption}>{t('matchAnalysis.predictionStability')}</Text>
@@ -172,7 +171,6 @@ const styles = StyleSheet.create({
   kickoff: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted, marginBottom: spacing.md },
   ringWrap: { alignItems: 'center', marginTop: 4 },
   confidenceTeam: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary, marginTop: 8 },
-  confidenceCaption: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
   stabilityCaption: { fontFamily: fonts.body, fontSize: 10, color: colors.textMuted, marginTop: 8 },
   sectionLabel: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textSecondary, marginBottom: 6 },
   outcomeBar: { flexDirection: 'row', height: 22, borderRadius: 8, overflow: 'hidden', marginBottom: 4 },

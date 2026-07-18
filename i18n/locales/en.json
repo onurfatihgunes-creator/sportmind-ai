@@ -101,6 +101,8 @@
     "title": "Match analysis",
     "estimatedWinProbability": "estimated win probability",
     "estimatedDrawProbability": "estimated draw probability",
+    "teamWinProbability": "{{team}} win probability {{pct}}%",
+    "drawProbabilityLine": "Draw probability {{pct}}%",
     "draw": "Draw",
     "predictionStability": "Prediction stability — stable over 72h",
     "expectedOutcomeDistribution": "Expected outcome distribution",
@@ -172,7 +174,7 @@
     "weatherUpdated": "Weather forecast updated",
     "lineupUpdated": "Expected lineup updated",
     "goalkeeperRuledOut": "Goalkeeper ruled out",
-    "modelRecalculated": "Confidence recalculated"
+    "recentResultsUpdated": "Recent results updated the analysis"
   },
   "batchAnalysis": {
     "title": "Selected matches",

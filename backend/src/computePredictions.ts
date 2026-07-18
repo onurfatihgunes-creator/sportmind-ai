@@ -69,6 +69,9 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
   const recentForm = clampSplit(50 + (home.pointsPerGame - away.pointsPerGame) * 12);
   const expectedGoals = clampSplit(50 + (xgHome - xgAway) * 10);
   const homeAdvantage = { home: 62, away: 38 }; // fixed prior, not team-specific with current data
+  // Lower recent goals-against = stronger defence — derived from the same team_form data
+  // already fetched above, not a new signal.
+  const defensivePerformance = clampSplit(50 + (away.avgGoalsAgainst - home.avgGoalsAgainst) * 10);
 
   return {
     outcomes,
@@ -79,6 +82,7 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
     factors: [
       { key: 'recentForm', home: recentForm.home, away: recentForm.away },
       { key: 'expectedGoals', home: expectedGoals.home, away: expectedGoals.away },
+      { key: 'defensivePerformance', home: defensivePerformance.home, away: defensivePerformance.away },
       { key: 'homeAdvantage', home: homeAdvantage.home, away: homeAdvantage.away },
     ],
   };
@@ -115,9 +119,12 @@ export async function computePredictions() {
     if (upsertError) throw upsertError;
 
     if (existing && Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT) {
+      // The only inputs that can move home_win_pct between runs are new results landing in
+      // team_form (recent form + goal averages) — there's no separate injury/lineup/weather
+      // signal in the free data tier, so this is the one honest reason to log.
       const { error: logError } = await supabase.from('prediction_changes').insert({
         match_id: match.id,
-        reason: 'model_recalculated',
+        reason: 'recent_results_updated',
         from_home_win_pct: existing.home_win_pct,
         to_home_win_pct: result.outcomes.home,
       });

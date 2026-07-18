@@ -58,6 +58,9 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
 
   const recentForm = clampSplit(50 + (home.winRate - away.winRate) * 60);
   const pointsScored = clampSplit(50 + (pointsHome - pointsAway) * 3);
+  // Lower recent points-against = stronger defence — derived from the same team_form data
+  // already fetched above, not a new signal.
+  const defensivePerformance = clampSplit(50 + (away.avgPointsAgainst - home.avgPointsAgainst) * 2);
 
   return {
     outcomes: { home: homePct, draw: 0, away: awayPct },
@@ -68,6 +71,7 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
     factors: [
       { key: 'recentForm', home: recentForm.home, away: recentForm.away },
       { key: 'pointsScored', home: pointsScored.home, away: pointsScored.away },
+      { key: 'defensivePerformance', home: defensivePerformance.home, away: defensivePerformance.away },
       { key: 'homeCourtAdvantage', home: BASE_HOME, away: BASE_AWAY },
     ],
   };
@@ -107,7 +111,7 @@ export async function computeBasketballPredictions() {
     if (existing && Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT) {
       const { error: logError } = await supabase.from('prediction_changes').insert({
         match_id: match.id,
-        reason: 'model_recalculated',
+        reason: 'recent_results_updated',
         from_home_win_pct: existing.home_win_pct,
         to_home_win_pct: result.outcomes.home,
       });

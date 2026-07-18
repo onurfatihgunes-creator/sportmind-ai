@@ -101,6 +101,8 @@
     "title": "Maç analizi",
     "estimatedWinProbability": "tahmini kazanma olasılığı",
     "estimatedDrawProbability": "tahmini beraberlik olasılığı",
+    "teamWinProbability": "{{team}} kazanma ihtimali %{{pct}}",
+    "drawProbabilityLine": "Beraberlik ihtimali %{{pct}}",
     "draw": "Beraberlik",
     "predictionStability": "Tahmin istikrarı — son 72 saattir stabil",
     "expectedOutcomeDistribution": "Beklenen sonuç dağılımı",
@@ -165,14 +167,14 @@
     "sample1": "Model artık iç sahada Arsenal'ı favori görüyor",
     "sample2": "Liverpool'un pres yoğunluğu son 6 maçta %18 arttı",
     "sample3": "Real Madrid'in beklenen gol ortalaması düşüş trendinde",
-    "liveFavoured": "Model {{team}}'i %{{pct}} ile favori görüyor",
+    "liveFavoured": "{{team}} modele göre %{{pct}} ile favori",
     "liveCloseMatch": "{{home}} - {{away}} modele göre çok yakın (%{{pct}})"
   },
   "changeEvents": {
     "weatherUpdated": "Hava durumu tahmini güncellendi",
     "lineupUpdated": "Beklenen kadro güncellendi",
     "goalkeeperRuledOut": "Kaleci sakatlık nedeniyle kadro dışı",
-    "modelRecalculated": "Güven oranı yeniden hesaplandı"
+    "recentResultsUpdated": "Son maç sonuçları analizi güncelledi"
   },
   "batchAnalysis": {
     "title": "Seçilen maçlar",

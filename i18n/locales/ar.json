@@ -101,6 +101,8 @@
     "title": "تحليل المباراة",
     "estimatedWinProbability": "احتمال الفوز التقديري",
     "estimatedDrawProbability": "احتمال التعادل التقديري",
+    "teamWinProbability": "احتمال فوز {{team}} %{{pct}}",
+    "drawProbabilityLine": "احتمال التعادل %{{pct}}",
     "draw": "تعادل",
     "predictionStability": "استقرار التوقع — مستقر منذ 72 ساعة",
     "expectedOutcomeDistribution": "توزيع النتائج المتوقعة",
@@ -165,14 +167,14 @@
     "sample1": "النموذج يرجّح آرسنال الآن على أرضه",
     "sample2": "ارتفعت كثافة ضغط ليفربول بنسبة 18٪ خلال 6 مباريات",
     "sample3": "الأهداف المتوقعة لريال مدريد في اتجاه هابط",
-    "liveFavoured": "يفضل النموذج {{team}} بنسبة {{pct}}٪",
+    "liveFavoured": "{{team}} هو المرشح بنسبة {{pct}}٪ وفق النموذج",
     "liveCloseMatch": "{{home}} ضد {{away}} تعتبر متقاربة جدًا ({{pct}}٪)"
   },
   "changeEvents": {
     "weatherUpdated": "تم تحديث توقعات الطقس",
     "lineupUpdated": "تم تحديث التشكيلة المتوقعة",
     "goalkeeperRuledOut": "غياب حارس المرمى بداعي الإصابة",
-    "modelRecalculated": "أعيد حساب نسبة الثقة"
+    "recentResultsUpdated": "حدّثت النتائج الأخيرة التحليل"
   },
   "batchAnalysis": {
     "title": "المباريات المختارة",

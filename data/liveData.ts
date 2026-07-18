@@ -39,7 +39,7 @@ const REASON_TO_KEY: Record<string, string> = {
   weather_update: 'weatherUpdated',
   lineup_confirmed: 'lineupUpdated',
   injury_update: 'goalkeeperRuledOut',
-  model_recalculated: 'modelRecalculated',
+  recent_results_updated: 'recentResultsUpdated',
 };
 
 export type LiveDataBundle = {
@@ -149,7 +149,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     const changeEvents: ChangeEvent[] = (changeRows ?? []).map((c) => ({
       id: String(c.id),
       timestamp: new Date(c.created_at).toLocaleString(),
-      key: REASON_TO_KEY[c.reason] ?? 'modelRecalculated',
+      key: REASON_TO_KEY[c.reason] ?? 'recentResultsUpdated',
       from: c.from_home_win_pct,
       to: c.to_home_win_pct,
       tone: c.to_home_win_pct >= c.from_home_win_pct ? 'success' : 'warning',
