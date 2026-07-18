@@ -90,9 +90,9 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
-          <Feather name={sortAsc ? 'arrow-up' : 'arrow-down'} size={11} color={colors.primaryLight} />
-          <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+        <Pressable style={styles.myMatchesLink} onPress={() => router.push('/my-matches')}>
+          <Feather name="bookmark" size={12} color={colors.primaryLight} />
+          <Text style={styles.myMatchesLinkText}>{t('home.myMatches', { count: matchIds.length })}</Text>
         </Pressable>
 
         <View style={styles.sectionHeaderRow}>
@@ -119,9 +119,9 @@ export default function HomeScreen() {
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>{t('home.allMatches')}</Text>
-          <Pressable style={styles.myMatchesLink} onPress={() => router.push('/my-matches')}>
-            <Feather name="bookmark" size={12} color={colors.primaryLight} />
-            <Text style={styles.myMatchesLinkText}>{t('home.myMatches', { count: matchIds.length })}</Text>
+          <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
+            <Feather name={sortAsc ? 'arrow-up' : 'arrow-down'} size={11} color={colors.primaryLight} />
+            <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
           </Pressable>
         </View>
         <View style={styles.allMatchesList}>
