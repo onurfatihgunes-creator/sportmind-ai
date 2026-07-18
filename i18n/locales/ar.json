@@ -47,14 +47,12 @@
   },
   "explore": {
     "title": "استكشاف",
-    "searchPlaceholder": "جرّب \"مباريات نهاية الأسبوع\"",
-    "league": "الدوري",
-    "country": "الدولة",
-    "date": "التاريخ",
-    "thisWeeksMatches": "مباريات هذا الأسبوع",
+    "searchPlaceholder": "ابحث عن فريق أو دوري",
+    "allLeagues": "الكل",
+    "matches": "المباريات",
+    "noResults": "لم يتم العثور على مباريات.",
     "selectMatches": "اختر مباريات",
     "trending": "الأكثر رواجًا",
-    "browseByLeague": "تصفح حسب الدوري",
     "analyseMatches_one": "تحليل {{count}} مباراة",
     "analyseMatches_other": "تحليل {{count}} مباريات"
   },

@@ -188,5 +188,3 @@ export const insights: Insight[] = [
   { id: '2', key: 'sample2', confidence: 74 },
   { id: '3', key: 'sample3', confidence: 39 },
 ];
-
-export const leagues = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Champions League'];

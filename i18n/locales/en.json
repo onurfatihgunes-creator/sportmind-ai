@@ -47,14 +47,12 @@
   },
   "explore": {
     "title": "Explore",
-    "searchPlaceholder": "Try \"weekend matches\"",
-    "league": "League",
-    "country": "Country",
-    "date": "Date",
-    "thisWeeksMatches": "This week's matches",
+    "searchPlaceholder": "Search team or league",
+    "allLeagues": "All",
+    "matches": "Matches",
+    "noResults": "No matches found.",
     "selectMatches": "Select matches",
     "trending": "Trending",
-    "browseByLeague": "Browse by league",
     "analyseMatches_one": "Analyse {{count}} match",
     "analyseMatches_other": "Analyse {{count}} matches"
   },

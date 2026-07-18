@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, leagues, teams } from '@/data/mockData';
+import { favouredOutcome, teams } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import TeamCrest from '@/components/TeamCrest';
@@ -19,6 +19,23 @@ export default function ExploreScreen() {
   const { isWatched, toggle: toggleWatch } = useWatchlist();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+
+  const competitions = useMemo(() => Array.from(new Set(matches.map((m) => m.competition))), [matches]);
+
+  const filteredMatches = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return matches.filter((m) => {
+      if (selectedLeague && m.competition !== selectedLeague) return false;
+      if (!query) return true;
+      return (
+        m.home.name.toLowerCase().includes(query) ||
+        m.away.name.toLowerCase().includes(query) ||
+        m.competition.toLowerCase().includes(query)
+      );
+    });
+  }, [matches, search, selectedLeague]);
 
   const toggleMatch = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
@@ -44,23 +61,40 @@ export default function ExploreScreen() {
 
         <View style={styles.searchBar}>
           <Feather name="search" size={14} color={colors.textMuted} />
-          <Text style={styles.searchPlaceholder}>{t('explore.searchPlaceholder')}</Text>
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t('explore.searchPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+          />
         </View>
 
-        <View style={styles.filterRow}>
-          <View style={[styles.filterChip, styles.filterChipActive]}>
-            <Text style={styles.filterChipTextActive}>{t('explore.league')}</Text>
-          </View>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterChipText}>{t('explore.country')}</Text>
-          </View>
-          <View style={styles.filterChip}>
-            <Text style={styles.filterChipText}>{t('explore.date')}</Text>
-          </View>
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ gap: 8 }}>
+          <Pressable
+            style={[styles.filterChip, selectedLeague === null && styles.filterChipActive]}
+            onPress={() => setSelectedLeague(null)}
+          >
+            <Text style={selectedLeague === null ? styles.filterChipTextActive : styles.filterChipText}>
+              {t('explore.allLeagues')}
+            </Text>
+          </Pressable>
+          {competitions.map((league) => (
+            <Pressable
+              key={league}
+              style={[styles.filterChip, selectedLeague === league && styles.filterChipActive]}
+              onPress={() => setSelectedLeague(league)}
+            >
+              <Text style={selectedLeague === league ? styles.filterChipTextActive : styles.filterChipText}>
+                {league}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
-        <Text style={styles.sectionLabel}>{t('explore.thisWeeksMatches')}</Text>
-        {matches.map((m) => {
+        <Text style={styles.sectionLabel}>{t('explore.matches')}</Text>
+        {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
+        {filteredMatches.map((m) => {
           const isSelected = selected.includes(m.id);
           return (
             <Pressable
@@ -104,20 +138,6 @@ export default function ExploreScreen() {
             </View>
           ))}
         </View>
-
-        <Text style={styles.sectionLabel}>{t('explore.browseByLeague')}</Text>
-        <View style={styles.leagueGrid}>
-          {leagues.map((league) => (
-            <View key={league} style={styles.leagueCard}>
-              <Feather
-                name={league === 'Champions League' ? 'award' : 'circle'}
-                size={16}
-                color={league === 'Champions League' ? colors.warningText : colors.primaryLight}
-              />
-              <Text style={styles.leagueName}>{league}</Text>
-            </View>
-          ))}
-        </View>
       </ScrollView>
 
       {selectMode && selected.length > 0 && (
@@ -153,8 +173,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: spacing.md,
   },
-  searchPlaceholder: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textMuted },
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.xl },
+  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 12.5, color: colors.textPrimary, padding: 0 },
+  filterRow: { marginBottom: spacing.xl },
+  emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, marginBottom: spacing.md },
   filterChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, backgroundColor: colors.surface },
   filterChipActive: { backgroundColor: colors.primaryMuted },
   filterChipText: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textSecondary },
@@ -195,19 +216,6 @@ const styles = StyleSheet.create({
   trendingRow: { flexDirection: 'row', gap: 14, marginBottom: spacing.xl },
   trendingItem: { alignItems: 'center', width: 64 },
   trendingName: { fontFamily: fonts.body, fontSize: 10, color: colors.textSecondary, marginTop: 6, textAlign: 'center' },
-  leagueGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  leagueCard: {
-    flexBasis: '47%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 13,
-  },
-  leagueName: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: '#E5E7EB', flexShrink: 1 },
   selectionBar: {
     position: 'absolute',
     left: 0,

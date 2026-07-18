@@ -47,14 +47,12 @@
   },
   "explore": {
     "title": "Keşfet",
-    "searchPlaceholder": "\"hafta sonu maçları\" dene",
-    "league": "Lig",
-    "country": "Ülke",
-    "date": "Tarih",
-    "thisWeeksMatches": "Bu haftanın maçları",
+    "searchPlaceholder": "Takım veya lig ara",
+    "allLeagues": "Tümü",
+    "matches": "Maçlar",
+    "noResults": "Maç bulunamadı.",
     "selectMatches": "Maç seç",
     "trending": "Trend",
-    "browseByLeague": "Lige göre gözat",
     "analyseMatches_one": "{{count}} maçı analiz et",
     "analyseMatches_other": "{{count}} maçı analiz et"
   },

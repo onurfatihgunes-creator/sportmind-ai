@@ -47,14 +47,12 @@
   },
   "explore": {
     "title": "Entdecken",
-    "searchPlaceholder": "Probiere \"Spiele am Wochenende\"",
-    "league": "Liga",
-    "country": "Land",
-    "date": "Datum",
-    "thisWeeksMatches": "Spiele dieser Woche",
+    "searchPlaceholder": "Team oder Liga suchen",
+    "allLeagues": "Alle",
+    "matches": "Spiele",
+    "noResults": "Keine Spiele gefunden.",
     "selectMatches": "Spiele auswählen",
     "trending": "Im Trend",
-    "browseByLeague": "Nach Liga durchsuchen",
     "analyseMatches_one": "{{count}} Spiel analysieren",
     "analyseMatches_other": "{{count}} Spiele analysieren"
   },
