@@ -13,7 +13,7 @@
   "tabs": {
     "home": "Ana Sayfa",
     "explore": "Keşfet",
-    "insights": "AI İçgörüleri",
+    "insights": "AI Öngörüleri",
     "premium": "Premium",
     "profile": "Profil"
   },
@@ -29,7 +29,7 @@
     "thingsChanged_one": "Gece boyunca 1 şey değişti",
     "thingsChanged_other": "Gece boyunca {{count}} şey değişti",
     "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
-    "latestAiInsights": "Son AI içgörüleri",
+    "latestAiInsights": "Son AI öngörüleri",
     "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
     "goPremium": "Premium'a geç",
     "liveData": "Canlı veri",
@@ -39,11 +39,13 @@
     "basketball": "Basketbol",
     "tennis": "Tenis",
     "soon": "Yakında",
-    "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok."
+    "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok.",
+    "sortHighToLow": "Güven oranı: yüksekten düşüğe",
+    "sortLowToHigh": "Güven oranı: düşükten yükseğe"
   },
   "matchCard": {
-    "favoured": "{{team}} favori",
-    "drawLikely": "Beraberlik olası"
+    "favoured": "AI öngörüsü: {{team}} favori",
+    "drawLikely": "AI öngörüsü: Beraberlik olası"
   },
   "explore": {
     "title": "Keşfet",
@@ -62,8 +64,8 @@
     "notifyMeAbout": "Şunlar için bildirim al",
     "confidenceChanges": "Güven değişimleri",
     "lineupsPublished": "Kadrolar açıklandığında",
-    "newAiInsight": "Yeni AI içgörüsü",
-    "latestAiInsights": "Son AI içgörüleri",
+    "newAiInsight": "Yeni AI öngörüsü",
+    "latestAiInsights": "Son AI öngörüleri",
     "compareLink": "{{a}} ve {{b}} karşılaştır",
     "confidenceUpdated": "Güven güncellendi · {{time}} önce",
     "lineupAnnounced": "Kadro açıklandı · {{time}} önce",
@@ -88,13 +90,15 @@
   "profile": {
     "premiumMember": "Premium üye",
     "namePlaceholder": "Adın",
-    "savedAnalyses": "Kaydedilen analizler",
-    "readingHistory": "Okuma geçmişi",
-    "favouriteClubs": "Favori kulüpler ve ligler",
+    "savedAnalyses": "Kaydedilen maçlar",
     "subscription": "Abonelik",
     "legalAndMethodology": "Yasal ve metodoloji",
     "exportData": "Verilerimi dışa aktar",
-    "deleteAccount": "Hesabı sil",
+    "clearData": "Verilerimi temizle",
+    "clearDataTitle": "Verilerimi temizle",
+    "clearDataBody": "Bu işlem adını, dil tercihini ve kaydedilen maçlarını bu cihazdan siler. Geri alınamaz.",
+    "clearDataConfirm": "Temizle",
+    "restartNotice": "Tamamlandı. Değişiklikleri görmek için uygulamayı yeniden başlat.",
     "language": "Dil"
   },
   "matchAnalysis": {

@@ -21,21 +21,28 @@ export default function ExploreScreen() {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+  const [sortAsc, setSortAsc] = useState(false);
 
   const competitions = useMemo(() => Array.from(new Set(matches.map((m) => m.competition))), [matches]);
 
   const filteredMatches = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return matches.filter((m) => {
-      if (selectedLeague && m.competition !== selectedLeague) return false;
-      if (!query) return true;
-      return (
-        m.home.name.toLowerCase().includes(query) ||
-        m.away.name.toLowerCase().includes(query) ||
-        m.competition.toLowerCase().includes(query)
+    return matches
+      .filter((m) => {
+        if (selectedLeague && m.competition !== selectedLeague) return false;
+        if (!query) return true;
+        return (
+          m.home.name.toLowerCase().includes(query) ||
+          m.away.name.toLowerCase().includes(query) ||
+          m.competition.toLowerCase().includes(query)
+        );
+      })
+      .sort((a, b) =>
+        sortAsc
+          ? favouredOutcome(a).probability - favouredOutcome(b).probability
+          : favouredOutcome(b).probability - favouredOutcome(a).probability,
       );
-    });
-  }, [matches, search, selectedLeague]);
+  }, [matches, search, selectedLeague, sortAsc]);
 
   const toggleMatch = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
@@ -92,7 +99,13 @@ export default function ExploreScreen() {
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionLabel}>{t('explore.matches')}</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>{t('explore.matches')}</Text>
+          <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
+            <Feather name={sortAsc ? 'arrow-up' : 'arrow-down'} size={11} color={colors.primaryLight} />
+            <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+          </Pressable>
+        </View>
         {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
         {filteredMatches.map((m) => {
           const isSelected = selected.includes(m.id);
@@ -188,6 +201,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: spacing.md,
   },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sortToggle: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md },
+  sortToggleText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
   matchRow: {
     flexDirection: 'row',
     alignItems: 'center',

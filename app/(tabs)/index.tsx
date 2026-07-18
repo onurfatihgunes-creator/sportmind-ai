@@ -21,10 +21,21 @@ export default function HomeScreen() {
   const { matchIds, isWatched, toggle } = useWatchlist();
   const { name } = useProfile();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
+  const [sortAsc, setSortAsc] = useState(false);
   const sportMatches = matches.filter((m) => m.sport === selectedSport);
   // "Key" matches = the ones the model is most decisive about (highest predicted
   // probability), not an editorial pick — we have no real popularity signal to rank on.
-  const topMatches = [...sportMatches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 5);
+  // Selection always picks the 5 highest-confidence matches; the sort toggle only
+  // changes the display order within that set (and the full list below).
+  const topMatchesByConfidence = [...sportMatches]
+    .sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability)
+    .slice(0, 5);
+  const topMatches = sortAsc ? [...topMatchesByConfidence].reverse() : topMatchesByConfidence;
+  const allMatchesSorted = [...sportMatches].sort((a, b) =>
+    sortAsc
+      ? favouredOutcome(a).probability - favouredOutcome(b).probability
+      : favouredOutcome(b).probability - favouredOutcome(a).probability,
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -79,6 +90,11 @@ export default function HomeScreen() {
           </View>
         )}
 
+        <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
+          <Feather name={sortAsc ? 'arrow-up' : 'arrow-down'} size={11} color={colors.primaryLight} />
+          <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+        </Pressable>
+
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>{t('home.todaysKeyMatches')}</Text>
           <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
@@ -109,7 +125,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={styles.allMatchesList}>
-        {sportMatches.map((m) => {
+        {allMatchesSorted.map((m) => {
           const favourite = favouredOutcome(m);
           const watched = isWatched(m.id);
           return (
@@ -220,6 +236,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sortToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  sortToggleText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
   myMatchesLink: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md },
   myMatchesLinkText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
   viewAllLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.md },

@@ -39,11 +39,13 @@
     "basketball": "Basketball",
     "tennis": "Tennis",
     "soon": "Soon",
-    "noMatchesForSport": "No analysed matches in this sport right now."
+    "noMatchesForSport": "No analysed matches in this sport right now.",
+    "sortHighToLow": "Confidence: high to low",
+    "sortLowToHigh": "Confidence: low to high"
   },
   "matchCard": {
-    "favoured": "{{team}} favoured",
-    "drawLikely": "Draw likely"
+    "favoured": "AI prediction: {{team}} favoured",
+    "drawLikely": "AI prediction: Draw likely"
   },
   "explore": {
     "title": "Explore",
@@ -88,13 +90,15 @@
   "profile": {
     "premiumMember": "Premium member",
     "namePlaceholder": "Your name",
-    "savedAnalyses": "Saved analyses",
-    "readingHistory": "Reading history",
-    "favouriteClubs": "Favourite clubs and leagues",
+    "savedAnalyses": "Saved matches",
     "subscription": "Subscription",
     "legalAndMethodology": "Legal and methodology",
     "exportData": "Export my data",
-    "deleteAccount": "Delete account",
+    "clearData": "Clear my data",
+    "clearDataTitle": "Clear my data",
+    "clearDataBody": "This removes your name, language, and saved matches from this device. It can't be undone.",
+    "clearDataConfirm": "Clear",
+    "restartNotice": "Done. Restart the app to see the changes.",
     "language": "Language"
   },
   "matchAnalysis": {

@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useWatchlist } from '@/contexts/WatchlistContext';
 
 export default function ProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { name, setName } = useProfile();
+  const { matchIds } = useWatchlist();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
 
@@ -19,11 +22,43 @@ export default function ProfileScreen() {
     setEditing(false);
   };
 
-  const groupOne = [
-    { icon: 'bookmark' as const, label: t('profile.savedAnalyses') },
-    { icon: 'clock' as const, label: t('profile.readingHistory') },
-    { icon: 'heart' as const, label: t('profile.favouriteClubs') },
-  ];
+  const exportData = async () => {
+    const payload = {
+      name,
+      language: i18n.language,
+      watchlistMatchIds: matchIds,
+      exportedAt: new Date().toISOString(),
+    };
+    try {
+      await Share.share({ message: JSON.stringify(payload, null, 2) });
+    } catch {
+      // User cancelled the share sheet — nothing to do.
+    }
+  };
+
+  const clearData = () => {
+    Alert.alert(t('profile.clearDataTitle'), t('profile.clearDataBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('profile.clearDataConfirm'),
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.multiRemove([
+            'sportmind_profile_name',
+            'sportmind_watchlist_match_ids',
+            'sportmind-ai-language',
+          ]);
+          if (Platform.OS === 'web') {
+            window.location.reload();
+          } else {
+            Alert.alert(t('profile.clearDataTitle'), t('profile.restartNotice'));
+          }
+        },
+      },
+    ]);
+  };
+
+  const groupOne = [{ icon: 'bookmark' as const, label: t('profile.savedAnalyses'), onPress: () => router.push('/my-matches') }];
 
   const groupTwo = [
     ...(PREMIUM_ENABLED
@@ -31,7 +66,7 @@ export default function ProfileScreen() {
       : []),
     { icon: 'shield' as const, label: t('profile.legalAndMethodology'), onPress: () => router.push('/legal') },
     { icon: 'globe' as const, label: t('profile.language'), onPress: () => router.push('/language') },
-    { icon: 'download' as const, label: t('profile.exportData') },
+    { icon: 'download' as const, label: t('profile.exportData'), onPress: exportData },
   ];
 
   return (
@@ -65,9 +100,9 @@ export default function ProfileScreen() {
         <Group items={groupOne} />
         <Group items={groupTwo} />
 
-        <Pressable style={styles.deleteRow}>
+        <Pressable style={styles.deleteRow} onPress={clearData}>
           <Feather name="trash-2" size={14} color={colors.dangerText} />
-          <Text style={styles.deleteText}>{t('profile.deleteAccount')}</Text>
+          <Text style={styles.deleteText}>{t('profile.clearData')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

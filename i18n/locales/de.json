@@ -39,11 +39,13 @@
     "basketball": "Basketball",
     "tennis": "Tennis",
     "soon": "Bald",
-    "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele."
+    "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele.",
+    "sortHighToLow": "Konfidenz: hoch zu niedrig",
+    "sortLowToHigh": "Konfidenz: niedrig zu hoch"
   },
   "matchCard": {
-    "favoured": "{{team}} favorisiert",
-    "drawLikely": "Unentschieden wahrscheinlich"
+    "favoured": "KI-Prognose: {{team}} favorisiert",
+    "drawLikely": "KI-Prognose: Unentschieden wahrscheinlich"
   },
   "explore": {
     "title": "Entdecken",
@@ -88,13 +90,15 @@
   "profile": {
     "premiumMember": "Premium-Mitglied",
     "namePlaceholder": "Dein Name",
-    "savedAnalyses": "Gespeicherte Analysen",
-    "readingHistory": "Leseverlauf",
-    "favouriteClubs": "Lieblingsvereine und -ligen",
+    "savedAnalyses": "Gespeicherte Spiele",
     "subscription": "Abonnement",
     "legalAndMethodology": "Rechtliches und Methodik",
     "exportData": "Meine Daten exportieren",
-    "deleteAccount": "Konto löschen",
+    "clearData": "Meine Daten löschen",
+    "clearDataTitle": "Meine Daten löschen",
+    "clearDataBody": "Dadurch werden dein Name, deine Sprache und gespeicherte Spiele von diesem Gerät entfernt. Dies kann nicht rückgängig gemacht werden.",
+    "clearDataConfirm": "Löschen",
+    "restartNotice": "Erledigt. Starte die App neu, um die Änderungen zu sehen.",
     "language": "Sprache"
   },
   "matchAnalysis": {

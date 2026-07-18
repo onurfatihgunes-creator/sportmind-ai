@@ -39,11 +39,13 @@
     "basketball": "كرة السلة",
     "tennis": "التنس",
     "soon": "قريبًا",
-    "noMatchesForSport": "لا توجد مباريات محللة لهذه الرياضة حاليًا."
+    "noMatchesForSport": "لا توجد مباريات محللة لهذه الرياضة حاليًا.",
+    "sortHighToLow": "الثقة: من الأعلى إلى الأدنى",
+    "sortLowToHigh": "الثقة: من الأدنى إلى الأعلى"
   },
   "matchCard": {
-    "favoured": "{{team}} هو المرشح",
-    "drawLikely": "التعادل مرجّح"
+    "favoured": "توقع الذكاء الاصطناعي: {{team}} هو المرشح",
+    "drawLikely": "توقع الذكاء الاصطناعي: التعادل مرجّح"
   },
   "explore": {
     "title": "استكشاف",
@@ -88,13 +90,15 @@
   "profile": {
     "premiumMember": "عضو بريميوم",
     "namePlaceholder": "اسمك",
-    "savedAnalyses": "التحليلات المحفوظة",
-    "readingHistory": "سجل القراءة",
-    "favouriteClubs": "الأندية والدوريات المفضلة",
+    "savedAnalyses": "المباريات المحفوظة",
     "subscription": "الاشتراك",
     "legalAndMethodology": "القانونية والمنهجية",
     "exportData": "تصدير بياناتي",
-    "deleteAccount": "حذف الحساب",
+    "clearData": "مسح بياناتي",
+    "clearDataTitle": "مسح بياناتي",
+    "clearDataBody": "سيؤدي هذا إلى إزالة اسمك ولغتك والمباريات المحفوظة من هذا الجهاز. لا يمكن التراجع عن هذا الإجراء.",
+    "clearDataConfirm": "مسح",
+    "restartNotice": "تم. أعد تشغيل التطبيق لرؤية التغييرات.",
     "language": "اللغة"
   },
   "matchAnalysis": {
