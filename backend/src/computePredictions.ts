@@ -92,7 +92,8 @@ export async function computePredictions() {
   const { data: matches, error } = await supabase
     .from('matches')
     .select('id, home_team_id, away_team_id')
-    .eq('status', 'scheduled');
+    .eq('status', 'scheduled')
+    .eq('sport', 'football');
   if (error) throw error;
 
   for (const match of matches ?? []) {

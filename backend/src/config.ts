@@ -12,6 +12,8 @@ export const env = {
   supabaseServiceKey: requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
   // Optional — basketball sync is skipped (not a hard failure) until this is set.
   balldontlieApiKey: process.env.BALLDONTLIE_API_KEY,
+  // Optional — Turkish Süper Lig sync is skipped (not a hard failure) until this is set.
+  apiFootballKey: process.env.API_FOOTBALL_KEY,
 };
 
 /** football-data.org competition codes for the confirmed MVP scope: top-5 leagues + UCL. */
