@@ -8,7 +8,7 @@ import { fetchTurkishFixtures } from './fetchTurkishFixtures.js';
 async function main() {
   await fetchFixtures();
 
-  if (env.apiFootballKey) {
+  if (env.rapidApiFootballKey) {
     // Newer, less-proven integration — a hiccup here shouldn't fail the whole run when
     // football-data.org's sync above already succeeded.
     try {
@@ -17,7 +17,7 @@ async function main() {
       console.error('Süper Lig sync failed, continuing:', error);
     }
   } else {
-    console.log('Skipping Süper Lig sync — API_FOOTBALL_KEY not set.');
+    console.log('Skipping Süper Lig sync — RAPIDAPI_FOOTBALL_KEY not set.');
   }
 
   await computePredictions();
