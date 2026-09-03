@@ -1,39 +1,75 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
-import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { ArrowLeftIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { teams } from '@/data/mockData';
-import TeamCrest from '@/components/TeamCrest';
+import { useAppData } from '@/contexts/DataContext';
+import type { Match, Team } from '@/data/mockData';
+import RadarChart, { type RadarAxis } from '@/components/RadarChart';
 
-const AXIS_KEYS = ['axisForm', 'axisXg', 'axisPressing', 'axisPossession', 'axisDefence', 'axisHomeForm'];
+/** Real per-team stats derived client-side from whatever matches involving this team are
+ * currently loaded (no new backend endpoint needed). Thin samples are a known limitation
+ * of the $0 data tier — same caveat already documented for team_form on the backend. */
+function teamAggregate(team: Team, matches: Match[]) {
+  const involved = matches.filter((m) => m.home.id === team.id || m.away.id === team.id);
+  const formPts = team.form.reduce((s, r) => s + (r === 'W' ? 3 : r === 'D' ? 1 : 0), 0);
+  const formScore = team.form.length > 0 ? formPts / (team.form.length * 3) : 0.5;
+  if (involved.length === 0) return { formScore, xgScore: null, defenceScore: null, homeFormScore: formScore };
 
-function axisPoint(index: number, value: number, cx = 50, cy = 50, r = 40) {
-  const angle = (Math.PI / 180) * (index * 60 - 90);
-  const dist = r * value;
-  return `${cx + dist * Math.cos(angle)},${cy + dist * Math.sin(angle)}`;
-}
+  const scale = team.sport === 'basketball' ? 130 : 3;
+  let xgSum = 0;
+  let againstSum = 0;
+  let homePts = 0;
+  let homeGames = 0;
+  involved.forEach((m) => {
+    const isHome = m.home.id === team.id;
+    xgSum += isHome ? m.xgHome : m.xgAway;
+    againstSum += isHome ? m.xgAway : m.xgHome;
+    if (isHome) {
+      homeGames += 1;
+      homePts += m.outcomes.home >= m.outcomes.away && m.outcomes.home >= m.outcomes.draw ? 3 : m.outcomes.draw >= m.outcomes.away ? 1 : 0;
+    }
+  });
+  const xgScore = Math.min(1, xgSum / involved.length / scale);
+  const defenceScore = Math.max(0, 1 - againstSum / involved.length / scale);
+  const homeFormScore = homeGames > 0 ? Math.min(1, homePts / (homeGames * 3)) : formScore;
 
-function polygonPoints(values: number[]) {
-  return values.map((v, i) => axisPoint(i, v)).join(' ');
+  return { formScore, xgScore, defenceScore, homeFormScore };
 }
 
 export default function TeamComparisonScreen() {
   const { t } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
-  const teamA = teams[a ?? 'liverpool'];
-  const teamB = teams[b ?? 'chelsea'];
+  const { teams, matches } = useAppData();
+  const teamList = Object.values(teams);
+  const teamA = teams[a ?? ''] ?? teamList[0];
+  const teamB = teams[b ?? ''] ?? teamList[1] ?? teamList[0];
 
-  const valuesA = [0.9, 0.75, 0.8, 0.6, 0.55, 0.85];
-  const valuesB = [0.6, 0.55, 0.5, 0.85, 0.7, 0.45];
+  const statsA = useMemo(() => teamAggregate(teamA, matches), [teamA, matches]);
+  const statsB = useMemo(() => teamAggregate(teamB, matches), [teamB, matches]);
+
+  const axes: RadarAxis[] = [
+    { key: 'axisForm', label: t('teamComparison.axisForm'), a: statsA.formScore, b: statsB.formScore },
+    { key: 'axisXg', label: t('teamComparison.axisXg'), a: statsA.xgScore, b: statsB.xgScore },
+    { key: 'axisPressing', label: t('teamComparison.axisPressing'), a: null, b: null },
+    { key: 'axisPossession', label: t('teamComparison.axisPossession'), a: null, b: null },
+    { key: 'axisDefence', label: t('teamComparison.axisDefence'), a: statsA.defenceScore, b: statsB.defenceScore },
+    { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA.homeFormScore, b: statsB.homeFormScore },
+  ];
+
+  const gaps = axes
+    .filter((ax) => ax.a !== null && ax.b !== null)
+    .map((ax) => ({ label: ax.label, diff: (ax.a as number) - (ax.b as number) }));
+  const biggestForA = [...gaps].sort((x, y) => y.diff - x.diff)[0];
+  const biggestForB = [...gaps].sort((x, y) => x.diff - y.diff)[0];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="chevron-left" size={20} color={colors.textSecondary} />
+        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('teamComparison.title')}</Text>
       </View>
@@ -41,71 +77,46 @@ export default function TeamComparisonScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.teamsRow}>
           <View style={styles.teamCol}>
-            <TeamCrest team={teamA} size={38} />
+            <View style={[styles.crest, { backgroundColor: teamA.bg }]}>
+              <Text style={[styles.crestText, { color: teamA.fg }]}>{teamA.code}</Text>
+            </View>
             <Text style={styles.teamName}>{teamA.name}</Text>
           </View>
           <Text style={styles.vs}>{t('common.vs')}</Text>
           <View style={styles.teamCol}>
-            <TeamCrest team={teamB} size={38} />
             <Text style={styles.teamName}>{teamB.name}</Text>
+            <View style={[styles.crest, { backgroundColor: teamB.bg }]}>
+              <Text style={[styles.crestText, { color: teamB.fg }]}>{teamB.code}</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.radarWrap}>
-          <Svg width={240} height={240} viewBox="-18 -14 136 128">
-            <Polygon
-              points={polygonPoints([1, 1, 1, 1, 1, 1])}
-              fill="none"
-              stroke={colors.border}
-              strokeWidth={0.5}
-            />
-            <Polygon
-              points={polygonPoints(valuesA)}
-              fill="rgba(99,102,241,0.22)"
-              stroke="#6366F1"
-              strokeWidth={1.6}
-            />
-            <Polygon
-              points={polygonPoints(valuesB)}
-              fill="rgba(34,197,94,0.16)"
-              stroke={colors.success}
-              strokeWidth={1.6}
-            />
-            {AXIS_KEYS.map((key, i) => {
-              const [x, y] = axisPoint(i, 1.28).split(',').map(Number);
-              const anchor = i === 4 || i === 5 ? 'end' : i === 1 || i === 2 ? 'start' : 'middle';
-              return (
-                <SvgText key={key} x={x} y={y} fontSize={5} fill={colors.textSecondary} textAnchor={anchor}>
-                  {t(`teamComparison.${key}`)}
-                </SvgText>
-              );
-            })}
-          </Svg>
-        </View>
-
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#6366F1' }]} />
-            <Text style={styles.legendText}>{teamA.name}</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-            <Text style={styles.legendText}>{teamB.name}</Text>
+        <View style={styles.radarCard}>
+          <RadarChart axes={axes} />
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+              <Text style={styles.legendText}>{teamA.name}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.neutralSeries }]} />
+              <Text style={styles.legendText}>{teamB.name}</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={[styles.summaryTitle, { color: colors.successText }]}>
-            {t('teamComparison.strength', { team: teamA.name })}
-          </Text>
-          <Text style={styles.summaryText}>{t('teamComparison.sampleStrengthA')}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={[styles.summaryTitle, { color: colors.warningText }]}>
-            {t('teamComparison.strength', { team: teamB.name })}
-          </Text>
-          <Text style={styles.summaryText}>{t('teamComparison.sampleStrengthB')}</Text>
-        </View>
+        {biggestForA && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
+            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForA.label.toLowerCase() })}</Text>
+          </View>
+        )}
+        {biggestForB && (
+          <View style={[styles.summaryCard, { marginBottom: 0 }]}>
+            <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
+            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForB.label.toLowerCase() })}</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,19 +124,22 @@ export default function TeamComparisonScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: 60, alignItems: 'center' },
-  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: spacing.md },
-  teamCol: { alignItems: 'center' },
-  teamName: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textPrimary, marginTop: 5 },
-  vs: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
-  radarWrap: { marginVertical: spacing.sm },
-  legendRow: { flexDirection: 'row', gap: 18, marginBottom: spacing.xl },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 8, height: 8, borderRadius: 2 },
-  legendText: { fontFamily: fonts.body, fontSize: 10.5, color: colors.textSecondary },
-  summaryCard: { width: '100%', backgroundColor: colors.surface, borderRadius: radius.md, padding: 13, marginBottom: spacing.sm },
-  summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, marginBottom: 3 },
-  summaryText: { fontFamily: fonts.body, fontSize: 11, color: colors.textSecondary, lineHeight: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSecondaryAlt },
+  content: { paddingHorizontal: spacing.screenX, paddingBottom: 60 },
+  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, marginTop: 6 },
+  teamCol: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  crest: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  crestText: { fontFamily: fonts.bodyBold, fontSize: 10 },
+  teamName: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  vs: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
+  radarCard: { marginTop: 14, padding: 16, paddingTop: 18, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center' },
+  legendRow: { flexDirection: 'row', gap: 18, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 3 },
+  legendText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
+  summaryCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, marginTop: 12 },
+  summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 5 },
+  summaryText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textTertiary },
 });

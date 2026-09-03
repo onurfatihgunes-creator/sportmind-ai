@@ -1,6 +1,18 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import {
+  ArrowLeftIcon,
+  CaretRightIcon,
+  CodeIcon,
+  CpuIcon,
+  DatabaseIcon,
+  FileIcon,
+  FileTextIcon,
+  HeartIcon,
+  ShieldIcon,
+  WarningCircleIcon,
+} from 'phosphor-react-native';
+import type { Icon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
@@ -8,17 +20,17 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 const PRIVACY_POLICY_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/privacy-policy.html';
 const TERMS_OF_SERVICE_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/terms-of-service.html';
 
-type LegalLink = { icon: keyof typeof Feather.glyphMap; labelKey: string; onPress?: () => void };
+type LegalLink = { Icon: Icon; labelKey: string; onPress?: () => void };
 
 const links: LegalLink[] = [
-  { icon: 'file-text', labelKey: 'privacyPolicy', onPress: () => Linking.openURL(PRIVACY_POLICY_URL) },
-  { icon: 'file', labelKey: 'termsOfService', onPress: () => Linking.openURL(TERMS_OF_SERVICE_URL) },
-  { icon: 'alert-circle', labelKey: 'disclaimer' },
-  { icon: 'shield', labelKey: 'responsibleAI' },
-  { icon: 'heart', labelKey: 'responsibleUse' },
-  { icon: 'cpu', labelKey: 'methodology', onPress: () => router.push('/legal/methodology') },
-  { icon: 'code', labelKey: 'licences' },
-  { icon: 'database', labelKey: 'dataSources' },
+  { Icon: FileTextIcon, labelKey: 'privacyPolicy', onPress: () => Linking.openURL(PRIVACY_POLICY_URL) },
+  { Icon: FileIcon, labelKey: 'termsOfService', onPress: () => Linking.openURL(TERMS_OF_SERVICE_URL) },
+  { Icon: WarningCircleIcon, labelKey: 'disclaimer' },
+  { Icon: ShieldIcon, labelKey: 'responsibleAI' },
+  { Icon: HeartIcon, labelKey: 'responsibleUse' },
+  { Icon: CpuIcon, labelKey: 'methodology', onPress: () => router.push('/legal/methodology') },
+  { Icon: CodeIcon, labelKey: 'licences' },
+  { Icon: DatabaseIcon, labelKey: 'dataSources' },
 ];
 
 export default function LegalHubScreen() {
@@ -27,8 +39,8 @@ export default function LegalHubScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="chevron-left" size={20} color={colors.textSecondary} />
+        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('legal.title')}</Text>
       </View>
@@ -41,11 +53,9 @@ export default function LegalHubScreen() {
               onPress={link.onPress ?? (() => {})}
               style={[styles.row, index < links.length - 1 && styles.rowBorder]}
             >
-              <View style={styles.rowLeft}>
-                <Feather name={link.icon} size={15} color={colors.textSecondary} />
-                <Text style={styles.label}>{t(`legal.${link.labelKey}`)}</Text>
-              </View>
-              <Feather name="chevron-right" size={14} color={colors.textFaint} />
+              <link.Icon size={17} color={colors.primary} />
+              <Text style={styles.label}>{t(`legal.${link.labelKey}`)}</Text>
+              <CaretRightIcon size={13} weight="bold" color={colors.textFaintest} />
             </Pressable>
           ))}
         </View>
@@ -56,12 +66,12 @@ export default function LegalHubScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  headerTitle: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
-  group: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  label: { fontFamily: fonts.body, fontSize: 12.5, color: '#E5E7EB' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
+  content: { paddingHorizontal: spacing.screenX, paddingTop: 10, paddingBottom: 60 },
+  group: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 52 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },
+  label: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
 });

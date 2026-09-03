@@ -11,16 +11,16 @@ export type Team = {
 };
 
 export const teams: Record<string, Team> = {
-  arsenal: { id: 'arsenal', name: 'Arsenal', code: 'ARS', bg: '#7F1D1D', fg: '#FEE2E2', form: ['W', 'W', 'D', 'W', 'W'], sport: 'football' },
-  liverpool: { id: 'liverpool', name: 'Liverpool', code: 'LIV', bg: '#7F1D1D', fg: '#FCA5A5', form: ['W', 'W', 'W', 'D', 'W'], sport: 'football' },
-  mancity: { id: 'mancity', name: 'Man City', code: 'MCI', bg: '#0C4A6E', fg: '#7DD3FC', form: ['D', 'W', 'L', 'W', 'D'], sport: 'football' },
-  realmadrid: { id: 'realmadrid', name: 'Real Madrid', code: 'RMA', bg: '#7C2D12', fg: '#FDBA74', form: ['W', 'D', 'W', 'W', 'L'], sport: 'football' },
-  barcelona: { id: 'barcelona', name: 'Barcelona', code: 'BAR', bg: '#4C1D95', fg: '#C4B5FD', form: ['W', 'L', 'W', 'D', 'W'], sport: 'football' },
-  chelsea: { id: 'chelsea', name: 'Chelsea', code: 'CHE', bg: '#1E3A8A', fg: '#BFDBFE', form: ['D', 'D', 'W', 'L', 'W'], sport: 'football' },
-  lakers: { id: 'lakers', name: 'Lakers', code: 'LAL', bg: '#4C1D95', fg: '#FDE047', form: ['W', 'W', 'L', 'W', 'W'], sport: 'basketball' },
-  celtics: { id: 'celtics', name: 'Celtics', code: 'BOS', bg: '#14532D', fg: '#BBF7D0', form: ['W', 'L', 'W', 'W', 'W'], sport: 'basketball' },
-  warriors: { id: 'warriors', name: 'Warriors', code: 'GSW', bg: '#1E3A8A', fg: '#FDE68A', form: ['L', 'W', 'W', 'L', 'W'], sport: 'basketball' },
-  nuggets: { id: 'nuggets', name: 'Nuggets', code: 'DEN', bg: '#7C2D12', fg: '#FDBA74', form: ['W', 'W', 'W', 'L', 'W'], sport: 'basketball' },
+  arsenal: { id: 'arsenal', name: 'Arsenal', code: 'ARS', bg: '#f2e2e2', fg: '#7d3535', form: ['W', 'W', 'D', 'W', 'W'], sport: 'football' },
+  liverpool: { id: 'liverpool', name: 'Liverpool', code: 'LIV', bg: '#f2e2e2', fg: '#7d3535', form: ['W', 'W', 'W', 'D', 'W'], sport: 'football' },
+  mancity: { id: 'mancity', name: 'Man City', code: 'MCI', bg: '#dbe6f2', fg: '#2f4f72', form: ['D', 'W', 'L', 'W', 'D'], sport: 'football' },
+  realmadrid: { id: 'realmadrid', name: 'Real Madrid', code: 'RMA', bg: '#f3e8da', fg: '#7d5320', form: ['W', 'D', 'W', 'W', 'L'], sport: 'football' },
+  barcelona: { id: 'barcelona', name: 'Barcelona', code: 'BAR', bg: '#e5e3f4', fg: '#4b4180', form: ['W', 'L', 'W', 'D', 'W'], sport: 'football' },
+  chelsea: { id: 'chelsea', name: 'Chelsea', code: 'CHE', bg: '#e0e9f5', fg: '#2b4a75', form: ['D', 'D', 'W', 'L', 'W'], sport: 'football' },
+  lakers: { id: 'lakers', name: 'Lakers', code: 'LAL', bg: '#e5e3f4', fg: '#4b4180', form: ['W', 'W', 'L', 'W', 'W'], sport: 'basketball' },
+  celtics: { id: 'celtics', name: 'Celtics', code: 'BOS', bg: '#e6efe8', fg: '#2f6340', form: ['W', 'L', 'W', 'W', 'W'], sport: 'basketball' },
+  warriors: { id: 'warriors', name: 'Warriors', code: 'GSW', bg: '#e0e9f5', fg: '#2b4a75', form: ['L', 'W', 'W', 'L', 'W'], sport: 'basketball' },
+  nuggets: { id: 'nuggets', name: 'Nuggets', code: 'DEN', bg: '#f3e8da', fg: '#7d5320', form: ['W', 'W', 'W', 'L', 'W'], sport: 'basketball' },
 };
 
 export type Outcomes = { home: number; draw: number; away: number };
@@ -158,9 +158,12 @@ export function favouredOutcome(match: Match): { label: 'home' | 'draw' | 'away'
   return { label: 'draw', team: null, probability: draw };
 }
 
-/** `key` maps to a translation in i18n/locales/*.json under "changeEvents". */
+/** `key` maps to a translation in i18n/locales/*.json under "changeEvents". `matchId`
+ * links the event back to the match it affects, so a per-match view (Match Analysis'
+ * "Değişim" tab) can filter to just that match's history. */
 export type ChangeEvent = {
   id: string;
+  matchId: string;
   timestamp: string;
   key: string;
   from: number;
@@ -169,9 +172,9 @@ export type ChangeEvent = {
 };
 
 export const changeEvents: ChangeEvent[] = [
-  { id: '1', timestamp: 'Today, 09:10', key: 'weatherUpdated', from: 79, to: 82, tone: 'success' },
-  { id: '2', timestamp: 'Yesterday, 18:40', key: 'lineupUpdated', from: 82, to: 79, tone: 'warning' },
-  { id: '3', timestamp: 'Yesterday, 14:20', key: 'goalkeeperRuledOut', from: 74, to: 82, tone: 'danger' },
+  { id: '1', matchId: 'ars-mci', timestamp: 'Today, 09:10', key: 'weatherUpdated', from: 79, to: 82, tone: 'success' },
+  { id: '2', matchId: 'rma-bar', timestamp: 'Yesterday, 18:40', key: 'lineupUpdated', from: 82, to: 79, tone: 'warning' },
+  { id: '3', matchId: 'ars-liv', timestamp: 'Yesterday, 14:20', key: 'goalkeeperRuledOut', from: 74, to: 82, tone: 'danger' },
 ];
 
 /** `key` maps to a translation in i18n/locales/*.json under "homeInsights". */
@@ -188,3 +191,24 @@ export const insights: Insight[] = [
   { id: '2', key: 'sample2', confidence: 74 },
   { id: '3', key: 'sample3', confidence: 39 },
 ];
+
+/** One finished match where the model's pre-match favourite matched the actual
+ * result — used on Home to build trust by showing real track record instead of
+ * generic "latest insights" copy. `predictedTeam` is null when the model called
+ * a draw and the match was in fact a draw. Only ever built from real finished
+ * matches with a stored score and a stored pre-match prediction — never
+ * fabricated, so this list is empty until real hits exist. */
+export type TrackRecordEntry = {
+  id: string;
+  home: string;
+  away: string;
+  competition: string;
+  homeScore: number;
+  awayScore: number;
+  predictedTeam: string | null;
+  predictedPct: number;
+};
+
+/** No mock track record — mock matches are all upcoming/unplayed, so there is
+ * honestly nothing to report here yet. Only live data populates this list. */
+export const trackRecord: TrackRecordEntry[] = [];

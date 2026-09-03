@@ -14,7 +14,24 @@ export const env = {
   balldontlieApiKey: process.env.BALLDONTLIE_API_KEY,
   // Optional — Turkish Süper Lig sync is skipped (not a hard failure) until this is set.
   rapidApiFootballKey: process.env.RAPIDAPI_FOOTBALL_KEY,
+  // Optional — BSD enrichment (lineups/stats/injuries/player-stats) is skipped until this is set.
+  bsdApiToken: process.env.BSD_API_TOKEN,
 };
+
+/** BSD (Bzzoiro Sports Data) is an enrichment source, not a fixture source, for these
+ * leagues — football-data.org/RapidAPI already own fixture ingestion for them, so BSD
+ * only attaches lineups/stats/incidents/player-stats/h2h to the matches that source
+ * already created (matched by team names + kickoff date), never a new `matches` row.
+ * See backend/src/bsdFootball.ts. Name/country must match BSD's /api/v2/leagues/ listing. */
+export const BSD_TIER1_LEAGUES = [
+  { name: 'Premier League', country: 'England' },
+  { name: 'La Liga', country: 'Spain' },
+  { name: 'Serie A', country: 'Italy' },
+  { name: 'Bundesliga', country: 'Germany' },
+  { name: 'Ligue 1', country: 'France' },
+  { name: 'Süper Lig', country: 'Turkey' },
+  { name: 'Champions League', country: 'World' },
+] as const;
 
 /** football-data.org competition codes for the confirmed MVP scope: top-5 leagues + UCL. */
 export const COMPETITIONS = [

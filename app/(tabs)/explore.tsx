@@ -1,35 +1,48 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { BookmarkSimpleIcon, MagnifyingGlassIcon, SortDescendingIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, teams } from '@/data/mockData';
+import { favouredOutcome } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
-import TeamCrest from '@/components/TeamCrest';
-import ConfidenceRing from '@/components/ConfidenceRing';
+import SegmentedControl from '@/components/SegmentedControl';
+import TeamBadgePair from '@/components/TeamBadgePair';
 
-const trending = [teams.arsenal, teams.liverpool, teams.barcelona];
+function dayBucket(kickoff: string): 'today' | 'tomorrow' | 'later' {
+  if (kickoff.startsWith('Today')) return 'today';
+  if (kickoff.startsWith('Tomorrow')) return 'tomorrow';
+  return 'later';
+}
 
 export default function ExploreScreen() {
   const { t } = useTranslation();
+  const params = useLocalSearchParams<{ league?: string }>();
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
-  const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+  const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
   const [sortAsc, setSortAsc] = useState(false);
 
+  // Home links here with a `league` param (e.g. from its league chips) — re-apply it
+  // whenever it changes, since expo-router reuses this screen's instance across tab visits.
+  useEffect(() => {
+    if (params.league) setSelectedLeague(params.league);
+  }, [params.league]);
+
   const competitions = useMemo(() => Array.from(new Set(matches.map((m) => m.competition))), [matches]);
+  const leagueOptions = useMemo(
+    () => [{ key: 'all', label: t('explore.allLeagues') }, ...competitions.map((c) => ({ key: c, label: c }))],
+    [competitions, t],
+  );
 
   const filteredMatches = useMemo(() => {
     const query = search.trim().toLowerCase();
     return matches
       .filter((m) => {
-        if (selectedLeague && m.competition !== selectedLeague) return false;
+        if (selectedLeague !== 'all' && m.competition !== selectedLeague) return false;
         if (!query) return true;
         return (
           m.home.name.toLowerCase().includes(query) ||
@@ -44,206 +57,130 @@ export default function ExploreScreen() {
       );
   }, [matches, search, selectedLeague, sortAsc]);
 
-  const toggleMatch = (id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
-  };
-
-  const exitSelectMode = () => {
-    setSelectMode(false);
-    setSelected([]);
-  };
+  const grouped = useMemo(() => {
+    const buckets: Record<'today' | 'tomorrow' | 'later', typeof filteredMatches> = { today: [], tomorrow: [], later: [] };
+    filteredMatches.forEach((m) => buckets[dayBucket(m.kickoff)].push(m));
+    return buckets;
+  }, [filteredMatches]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={[styles.content, selectMode && { paddingBottom: 140 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{t('explore.title')}</Text>
-          <Pressable onPress={() => (selectMode ? exitSelectMode() : setSelectMode(true))}>
-            <Text style={styles.selectToggle}>{selectMode ? t('common.cancel') : t('explore.selectMatches')}</Text>
-          </Pressable>
-        </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>{t('explore.title')}</Text>
 
         <View style={styles.searchBar}>
-          <Feather name="search" size={14} color={colors.textMuted} />
+          <MagnifyingGlassIcon size={16} color={colors.textFainter} />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
             placeholder={t('explore.searchPlaceholder')}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.textFainter}
           />
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ gap: 8 }}>
-          <Pressable
-            style={[styles.filterChip, selectedLeague === null && styles.filterChipActive]}
-            onPress={() => setSelectedLeague(null)}
-          >
-            <Text style={selectedLeague === null ? styles.filterChipTextActive : styles.filterChipText}>
-              {t('explore.allLeagues')}
-            </Text>
-          </Pressable>
-          {competitions.map((league) => (
-            <Pressable
-              key={league}
-              style={[styles.filterChip, selectedLeague === league && styles.filterChipActive]}
-              onPress={() => setSelectedLeague(league)}
-            >
-              <Text style={selectedLeague === league ? styles.filterChipTextActive : styles.filterChipText}>
-                {league}
-              </Text>
-            </Pressable>
-          ))}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+          <SegmentedControl options={leagueOptions} value={selectedLeague} onChange={setSelectedLeague} height={34} fontSize={11} />
         </ScrollView>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>{t('explore.matches')}</Text>
-          <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
-            <Feather name={sortAsc ? 'arrow-up' : 'arrow-down'} size={11} color={colors.primaryLight} />
-            <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
-          </Pressable>
-        </View>
         {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
-        {filteredMatches.map((m) => {
-          const isSelected = selected.includes(m.id);
-          return (
-            <Pressable
-              key={m.id}
-              style={styles.matchRow}
-              onPress={() => (selectMode ? toggleMatch(m.id) : router.push(`/match/${m.id}`))}
-            >
-              {selectMode && (
-                <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-                  {isSelected && <Feather name="check" size={11} color="#fff" />}
-                </View>
-              )}
-              <View style={styles.matchCrests}>
-                <TeamCrest team={m.home} size={28} />
-                <TeamCrest team={m.away} size={28} overlap />
-              </View>
-              <View style={styles.matchInfo}>
-                <Text style={styles.matchTitle}>
-                  {m.home.name} {t('common.vs')} {m.away.name}
-                </Text>
-                <Text style={styles.matchSubtitle}>
-                  {m.kickoff} · {m.competition}
-                </Text>
-              </View>
-              {!selectMode && (
-                <Pressable hitSlop={10} onPress={() => toggleWatch(m.id)}>
-                  <Feather name="bookmark" size={16} color={isWatched(m.id) ? colors.primaryLight : colors.textFaint} />
-                </Pressable>
-              )}
-              <ConfidenceRing value={favouredOutcome(m).probability} size={30} strokeWidth={3.5} />
-            </Pressable>
-          );
-        })}
 
-        <Text style={styles.sectionLabel}>{t('explore.trending')}</Text>
-        <View style={styles.trendingRow}>
-          {trending.map((team) => (
-            <View key={team.id} style={styles.trendingItem}>
-              <TeamCrest team={team} size={40} />
-              <Text style={styles.trendingName}>{team.name}</Text>
+        {(['today', 'tomorrow', 'later'] as const).map((bucket) =>
+          grouped[bucket].length === 0 ? null : (
+            <View key={bucket}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.kicker}>{t(`explore.${bucket}`)}</Text>
+                {bucket === 'today' && (
+                  <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
+                    <SortDescendingIcon size={13} weight="bold" color={colors.primary} />
+                    <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+                  </Pressable>
+                )}
+              </View>
+              <View style={styles.matchList}>
+                {grouped[bucket].map((m, index) => {
+                  const favourite = favouredOutcome(m);
+                  const watched = isWatched(m.id);
+                  return (
+                    <Pressable
+                      key={m.id}
+                      style={[styles.matchRow, bucket === 'today' && index === 0 && styles.matchRowFeatured]}
+                      onPress={() => router.push(`/match/${m.id}`)}
+                    >
+                      <TeamBadgePair home={m.home} away={m.away} />
+                      <View style={styles.matchInfo}>
+                        <Text style={styles.matchTitle}>
+                          {m.home.name} — {m.away.name}
+                        </Text>
+                        <Text style={styles.matchSubtitle}>
+                          {m.kickoff.replace(/^(Today|Tomorrow),\s*/, '')} · {m.competition}
+                        </Text>
+                      </View>
+                      <View style={[styles.pctChip, { backgroundColor: colors.divider }, favourite.probability >= 55 && { backgroundColor: colors.primaryTintStrong }]}>
+                        <Text style={[styles.pctChipText, { color: colors.textSecondaryAlt }, favourite.probability >= 55 && { color: colors.primaryText }]}>
+                          {favourite.probability}%
+                        </Text>
+                      </View>
+                      <Pressable
+                        hitSlop={10}
+                        style={styles.favButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleWatch(m.id);
+                        }}
+                      >
+                        <BookmarkSimpleIcon size={17} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFainter} />
+                      </Pressable>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          ))}
-        </View>
+          ),
+        )}
       </ScrollView>
-
-      {selectMode && selected.length > 0 && (
-        <View style={styles.selectionBar}>
-          <Pressable
-            style={styles.selectionCta}
-            onPress={() => {
-              router.push({ pathname: '/batch-analysis', params: { ids: selected.join(',') } });
-              exitSelectMode();
-            }}
-          >
-            <Text style={styles.selectionCtaText}>{t('explore.analyseMatches', { count: selected.length })}</Text>
-          </Pressable>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: 120 },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
-  title: { fontFamily: fonts.headline, fontSize: 22, color: colors.textPrimary },
-  selectToggle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.primaryLight },
+  content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
+  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 14 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: spacing.md,
   },
-  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 12.5, color: colors.textPrimary, padding: 0 },
-  filterRow: { marginBottom: spacing.xl },
-  emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, marginBottom: spacing.md },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, backgroundColor: colors.surface },
-  filterChipActive: { backgroundColor: colors.primaryMuted },
-  filterChipText: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textSecondary },
-  filterChipTextActive: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.primaryLight },
-  sectionLabel: {
-    fontFamily: fonts.headline,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: spacing.md,
-  },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sortToggle: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md },
-  sortToggleText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLight },
+  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary, padding: 0 },
+  filterRow: { marginTop: 14, marginBottom: 16 },
+  emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 9 },
+  kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
+  sortToggle: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 9, backgroundColor: colors.surface },
+  sortToggleText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textSecondaryAlt },
+  matchList: { gap: 8, marginBottom: 12 },
   matchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 13,
-    marginBottom: spacing.sm,
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: colors.textFaint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-  matchCrests: { flexDirection: 'row', alignItems: 'center' },
-  matchInfo: { flex: 1 },
-  matchTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.textPrimary },
-  matchSubtitle: { fontFamily: fonts.body, fontSize: 9.5, color: colors.textMuted, marginTop: 2 },
-  trendingRow: { flexDirection: 'row', gap: 14, marginBottom: spacing.xl },
-  trendingItem: { alignItems: 'center', width: 64 },
-  trendingName: { fontFamily: fonts.body, fontSize: 10, color: colors.textSecondary, marginTop: 6, textAlign: 'center' },
-  selectionBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 84,
-    paddingHorizontal: spacing.xl,
-  },
-  selectionCta: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  selectionCtaText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: '#fff' },
+  matchRowFeatured: { backgroundColor: colors.surfaceSelected, borderColor: colors.borderAccent },
+  matchInfo: { flex: 1, minWidth: 0 },
+  matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 3 },
+  matchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
+  pctChip: { borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 },
+  pctChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10 },
+  favButton: { width: 38, height: 38, marginVertical: -8, marginRight: -8, alignItems: 'center', justifyContent: 'center', borderRadius: 11 },
 });

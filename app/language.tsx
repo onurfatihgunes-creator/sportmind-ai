@@ -1,6 +1,6 @@
 import { Alert, I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { ArrowLeftIcon, CheckIcon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
@@ -28,8 +28,8 @@ export default function LanguageScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="chevron-left" size={20} color={colors.textSecondary} />
+        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('language.title')}</Text>
       </View>
@@ -43,7 +43,7 @@ export default function LanguageScreen() {
               style={[styles.row, index < SUPPORTED_LANGUAGES.length - 1 && styles.rowBorder]}
             >
               <Text style={styles.label}>{t(`language.${language}`)}</Text>
-              {i18n.language === language && <Feather name="check" size={16} color={colors.primaryLight} />}
+              {i18n.language === language && <CheckIcon size={16} weight="bold" color={colors.primary} />}
             </Pressable>
           ))}
         </View>
@@ -54,11 +54,12 @@ export default function LanguageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  headerTitle: { fontFamily: fonts.headline, fontSize: 14, color: colors.textPrimary },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
-  group: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 14 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  label: { fontFamily: fonts.body, fontSize: 13, color: '#E5E7EB' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
+  content: { paddingHorizontal: spacing.screenX, paddingTop: 10, paddingBottom: 60 },
+  group: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, minHeight: 52 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },
+  label: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
 });
