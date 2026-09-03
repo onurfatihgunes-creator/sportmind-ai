@@ -22,15 +22,22 @@ export const env = {
  * leagues — football-data.org/RapidAPI already own fixture ingestion for them, so BSD
  * only attaches lineups/stats/incidents/player-stats/h2h to the matches that source
  * already created (matched by team names + kickoff date), never a new `matches` row.
- * See backend/src/bsdFootball.ts. Name/country must match BSD's /api/v2/leagues/ listing. */
+ * See backend/src/bsdFootball.ts.
+ *
+ * `bsdName`/`bsdCountry` must match BSD's own `/api/v2/leagues/` listing exactly —
+ * confirmed live (not guessed): BSD names Süper Lig "Trendyol Super Lig" (a sponsor
+ * name, not "Süper Lig"), and files Champions League under country "Europe", not
+ * "World". `competition` is SportMind's OWN `matches.competition` string (from
+ * config.ts's COMPETITIONS / fetchTurkishFixtures.ts's hardcoded 'Süper Lig') — the
+ * two names are deliberately kept separate since the two systems don't agree on them. */
 export const BSD_TIER1_LEAGUES = [
-  { name: 'Premier League', country: 'England' },
-  { name: 'La Liga', country: 'Spain' },
-  { name: 'Serie A', country: 'Italy' },
-  { name: 'Bundesliga', country: 'Germany' },
-  { name: 'Ligue 1', country: 'France' },
-  { name: 'Süper Lig', country: 'Turkey' },
-  { name: 'Champions League', country: 'World' },
+  { bsdName: 'Premier League', bsdCountry: 'England', competition: 'Premier League' },
+  { bsdName: 'La Liga', bsdCountry: 'Spain', competition: 'La Liga' },
+  { bsdName: 'Serie A', bsdCountry: 'Italy', competition: 'Serie A' },
+  { bsdName: 'Bundesliga', bsdCountry: 'Germany', competition: 'Bundesliga' },
+  { bsdName: 'Ligue 1', bsdCountry: 'France', competition: 'Ligue 1' },
+  { bsdName: 'Trendyol Super Lig', bsdCountry: 'Turkey', competition: 'Süper Lig' },
+  { bsdName: 'Champions League', bsdCountry: 'Europe', competition: 'Champions League' },
 ] as const;
 
 /** football-data.org competition codes for the confirmed MVP scope: top-5 leagues + UCL. */

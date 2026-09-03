@@ -4,6 +4,7 @@ import { computePredictions } from './computePredictions.js';
 import { fetchBasketballFixtures } from './fetchBasketballFixtures.js';
 import { computeBasketballPredictions } from './computeBasketballPredictions.js';
 import { fetchTurkishFixtures } from './fetchTurkishFixtures.js';
+import { enrichWithBsd } from './bsdEnrichment.js';
 
 async function main() {
   await fetchFixtures();
@@ -21,6 +22,18 @@ async function main() {
   }
 
   await computePredictions();
+
+  if (env.bsdApiToken) {
+    // Enrichment only — never fails the run. A BSD outage must never affect
+    // the fixture/prediction pipeline that already succeeded above.
+    try {
+      await enrichWithBsd();
+    } catch (error) {
+      console.error('BSD enrichment failed, continuing:', error);
+    }
+  } else {
+    console.log('Skipping BSD enrichment — BSD_API_TOKEN not set.');
+  }
 
   if (env.balldontlieApiKey) {
     // balldontlie.io throws on any non-2xx response (auth/rate-limit/quota) with no

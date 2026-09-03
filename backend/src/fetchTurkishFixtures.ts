@@ -1,15 +1,17 @@
 import { ACTIVE_WINDOW_DAYS, FORM_LOOKBACK_DAYS } from './config.js';
 import { getLeagueMatches, SUPER_LIG_ID, type RflMatch } from './rapidApiFootball.js';
 import { supabase } from './supabaseClient.js';
+import { resolveTeamId } from './teamIdentity.js';
 
-// Prefixed to keep this provider's ids from colliding with football-data.org's and
-// balldontlie's ids in the shared teams/matches tables.
-const teamId = (id: string) => `ffld-${id}`;
+// Prefixed to keep this provider's raw ids from colliding with football-data.org's and
+// balldontlie's ids — the fallback id when resolveTeamId finds no existing cross-provider
+// match by name (see teamIdentity.ts).
+const rawTeamId = (id: string) => `ffld-${id}`;
 const matchId = (id: string) => `ffld-${id}`;
 
-async function upsertTeam(team: { id: string; name: string }) {
+async function upsertTeam(id: string, team: { name: string }) {
   const { error } = await supabase.from('teams').upsert({
-    id: teamId(team.id),
+    id,
     name: team.name,
     short_code: team.name.slice(0, 3).toUpperCase(),
     sport: 'football',
@@ -24,13 +26,13 @@ function statusOf(match: RflMatch) {
   return 'scheduled';
 }
 
-async function upsertMatch(match: RflMatch) {
+async function upsertMatch(match: RflMatch, homeId: string, awayId: string) {
   const { error } = await supabase.from('matches').upsert({
     id: matchId(match.id),
     competition: 'Süper Lig',
     sport: 'football',
-    home_team_id: teamId(match.home.id),
-    away_team_id: teamId(match.away.id),
+    home_team_id: homeId,
+    away_team_id: awayId,
     kickoff_at: match.status.utcTime,
     status: statusOf(match),
     home_score: match.home.score,
@@ -40,7 +42,7 @@ async function upsertMatch(match: RflMatch) {
   if (error) throw error;
 }
 
-async function recordFormIfFinished(match: RflMatch) {
+async function recordFormIfFinished(match: RflMatch, homeId: string, awayId: string) {
   if (!match.status.finished) return;
   const home = match.home.score;
   const away = match.away.score;
@@ -48,14 +50,14 @@ async function recordFormIfFinished(match: RflMatch) {
   const matchDate = match.status.utcTime.slice(0, 10);
   const rows = [
     {
-      team_id: teamId(match.home.id),
+      team_id: homeId,
       match_date: matchDate,
       result: home > away ? 'W' : home === away ? 'D' : 'L',
       goals_for: home,
       goals_against: away,
     },
     {
-      team_id: teamId(match.away.id),
+      team_id: awayId,
       match_date: matchDate,
       result: away > home ? 'W' : home === away ? 'D' : 'L',
       goals_for: away,
@@ -88,10 +90,12 @@ export async function fetchTurkishFixtures() {
   });
 
   for (const match of matches) {
-    await upsertTeam(match.home);
-    await upsertTeam(match.away);
-    await upsertMatch(match);
-    await recordFormIfFinished(match);
+    const homeId = await resolveTeamId('football', rawTeamId(match.home.id), match.home.name);
+    const awayId = await resolveTeamId('football', rawTeamId(match.away.id), match.away.name);
+    await upsertTeam(homeId, match.home);
+    await upsertTeam(awayId, match.away);
+    await upsertMatch(match, homeId, awayId);
+    await recordFormIfFinished(match, homeId, awayId);
   }
 
   console.log(`  ${matches.length} Süper Lig fixtures synced`);

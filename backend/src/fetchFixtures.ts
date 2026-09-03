@@ -1,31 +1,33 @@
 import { ACTIVE_WINDOW_DAYS, COMPETITIONS, FORM_LOOKBACK_DAYS } from './config.js';
 import { getCompetitionMatches, sleep, type FdMatch, type FdTeam } from './footballData.js';
 import { supabase } from './supabaseClient.js';
+import { resolveTeamId } from './teamIdentity.js';
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
-async function upsertTeam(team: FdTeam) {
+async function upsertTeam(id: string, team: FdTeam) {
   const { error } = await supabase.from('teams').upsert({
-    id: String(team.id),
+    id,
     name: team.name,
     short_code: team.tla,
     crest_url: team.crest,
+    sport: 'football',
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
 }
 
-async function upsertMatch(match: FdMatch, competitionName: string) {
+async function upsertMatch(match: FdMatch, competitionName: string, homeId: string, awayId: string) {
   const status =
     match.status === 'FINISHED' ? 'finished' : match.status === 'POSTPONED' ? 'postponed' : 'scheduled';
 
   const { error } = await supabase.from('matches').upsert({
     id: String(match.id),
     competition: competitionName,
-    home_team_id: String(match.homeTeam.id),
-    away_team_id: String(match.awayTeam.id),
+    home_team_id: homeId,
+    away_team_id: awayId,
     kickoff_at: match.utcDate,
     status,
     home_score: match.score.fullTime.home,
@@ -35,7 +37,7 @@ async function upsertMatch(match: FdMatch, competitionName: string) {
   if (error) throw error;
 }
 
-async function recordFormIfFinished(match: FdMatch) {
+async function recordFormIfFinished(match: FdMatch, homeId: string, awayId: string) {
   if (match.status !== 'FINISHED') return;
   const { home, away } = match.score.fullTime;
   if (home === null || away === null) return;
@@ -43,14 +45,14 @@ async function recordFormIfFinished(match: FdMatch) {
   const matchDate = match.utcDate.slice(0, 10);
   const rows = [
     {
-      team_id: String(match.homeTeam.id),
+      team_id: homeId,
       match_date: matchDate,
       result: home > away ? 'W' : home === away ? 'D' : 'L',
       goals_for: home,
       goals_against: away,
     },
     {
-      team_id: String(match.awayTeam.id),
+      team_id: awayId,
       match_date: matchDate,
       result: away > home ? 'W' : home === away ? 'D' : 'L',
       goals_for: away,
@@ -79,10 +81,12 @@ export async function fetchFixtures() {
     const matches = await getCompetitionMatches(competition.code, isoDate(formStart), isoDate(windowEnd));
 
     for (const match of matches) {
-      await upsertTeam(match.homeTeam);
-      await upsertTeam(match.awayTeam);
-      await upsertMatch(match, competition.name);
-      await recordFormIfFinished(match);
+      const homeId = await resolveTeamId('football', String(match.homeTeam.id), match.homeTeam.name);
+      const awayId = await resolveTeamId('football', String(match.awayTeam.id), match.awayTeam.name);
+      await upsertTeam(homeId, match.homeTeam);
+      await upsertTeam(awayId, match.awayTeam);
+      await upsertMatch(match, competition.name, homeId, awayId);
+      await recordFormIfFinished(match, homeId, awayId);
     }
 
     console.log(`  ${matches.length} matches synced`);

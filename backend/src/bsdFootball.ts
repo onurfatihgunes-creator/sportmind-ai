@@ -63,8 +63,13 @@ export async function getLeagues(): Promise<BsdLeague[]> {
   return data.results;
 }
 
+/** Confirmed live (not per the OpenAPI component schema, which only describes the
+ * season fields, not this endpoint's actual envelope): the real response is
+ * `{ league_id, season }`, not the bare season object. `season` is null when none
+ * is marked current for this league. */
 export async function getCurrentSeason(leagueId: number): Promise<BsdSeason | null> {
-  return bsdGet<BsdSeason | null>(`/leagues/${leagueId}/season/`);
+  const data = await bsdGet<{ league_id: number; season: BsdSeason | null }>(`/leagues/${leagueId}/season/`);
+  return data.season;
 }
 
 export async function getEvents(params: {
@@ -132,11 +137,15 @@ export async function getEventLineups(eventId: number): Promise<BsdLineups> {
   return bsdGet<BsdLineups>(`/events/${eventId}/lineups/`);
 }
 
-/** Field shape is not published in BSD's OpenAPI schema (dynamic/unserialized view) —
- * treat as an opaque bag and only read keys after confirming them against a real response.
- * Do not assume any field below exists; the app must never fabricate a stat that isn't here. */
+/** Field shape *inside* `stats` is not published in BSD's OpenAPI schema
+ * (dynamic/unserialized view) — treat its contents as an opaque bag and only
+ * read keys after confirming them against a real response; never fabricate a
+ * stat that isn't there. The outer envelope IS confirmed live, though:
+ * `{ event_id, stats: {...} }` — unwrapped here so callers get the payload,
+ * not a redundant copy of the id they already have. */
 export async function getEventStats(eventId: number): Promise<Record<string, unknown>> {
-  return bsdGet<Record<string, unknown>>(`/events/${eventId}/stats/`);
+  const data = await bsdGet<{ event_id: number; stats: Record<string, unknown> }>(`/events/${eventId}/stats/`);
+  return data.stats;
 }
 
 export type BsdIncident = {
@@ -147,12 +156,23 @@ export type BsdIncident = {
   assist?: string | null;
 };
 
+/** Confirmed live: the real envelope is `{ event_id, incidents }`, not a bare array. */
 export async function getEventIncidents(eventId: number): Promise<BsdIncident[]> {
-  return bsdGet<BsdIncident[]>(`/events/${eventId}/incidents/`);
+  const data = await bsdGet<{ event_id: number; incidents: BsdIncident[] }>(`/events/${eventId}/incidents/`);
+  return data.incidents;
 }
 
+/** Confirmed live against a real finished match: a flat row per player, ~80
+ * fields total (touches, duels, carries, keeper stats, etc.) — far richer
+ * than BSD's own OpenAPI component schema describes, and structurally
+ * different from it: there is NO nested `player: {id, name, ...}` object,
+ * only a bare `player_id`/`team_id`. BSD does not ship a player name on this
+ * endpoint at all — resolving one would need a separate `/players/{id}/`
+ * call per player, not made here. Only the fields this app actually reads
+ * are typed; the rest pass through unread rather than being guessed at. */
 export type BsdPlayerStat = {
-  player: { id: number; name: string; position?: string; team?: string };
+  player_id: number;
+  team_id: number;
   minutes_played: number;
   rating: number | null;
   goals: number;
@@ -163,12 +183,63 @@ export type BsdPlayerStat = {
   shots_on_target: number;
 };
 
+/** Confirmed live: the real envelope is `{ event_id, count, player_stats }`,
+ * not the generic `{results}` pagination shape assumed elsewhere in this file
+ * (OpenAPI's component schema doesn't describe this endpoint's own envelope). */
 export async function getEventPlayerStats(eventId: number): Promise<BsdPlayerStat[]> {
-  const data = await bsdGet<BsdPaginated<BsdPlayerStat> | BsdPlayerStat[]>(`/events/${eventId}/player-stats/`);
-  return Array.isArray(data) ? data : data.results;
+  const data = await bsdGet<{ event_id: number; count: number; player_stats: BsdPlayerStat[] }>(
+    `/events/${eventId}/player-stats/`,
+  );
+  return data.player_stats;
 }
 
-/** Returns null-valued fields (not a 404) when BSD has no indexed history for the pair. */
-export async function getEventH2H(eventId: number): Promise<Record<string, unknown>> {
-  return bsdGet<Record<string, unknown>>(`/events/${eventId}/h2h/`);
+export type BsdH2HRecentMatch = {
+  event_id: number;
+  date: string;
+  home: string;
+  away: string;
+  home_team_id: number;
+  away_team_id: number;
+  home_score: number;
+  away_score: number;
+  score: string;
+};
+
+/** Confirmed live (2026-09-03, Arsenal vs Chelsea/Everton vs Man Utd/Hull vs Aston
+ * Villa) — a stable typed shape, not the generic opaque bag match_stats_raw's endpoint
+ * returns. `total_matches: 0` (not a 404) is BSD's own way of saying it has no indexed
+ * history for the pair — treat that as "no data", never as a 0-0 record. */
+export type BsdH2H = {
+  total_matches: number;
+  home_wins: number;
+  draws: number;
+  away_wins: number;
+  home_goals: number;
+  away_goals: number;
+  avg_total_goals: number;
+  home_win_rate: number;
+  away_win_rate: number;
+  recent_matches: BsdH2HRecentMatch[];
+};
+
+export async function getEventH2H(eventId: number): Promise<BsdH2H> {
+  return bsdGet<BsdH2H>(`/events/${eventId}/h2h/`);
+}
+
+/** Confirmed live (2026-09-03, id=510 -> John McGinn, Aston Villa,
+ * market_value_eur=12600000) — only the fields this app actually reads are typed. Used
+ * to resolve a real name + an objective market value for a numeric player id, e.g. one
+ * seen in player_availability's bsd_player_id or match_player_stats' player_id. Always
+ * cache the result (see bsdEnrichment.ts's resolvePlayerMarketValue) — this is a
+ * per-player detail call, never made in a loop without a cache check first. */
+export type BsdPlayerDetail = {
+  id: number;
+  name: string;
+  position: string | null;
+  current_team_id: number | null;
+  market_value_eur: number | null;
+};
+
+export async function getPlayer(playerId: number): Promise<BsdPlayerDetail> {
+  return bsdGet<BsdPlayerDetail>(`/players/${playerId}/`);
 }
