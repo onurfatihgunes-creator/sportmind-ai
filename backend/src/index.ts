@@ -23,8 +23,15 @@ async function main() {
   await computePredictions();
 
   if (env.balldontlieApiKey) {
-    await fetchBasketballFixtures();
-    await computeBasketballPredictions();
+    // balldontlie.io throws on any non-2xx response (auth/rate-limit/quota) with no
+    // retry — isolated so an NBA-side outage can never take down football ingestion,
+    // which already succeeded above.
+    try {
+      await fetchBasketballFixtures();
+      await computeBasketballPredictions();
+    } catch (error) {
+      console.error('Basketball sync failed, continuing:', error);
+    }
   } else {
     console.log('Skipping basketball sync — BALLDONTLIE_API_KEY not set.');
   }
