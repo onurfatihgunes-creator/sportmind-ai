@@ -18,36 +18,27 @@
     "profile": "Profil"
   },
   "disclaimer": {
-    "full": "Yapay zekâ üretimi istatistiksel analiz. Sonuçlar öngörülemez.",
-    "short": "AI tarafından üretilen analiz. Sonuçlar tahmin edilemez kalmaya devam eder."
+    "full": "Yapay zekâ üretimi istatistiksel analiz. Sonuçlar öngörülemez."
   },
   "welcome": {
     "kicker": "SportMind AI",
-    "title": "Binlerce veriyi, tek bir analize dönüştürür.",
-    "body": "Form, performans ve maç verilerini analiz eder. Sonucu değil, nedenini de gösterir.",
+    "title": "Binlerce spor verisini tek bir akıllı analize dönüştürür.",
+    "body": "Form, performans ve maç verilerini her spor dalında analiz eder — karmaşık verileri anlaşılır içgörülere dönüştürür ve her sonucun arkasındaki gerekçeyi gösterir.",
     "start": "Başla",
-    "skip": "Şimdilik atla"
+    "skip": "Şimdilik atla",
+    "liveAnalysisLabel": "Canlı spor analizi",
+    "dataPointsLabel": "{{countFormatted}} veri noktası",
+    "passAccuracy": "Pas isabeti"
   },
   "home": {
     "goodEvening": "İyi akşamlar",
     "matchOfTheDay": "Günün maçları",
-    "todaysMatches": "Son 6 maç",
     "heroReason": "Model {{team}} takımını öne çıkarıyor: en belirleyici etken {{factor}}.",
-    "leagues": "Ligler",
-    "aiMatchHighlight": "AI maç özeti",
-    "thingsChanged_one": "Gece boyunca 1 şey değişti",
-    "thingsChanged_other": "Gece boyunca {{count}} şey değişti",
-    "lineupsWeatherForm": "Kadrolar, hava durumu ve form dünden bu yana değişti",
-    "latestAiInsights": "Son AI öngörüleri",
-    "trackRecordTitle": "AI'IN TUTAN TAHMİNLERİ",
-    "trackRecordSubtitle": "Model bu maçların sonucunu maç öncesinde doğru öngörmüştü",
-    "trackRecordCalledTeam": "Model %{{pct}} güvenle {{team}}'i doğru bildi",
-    "trackRecordCalledDraw": "Model %{{pct}} güvenle beraberliği doğru bildi",
+    "recentChangeKicker": "Son değişiklik",
+    "recentChangeDetail": "{{change}} — güven %{{from}} → %{{to}}",
     "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
     "goPremium": "Premium'a geç",
-    "liveData": "Canlı veri",
     "demoData": "Örnek veri",
-    "myMatches": "Maçlarım ({{count}})",
     "football": "Futbol",
     "basketball": "Basketbol",
     "tennis": "Tenis",
@@ -72,18 +63,21 @@
   },
   "insights": {
     "title": "AI Öngörüler",
-    "slotsUsed": "Takip ettiğin {{total}} takımdan {{used}} tanesi kullanılıyor",
-    "addTeam": "Takım ekle · {{count}}/{{max}} ücretsiz",
-    "notifyMeAbout": "Şunlar için bildirim al",
+    "followingKicker": "Takip Edilenler",
+    "followingCount": "{{max}} takımdan {{count}} tanesi takip ediliyor",
+    "followingEmptyBody": "Anlamlı değişiklikleri burada görmek için ücretsiz olarak en fazla {{max}} takımı takip edebilirsin.",
+    "addTeamShort": "+ Takım ekle",
+    "recentChangesKicker": "Son değişiklikler",
+    "recentChangesEmpty": "Henüz değişiklik yok. Maçlar başlamaya yaklaştıkça buraya tekrar bakabilirsin.",
+    "compareLink": "{{a}} ve {{b}}'yi karşılaştır",
+    "stableNoChanges": "Sabit · değişiklik yok"
+  },
+  "notifications": {
+    "title": "Bildirimler",
     "confidenceChanges": "Güven değişimleri",
     "confidenceChangesSubtitle": "±3 puan ve üzeri",
     "lineupsPublished": "Kadro açıklandığında",
-    "lineupsPublishedSubtitle": "Maçtan ~1 saat önce",
-    "newAiInsight": "Yeni analiz hazır",
-    "newAiInsightSubtitle": "Günlük özet olarak",
-    "latestAiInsights": "Son AI öngörüleri",
-    "compareLink": "{{a}} ve {{b}}'yi karşılaştır",
-    "stableNoChanges": "Sabit · değişiklik yok"
+    "lineupsPublishedSubtitle": "Maçtan ~1 saat önce"
   },
   "premium": {
     "goDeeper": "Analizin tamamını gör",
@@ -106,6 +100,7 @@
     "namePlaceholder": "Adın",
     "freePlanLimit": "Ücretsiz plan · günde 1 analiz",
     "savedAnalyses": "Kaydedilen maçlar",
+    "notifications": "Bildirimler",
     "howModelWorks": "Model nasıl çalışıyor",
     "legalAndTransparency": "Yasal ve şeffaflık",
     "transparencyNote": "Analizler istatistiksel tahminlerdir; kesinlik iddiası taşımaz. Veri kaynakları ve model yöntemi \"Model nasıl çalışıyor\" bölümünde açıklanır.",
@@ -180,13 +175,6 @@
     "onlyMaterialChanges": "Yalnızca anlamlı değişimler listelenir",
     "empty": "Bu maç için henüz kaydedilen bir değişiklik yok."
   },
-  "homeInsights": {
-    "sample1": "Model artık iç sahada Arsenal'ı favori görüyor",
-    "sample2": "Liverpool'un pres yoğunluğu son 6 maçta %18 arttı",
-    "sample3": "Real Madrid'in beklenen gol ortalaması düşüş trendinde",
-    "liveFavoured": "{{team}} modele göre %{{pct}} ile favori",
-    "liveCloseMatch": "{{home}} - {{away}} modele göre çok yakın (%{{pct}})"
-  },
   "changeEvents": {
     "weatherUpdated": "Hava durumu tahmini güncellendi",
     "lineupUpdated": "Beklenen kadro güncellendi",
@@ -194,7 +182,7 @@
     "recentResultsUpdated": "Son maç sonuçları analizi güncelledi"
   },
   "myMatches": {
-    "title": "Maçlarım",
+    "title": "Kaydedilen maçlar",
     "note": "Her maç bağımsız olarak analiz edilir — bunlar birleşik bir sonuç değil, ayrı analizlerdir.",
     "emptyTitle": "Henüz kaydedilen maç yok",
     "emptyBody": "Herhangi bir maçtaki yer imi ikonuna dokunarak buraya kaydedebilirsin.",
@@ -221,6 +209,11 @@
     "whyChangeBody": "Sakatlık, kadro ve hava durumu gibi yeni veriler modelin çıktısını değiştirebilir. Her önemli değişiklik \"Ne değişti?\" bölümünde kayıt altına alınır.",
     "cannotDoTitle": "AI'mızın yapamadıkları",
     "cannotDoBody": "Sonuçları garanti edemez, kesinlikle tahmin edemez veya bir maçtaki her öngörülemez olayı hesaba katamaz.",
+    "modelPerformanceTitle": "Model performansı",
+    "modelPerformanceBody": "Model bu maçların sonucunu maç öncesinde doğru öngörmüştü.",
+    "modelPerformanceEmpty": "Henüz kontrol edilecek biten maç yok — gerçek sonuçlar geldikçe burası dolacak.",
+    "trackRecordCalledTeam": "Model %{{pct}} güvenle {{team}}'i doğru bildi",
+    "trackRecordCalledDraw": "Model %{{pct}} güvenle beraberliği doğru bildi",
     "version": "Sürüm 1.0 — bu hafta gözden geçirildi"
   },
   "language": {

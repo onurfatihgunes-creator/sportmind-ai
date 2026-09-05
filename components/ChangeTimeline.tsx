@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
-import { ClockCounterClockwiseIcon, type Icon } from 'phosphor-react-native';
+import { TrayIcon, type Icon } from 'phosphor-react-native';
 import { colors, fonts, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
 import type { ChangeEvent } from '@/data/mockData';
 
@@ -13,7 +13,7 @@ export default function ChangeTimeline({ events, ArrowIcon, emptyText }: Props) 
     return (
       <View style={styles.emptyState}>
         <View style={styles.emptyIconCircle}>
-          <ClockCounterClockwiseIcon size={20} weight="bold" color={colors.primary} />
+          <TrayIcon size={20} weight="bold" color={colors.primary} />
         </View>
         <Text style={styles.empty}>{emptyText}</Text>
       </View>

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ChangeEvent, Insight, Match, MatchFactor, Sport, Team, TrackRecordEntry } from './mockData';
+import type { ChangeEvent, Match, MatchFactor, Sport, Team, TrackRecordEntry } from './mockData';
 
 const PALETTE = [
   { bg: '#f2e2e2', fg: '#7d3535' },
@@ -30,13 +30,6 @@ function formatKickoff(iso: string) {
   return `${d.toLocaleDateString(undefined, { weekday: 'short' })}, ${time}`;
 }
 
-function favouredOutcomeLocal(match: Match) {
-  const { home, draw, away } = match.outcomes;
-  if (home >= draw && home >= away) return { team: match.home as Team | null, probability: home };
-  if (away >= draw && away >= home) return { team: match.away as Team | null, probability: away };
-  return { team: null as Team | null, probability: draw };
-}
-
 const REASON_TO_KEY: Record<string, string> = {
   weather_update: 'weatherUpdated',
   lineup_confirmed: 'lineupUpdated',
@@ -47,7 +40,6 @@ const REASON_TO_KEY: Record<string, string> = {
 export type LiveDataBundle = {
   teams: Record<string, Team>;
   matches: Match[];
-  insights: Insight[];
   changeEvents: ChangeEvent[];
   trackRecord: TrackRecordEntry[];
 };
@@ -118,7 +110,7 @@ async function fetchTrackRecord(): Promise<TrackRecordEntry[]> {
 }
 
 /** Fetches real data via the anon (read-only) Supabase client and reshapes it into the
- * app's existing Team/Match/Insight/ChangeEvent types, so screens don't need to know
+ * app's existing Team/Match/ChangeEvent types, so screens don't need to know
  * whether they're looking at live or mock data. Returns null on any failure or when
  * there's simply no usable data yet (e.g. RLS not enabled, pipeline hasn't run), so
  * callers can fall back to mock data instead of showing a broken screen. */
@@ -197,17 +189,6 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     }
     if (matches.length === 0) return null;
 
-    const ranked = [...matches].sort(
-      (a, b) => favouredOutcomeLocal(b).probability - favouredOutcomeLocal(a).probability,
-    );
-    const insights: Insight[] = ranked.slice(0, 3).map((m) => {
-      const fav = favouredOutcomeLocal(m);
-      const params: Record<string, string | number> = fav.team
-        ? { team: fav.team.name, pct: fav.probability }
-        : { home: m.home.name, away: m.away.name, pct: fav.probability };
-      return { id: m.id, key: fav.team ? 'liveFavoured' : 'liveCloseMatch', confidence: fav.probability, params };
-    });
-
     const { data: changeRows } = await supabase
       .from('prediction_changes')
       .select('*')
@@ -226,7 +207,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
 
     const trackRecord = await fetchTrackRecord();
 
-    return { teams, matches, insights, changeEvents, trackRecord };
+    return { teams, matches, changeEvents, trackRecord };
   } catch {
     return null;
   }

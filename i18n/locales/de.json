@@ -18,36 +18,27 @@
     "profile": "Profil"
   },
   "disclaimer": {
-    "full": "KI-generierte Analyse auf Basis statistischer Daten. Ergebnisse bleiben unvorhersehbar.",
-    "short": "KI-generierte Analyse. Ergebnisse bleiben unvorhersehbar."
+    "full": "KI-generierte Analyse auf Basis statistischer Daten. Ergebnisse bleiben unvorhersehbar."
   },
   "welcome": {
     "kicker": "SportMind AI",
-    "title": "Verwandelt Tausende Daten in eine einzige Analyse.",
-    "body": "Analysiert Form, Leistung und Spieldaten — und zeigt die Begründung, nicht nur das Ergebnis.",
+    "title": "Verwandelt Tausende Sportdaten in eine einzige, intelligente Analyse.",
+    "body": "Analysiert Form, Leistung und Spieldaten in jeder Sportart — und macht komplexe Zahlen zu klaren Erkenntnissen, mit der Begründung hinter jedem Ergebnis.",
     "start": "Loslegen",
-    "skip": "Später"
+    "skip": "Später",
+    "liveAnalysisLabel": "Live-Sportanalyse",
+    "dataPointsLabel": "{{countFormatted}} Datenpunkte",
+    "passAccuracy": "Passgenauigkeit"
   },
   "home": {
     "goodEvening": "Guten Abend",
     "matchOfTheDay": "Spiele des Tages",
-    "todaysMatches": "Letzte 6 Spiele",
     "heroReason": "Das Modell favorisiert {{team}}: entscheidender Faktor ist {{factor}}.",
-    "leagues": "Ligen",
-    "aiMatchHighlight": "KI-Spiel-Highlight",
-    "thingsChanged_one": "1 Ding hat sich über Nacht geändert",
-    "thingsChanged_other": "{{count}} Dinge haben sich über Nacht geändert",
-    "lineupsWeatherForm": "Aufstellungen, Wetter und Form haben sich seit gestern verändert",
-    "latestAiInsights": "Neueste KI-Insights",
-    "trackRecordTitle": "TREFFERQUOTE DER KI",
-    "trackRecordSubtitle": "Das Modell hat diese Ergebnisse vor dem Anpfiff korrekt vorhergesagt",
-    "trackRecordCalledTeam": "Modell lag mit {{team}} bei {{pct}}% Vertrauen richtig",
-    "trackRecordCalledDraw": "Modell lag mit dem Unentschieden bei {{pct}}% Vertrauen richtig",
+    "recentChangeKicker": "Letzte Änderung",
+    "recentChangeDetail": "{{change}} — Konfidenz {{from}}% → {{to}}%",
     "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
     "goPremium": "Zu Premium wechseln",
-    "liveData": "Live-Daten",
     "demoData": "Demo-Daten",
-    "myMatches": "Meine Spiele ({{count}})",
     "football": "Fußball",
     "basketball": "Basketball",
     "tennis": "Tennis",
@@ -72,18 +63,21 @@
   },
   "insights": {
     "title": "KI-Insights",
-    "slotsUsed": "{{used}} von {{total}} kostenlosen Plätzen belegt",
-    "addTeam": "Team hinzufügen · {{count}}/{{max}} kostenlos",
-    "notifyMeAbout": "Benachrichtige mich über",
+    "followingKicker": "Verfolgt",
+    "followingCount": "{{count}} von {{max}} Teams gefolgt",
+    "followingEmptyBody": "Folge bis zu {{max}} Teams kostenlos, um hier wichtige Änderungen für sie zu sehen.",
+    "addTeamShort": "+ Team hinzufügen",
+    "recentChangesKicker": "Letzte Änderungen",
+    "recentChangesEmpty": "Noch keine Änderungen. Schau kurz vor Anpfiff noch einmal vorbei.",
+    "compareLink": "{{a}} und {{b}} vergleichen",
+    "stableNoChanges": "Stabil · keine Änderungen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
     "confidenceChanges": "Änderungen der Modellsicherheit",
     "confidenceChangesSubtitle": "±3 Punkte oder mehr",
     "lineupsPublished": "Veröffentlichte Aufstellungen",
-    "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff",
-    "newAiInsight": "Neue Analyse fertig",
-    "newAiInsightSubtitle": "Als tägliche Zusammenfassung",
-    "latestAiInsights": "Neueste KI-Insights",
-    "compareLink": "{{a}} und {{b}} vergleichen",
-    "stableNoChanges": "Stabil · keine Änderungen"
+    "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff"
   },
   "premium": {
     "goDeeper": "Die vollständige Analyse sehen",
@@ -106,6 +100,7 @@
     "namePlaceholder": "Dein Name",
     "freePlanLimit": "Kostenloser Plan · 1 Analyse pro Tag",
     "savedAnalyses": "Gespeicherte Spiele",
+    "notifications": "Benachrichtigungen",
     "howModelWorks": "Wie das Modell funktioniert",
     "legalAndTransparency": "Recht und Transparenz",
     "transparencyNote": "Analysen sind statistische Schätzungen, keine Gewissheiten. Datenquellen und Methodik sind unter \"Wie das Modell funktioniert\" erklärt.",
@@ -180,13 +175,6 @@
     "onlyMaterialChanges": "Hier werden nur wesentliche Änderungen angezeigt",
     "empty": "Noch keine Änderungen für dieses Spiel protokolliert."
   },
-  "homeInsights": {
-    "sample1": "Das Modell favorisiert Arsenal jetzt zu Hause",
-    "sample2": "Liverpools Pressing-Intensität um 18 % über 6 Spiele gestiegen",
-    "sample3": "Real Madrids erwartete Tore tendieren nach unten",
-    "liveFavoured": "{{team}} wird vom Modell mit {{pct}}% favorisiert",
-    "liveCloseMatch": "{{home}} gegen {{away}} gilt als sehr ausgeglichen ({{pct}}%)"
-  },
   "changeEvents": {
     "weatherUpdated": "Wettervorhersage aktualisiert",
     "lineupUpdated": "Erwartete Aufstellung aktualisiert",
@@ -194,7 +182,7 @@
     "recentResultsUpdated": "Aktuelle Ergebnisse haben die Analyse aktualisiert"
   },
   "myMatches": {
-    "title": "Meine Spiele",
+    "title": "Gespeicherte Spiele",
     "note": "Jedes Spiel wird unabhängig analysiert — dies sind separate Analysen, kein kombiniertes Ergebnis.",
     "emptyTitle": "Noch keine gespeicherten Spiele",
     "emptyBody": "Tippe auf das Lesezeichen-Symbol bei einem Spiel, um es hier zu speichern.",
@@ -221,6 +209,11 @@
     "whyChangeBody": "Neue Daten — Verletzungen, Aufstellungen, Wetter — können das Modellergebnis verschieben. Jede wesentliche Änderung wird unter \"Was hat sich geändert?\" protokolliert.",
     "cannotDoTitle": "Was unsere KI nicht kann",
     "cannotDoBody": "Sie kann keine Ergebnisse garantieren, keine Gewissheit vorhersagen oder jedes unvorhersehbare Ereignis in einem Spiel berücksichtigen.",
+    "modelPerformanceTitle": "Modellleistung",
+    "modelPerformanceBody": "Das Modell hat diese Ergebnisse vor dem Anpfiff korrekt vorhergesagt.",
+    "modelPerformanceEmpty": "Noch keine abgeschlossenen Spiele zum Abgleich — das füllt sich, sobald echte Ergebnisse eintreffen.",
+    "trackRecordCalledTeam": "Modell lag mit {{team}} bei {{pct}}% Vertrauen richtig",
+    "trackRecordCalledDraw": "Modell lag mit dem Unentschieden bei {{pct}}% Vertrauen richtig",
     "version": "Version 1.0 — diese Woche überprüft"
   },
   "language": {

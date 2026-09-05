@@ -177,21 +177,6 @@ export const changeEvents: ChangeEvent[] = [
   { id: '3', matchId: 'ars-liv', timestamp: 'Yesterday, 14:20', key: 'goalkeeperRuledOut', from: 74, to: 82, tone: 'danger' },
 ];
 
-/** `key` maps to a translation in i18n/locales/*.json under "homeInsights". */
-export type Insight = {
-  id: string;
-  key: string;
-  confidence: number;
-  /** Interpolation values for the i18n template at `homeInsights.${key}` — only set for dynamically generated (live) insights. */
-  params?: Record<string, string | number>;
-};
-
-export const insights: Insight[] = [
-  { id: '1', key: 'sample1', confidence: 58 },
-  { id: '2', key: 'sample2', confidence: 74 },
-  { id: '3', key: 'sample3', confidence: 39 },
-];
-
 /** One finished match where the model's pre-match favourite matched the actual
  * result — used on Home to build trust by showing real track record instead of
  * generic "latest insights" copy. `predictedTeam` is null when the model called

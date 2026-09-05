@@ -7,9 +7,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowRightIcon,
   ArrowsClockwiseIcon,
-  BookmarkSimpleIcon,
   BasketballIcon,
-  CheckCircleIcon,
   LightningIcon,
   SoccerBallIcon,
   SparkleIcon,
@@ -17,7 +15,7 @@ import {
 import { colors, confidenceColor, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
-import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -25,31 +23,38 @@ import TeamBadgePair from '@/components/TeamBadgePair';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { matches, trackRecord, changeEvents, isLive, loading } = useAppData();
-  const { matchIds } = useWatchlist();
+  const { matches, changeEvents, isLive, loading } = useAppData();
+  const { teamIds: followedTeamIds } = useFollowedTeams();
   const { name } = useProfile();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
-  const [selectedLeague, setSelectedLeague] = useState<string>('');
 
   const { width: windowWidth } = useWindowDimensions();
   const heroCardWidth = Math.min(360, windowWidth - spacing.screenX - 56);
 
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
-  const leagues = useMemo(() => Array.from(new Set(sportMatches.map((m) => m.competition))), [sportMatches]);
-  const effectiveLeague = leagues.includes(selectedLeague) ? selectedLeague : leagues[0];
   const heroMatches = useMemo(
     () => [...sportMatches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 6),
     [sportMatches],
   );
-  const leagueMatches = useMemo(() => {
-    const pool = sportMatches.filter((m) => m.competition === effectiveLeague);
-    return [...pool].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 6);
-  }, [sportMatches, effectiveLeague]);
+
+  // Personalised, not a duplicate of Today's highlights above — this surfaces
+  // each followed team's own next match regardless of sport/competition, so a
+  // team with no upcoming match in the loaded window simply produces no row
+  // rather than an awkward placeholder.
+  const followingRows = useMemo(() => {
+    return followedTeamIds
+      .map((teamId) => matches.find((m) => m.home.id === teamId || m.away.id === teamId))
+      .filter((m): m is NonNullable<typeof m> => Boolean(m));
+  }, [followedTeamIds, matches]);
 
   const biggestMoverEvent = useMemo(() => {
     if (changeEvents.length === 0) return null;
     return [...changeEvents].sort((a, b) => Math.abs(b.to - b.from) - Math.abs(a.to - a.from))[0];
   }, [changeEvents]);
+  const biggestMoverMatch = useMemo(
+    () => (biggestMoverEvent ? matches.find((m) => m.id === biggestMoverEvent.matchId) : null),
+    [biggestMoverEvent, matches],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -75,19 +80,20 @@ export default function HomeScreen() {
           onChange={(key) => setSelectedSport(key as Sport)}
         />
 
-        <Pressable style={styles.myMatchesLink} onPress={() => router.push('/my-matches')}>
-          <BookmarkSimpleIcon size={12} weight="bold" color={colors.primaryLink} />
-          <Text style={styles.myMatchesLinkText}>{t('home.myMatches', { count: matchIds.length })}</Text>
-        </Pressable>
-
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
-          {!loading && (
-            <View style={styles.liveRow}>
-              <View style={[styles.liveDot, { backgroundColor: isLive ? colors.success : colors.warning }]} />
-              <Text style={styles.liveText}>{isLive ? t('home.liveData') : t('home.demoData')}</Text>
-            </View>
-          )}
+          <View style={styles.sectionHeaderRight}>
+            {!loading && !isLive && (
+              <View style={styles.liveRow}>
+                <View style={[styles.liveDot, { backgroundColor: colors.warning }]} />
+                <Text style={styles.liveText}>{t('home.demoData')}</Text>
+              </View>
+            )}
+            <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
+              <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
+              <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
+            </Pressable>
+          </View>
         </View>
 
         {heroMatches.length > 0 ? (
@@ -142,80 +148,35 @@ export default function HomeScreen() {
           <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
         )}
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.kicker}>{t('home.leagues')}</Text>
-          <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
-            <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
-            <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
-          </Pressable>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.leaguesRow} contentContainerStyle={{ gap: 8 }}>
-          {leagues.map((league) => (
-            <Pressable
-              key={league}
-              style={({ pressed }) => [
-                styles.leagueChip,
-                effectiveLeague === league && styles.leagueChipSelected,
-                pressed && styles.leagueChipPressed,
-              ]}
-              onPress={() => setSelectedLeague(league)}
-            >
-              <Text style={styles.leagueChipText}>{league}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-        <View style={styles.matchListGroup}>
-          {leagueMatches.map((match) => {
-            const favourite = favouredOutcome(match);
-            return (
-              <Pressable key={match.id} style={styles.matchRow} onPress={() => router.push(`/match/${match.id}`)}>
-                <View style={styles.matchRowInfo}>
-                  <Text style={styles.matchRowTeams} numberOfLines={1}>
-                    {match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
-                  </Text>
-                  <Text style={styles.matchRowSubtitle} numberOfLines={1}>
-                    {match.competition} · {match.kickoff}
-                  </Text>
-                </View>
-                <View style={styles.matchRowChip}>
-                  <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability) }]}>
-                    {favourite.probability}%
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {trackRecord.length > 0 && (
+        {followingRows.length > 0 && (
           <>
-            <Text style={[styles.kicker, styles.insightsKicker]}>{t('home.trackRecordTitle')}</Text>
-            <Text style={styles.trackRecordSubtitle}>{t('home.trackRecordSubtitle')}</Text>
-            {trackRecord.map((entry) => (
-              <Pressable
-                key={entry.id}
-                style={styles.trackRecordCard}
-                onPress={() => router.push(`/match/${entry.id}`)}
-              >
-                <View style={styles.trackRecordIconCircle}>
-                  <CheckCircleIcon size={18} weight="fill" color={colors.success} />
-                </View>
-                <View style={styles.trackRecordInfo}>
-                  <Text style={styles.trackRecordScoreLine} numberOfLines={1}>
-                    {entry.home} {entry.homeScore}-{entry.awayScore} {entry.away}
-                  </Text>
-                  <Text style={styles.trackRecordCaption}>
-                    {entry.predictedTeam
-                      ? t('home.trackRecordCalledTeam', { team: entry.predictedTeam, pct: entry.predictedPct })
-                      : t('home.trackRecordCalledDraw', { pct: entry.predictedPct })}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
+            <Text style={[styles.kicker, styles.sectionSpacer]}>{t('insights.followingKicker')}</Text>
+            <View style={styles.matchListGroup}>
+              {followingRows.map((match) => {
+                const favourite = favouredOutcome(match);
+                return (
+                  <Pressable key={match.id} style={styles.matchRow} onPress={() => router.push(`/match/${match.id}`)}>
+                    <View style={styles.matchRowInfo}>
+                      <Text style={styles.matchRowTeams} numberOfLines={1}>
+                        {match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
+                      </Text>
+                      <Text style={styles.matchRowSubtitle} numberOfLines={1}>
+                        {match.competition} · {match.kickoff}
+                      </Text>
+                    </View>
+                    <View style={styles.matchRowChip}>
+                      <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability) }]}>
+                        {favourite.probability}%
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
           </>
         )}
 
-        {biggestMoverEvent && (
+        {biggestMoverEvent && biggestMoverMatch && (
           <Pressable onPress={() => router.push(`/match/${biggestMoverEvent.matchId}?tab=change`)}>
             <LinearGradient
               colors={[colors.highlightBg, colors.highlightBgAlt]}
@@ -231,11 +192,20 @@ export default function HomeScreen() {
               />
               <View style={styles.highlightLabelRow}>
                 <ArrowsClockwiseIcon size={13} weight="bold" color={colors.highlightAccent} />
-                <Text style={styles.highlightLabel}>{t('home.thingsChanged', { count: changeEvents.length })}</Text>
+                <Text style={styles.highlightLabel}>{t('home.recentChangeKicker')}</Text>
               </View>
-              <Text style={styles.highlightSubtitle}>{t('home.lineupsWeatherForm')}</Text>
+              <Text style={styles.highlightMatchup}>
+                {biggestMoverMatch.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {biggestMoverMatch.away.name}
+              </Text>
+              <Text style={styles.highlightSubtitle}>
+                {t('home.recentChangeDetail', {
+                  change: t(`changeEvents.${biggestMoverEvent.key}`),
+                  from: biggestMoverEvent.from,
+                  to: biggestMoverEvent.to,
+                })}
+              </Text>
               <Text style={styles.highlightLink}>
-                {t('home.aiMatchHighlight')} <ArrowRightIcon size={12} weight="bold" color={colors.highlightText} />
+                {t('common.viewFullAnalysis')} <ArrowRightIcon size={12} weight="bold" color={colors.highlightText} />
               </Text>
             </LinearGradient>
           </Pressable>
@@ -264,34 +234,10 @@ const styles = StyleSheet.create({
   },
   premiumButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   sportSegment: { marginBottom: spacing.lg },
-  myMatchesLink: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.lg },
-  myMatchesLinkText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 },
+  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  sectionSpacer: { marginTop: spacing.xl, marginBottom: 9 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
-  insightsKicker: { marginTop: 4, marginBottom: 4 },
-  trackRecordSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: 10 },
-  trackRecordCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    marginBottom: 8,
-  },
-  trackRecordIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.successMuted,
-  },
-  trackRecordInfo: { flex: 1 },
-  trackRecordScoreLine: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textPrimary, marginBottom: 3 },
-  trackRecordCaption: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondaryAlt },
   matchListGroup: { gap: 8, marginBottom: spacing.xxl },
   matchRow: {
     flexDirection: 'row',
@@ -338,18 +284,6 @@ const styles = StyleSheet.create({
   emptySportText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.xxl },
   viewAllLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   viewAllLinkText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
-  leaguesRow: { marginBottom: spacing.lg },
-  leagueChip: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.highlightBg,
-    backgroundColor: colors.highlightBg,
-  },
-  leagueChipSelected: { borderColor: colors.highlightBgAlt, backgroundColor: colors.highlightBgAlt },
-  leagueChipPressed: { opacity: 0.85 },
-  leagueChipText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.highlightText },
   highlightCard: {
     borderRadius: radius.md,
     padding: 16,
@@ -360,6 +294,7 @@ const styles = StyleSheet.create({
   highlightBallIcon: { position: 'absolute', top: -30, right: -34 },
   highlightLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 },
   highlightLabel: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.highlightText },
+  highlightMatchup: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.highlightText, marginBottom: 4 },
   highlightSubtitle: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.highlightTextMuted, marginBottom: 10 },
   highlightLink: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.highlightText },
 });

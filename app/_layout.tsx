@@ -89,6 +89,7 @@ export default function RootLayout() {
                 <Stack.Screen name="match/[id]" />
                 <Stack.Screen name="team/[id]" />
                 <Stack.Screen name="my-matches" />
+                <Stack.Screen name="notifications" />
                 <Stack.Screen name="team-comparison" />
                 <Stack.Screen name="legal/index" />
                 <Stack.Screen name="legal/methodology" />

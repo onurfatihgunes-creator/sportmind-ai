@@ -18,36 +18,27 @@
     "profile": "Profile"
   },
   "disclaimer": {
-    "full": "AI-generated analysis based on statistical data. Outcomes remain unpredictable.",
-    "short": "AI-generated analysis. Outcomes remain unpredictable."
+    "full": "AI-generated analysis based on statistical data. Outcomes remain unpredictable."
   },
   "welcome": {
     "kicker": "SportMind AI",
-    "title": "Turns thousands of data points into a single analysis.",
-    "body": "It analyses form, performance and match data — and shows the reasoning, not just the result.",
+    "title": "Turns thousands of sports data points into a single, intelligent analysis.",
+    "body": "It analyzes form, performance, and match data across every sport — turning complex numbers into clear insights and showing the reasoning behind every result.",
     "start": "Get started",
-    "skip": "Skip for now"
+    "skip": "Skip for now",
+    "liveAnalysisLabel": "Live sports analysis",
+    "dataPointsLabel": "{{countFormatted}} data points",
+    "passAccuracy": "Pass accuracy"
   },
   "home": {
     "goodEvening": "Good evening",
     "matchOfTheDay": "Matches of the day",
-    "todaysMatches": "Last 6 matches",
     "heroReason": "The model favours {{team}}: the most decisive factor is {{factor}}.",
-    "leagues": "Leagues",
-    "aiMatchHighlight": "AI match highlight",
-    "thingsChanged_one": "1 thing changed overnight",
-    "thingsChanged_other": "{{count}} things changed overnight",
-    "lineupsWeatherForm": "Lineups, weather and form all shifted since yesterday",
-    "latestAiInsights": "Latest AI insights",
-    "trackRecordTitle": "AI'S TRACK RECORD",
-    "trackRecordSubtitle": "The model correctly called these results before kickoff",
-    "trackRecordCalledTeam": "Model correctly called {{team}} at {{pct}}% confidence",
-    "trackRecordCalledDraw": "Model correctly called the draw at {{pct}}% confidence",
+    "recentChangeKicker": "Recent change",
+    "recentChangeDetail": "{{change}} — confidence {{from}}% → {{to}}%",
     "unlockUnlimited": "Unlock unlimited AI analysis",
     "goPremium": "Go Premium",
-    "liveData": "Live data",
     "demoData": "Demo data",
-    "myMatches": "My matches ({{count}})",
     "football": "Football",
     "basketball": "Basketball",
     "tennis": "Tennis",
@@ -72,18 +63,21 @@
   },
   "insights": {
     "title": "AI Insights",
-    "slotsUsed": "{{used}} of {{total}} free slots used",
-    "addTeam": "Add team · {{count}}/{{max}} free",
-    "notifyMeAbout": "Notify me about",
+    "followingKicker": "Following",
+    "followingCount": "{{count}} of {{max}} teams followed",
+    "followingEmptyBody": "Follow up to {{max}} teams for free to see meaningful changes for them here.",
+    "addTeamShort": "+ Add team",
+    "recentChangesKicker": "Recent changes",
+    "recentChangesEmpty": "No changes yet. Check back once matches get closer to kickoff.",
+    "compareLink": "Compare {{a}} and {{b}}",
+    "stableNoChanges": "Stable · no changes"
+  },
+  "notifications": {
+    "title": "Notifications",
     "confidenceChanges": "Confidence changes",
     "confidenceChangesSubtitle": "±3 points or more",
     "lineupsPublished": "Lineups published",
-    "lineupsPublishedSubtitle": "~1 hour before kickoff",
-    "newAiInsight": "New AI insight",
-    "newAiInsightSubtitle": "As a daily summary",
-    "latestAiInsights": "Latest AI insights",
-    "compareLink": "Compare {{a}} and {{b}}",
-    "stableNoChanges": "Stable · no changes"
+    "lineupsPublishedSubtitle": "~1 hour before kickoff"
   },
   "premium": {
     "goDeeper": "See the full analysis",
@@ -106,6 +100,7 @@
     "namePlaceholder": "Your name",
     "freePlanLimit": "Free plan · 1 analysis a day",
     "savedAnalyses": "Saved matches",
+    "notifications": "Notifications",
     "howModelWorks": "How the model works",
     "legalAndTransparency": "Legal and transparency",
     "transparencyNote": "Analyses are statistical estimates, not certainties. Data sources and methodology are explained under \"How the model works\".",
@@ -180,13 +175,6 @@
     "onlyMaterialChanges": "Only material changes are shown here to avoid noise.",
     "empty": "No changes logged yet for this match."
   },
-  "homeInsights": {
-    "sample1": "Model now favours Arsenal at home",
-    "sample2": "Liverpool pressing intensity up 18% over 6 matches",
-    "sample3": "Real Madrid expected goals trending down",
-    "liveFavoured": "{{team}} favoured by the model at {{pct}}%",
-    "liveCloseMatch": "{{home}} vs {{away}} rated close to even ({{pct}}%)"
-  },
   "changeEvents": {
     "weatherUpdated": "Weather forecast updated",
     "lineupUpdated": "Expected lineup updated",
@@ -194,7 +182,7 @@
     "recentResultsUpdated": "Recent results updated the analysis"
   },
   "myMatches": {
-    "title": "My matches",
+    "title": "Saved matches",
     "note": "Each match is analysed independently — these are separate analyses, not a combined outcome.",
     "emptyTitle": "No saved matches yet",
     "emptyBody": "Tap the bookmark icon on any match to save it here for quick access.",
@@ -221,6 +209,11 @@
     "whyChangeBody": "New data — injuries, lineups, weather — can shift the model's output. Every material change is logged in \"What changed?\".",
     "cannotDoTitle": "What our AI cannot do",
     "cannotDoBody": "It cannot guarantee outcomes, predict with certainty, or account for every unpredictable event in a match.",
+    "modelPerformanceTitle": "Model performance",
+    "modelPerformanceBody": "The model correctly called these results before kickoff.",
+    "modelPerformanceEmpty": "No finished matches to check yet — this fills in as real results come in.",
+    "trackRecordCalledTeam": "Model correctly called {{team}} at {{pct}}% confidence",
+    "trackRecordCalledDraw": "Model correctly called the draw at {{pct}}% confidence",
     "version": "Version 1.0 — last reviewed this week"
   },
   "language": {

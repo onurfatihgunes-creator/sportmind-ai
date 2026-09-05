@@ -7,14 +7,11 @@ import { BellIcon, ChartPolarIcon, PlusIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
-import Toggle from '@/components/Toggle';
-import InsightCard from '@/components/InsightCard';
 
 export default function InsightsScreen() {
   const { t } = useTranslation();
-  const { teams, matches, changeEvents, insights } = useAppData();
+  const { teams, matches, changeEvents } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
-  const [toggles, setToggles] = useState({ confidence: true, lineups: true, newInsight: false });
   const [showPicker, setShowPicker] = useState(false);
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
@@ -32,134 +29,129 @@ export default function InsightsScreen() {
     return { text: `${t(`changeEvents.${latest.key}`)} · ${latest.timestamp}`, delta: latest.to - latest.from, tone: latest.tone };
   };
 
-  const topInsights = [...insights].sort((a, b) => b.confidence - a.confidence).slice(0, 2);
+  // A global feed (not filtered to followed teams) — Change Intelligence is a
+  // product asset in its own right, not just a per-team status line.
+  const recentChanges = useMemo(
+    () =>
+      changeEvents
+        .map((e) => ({ event: e, match: matches.find((m) => m.id === e.matchId) }))
+        .filter((x): x is { event: typeof changeEvents[number]; match: NonNullable<typeof x.match> } => Boolean(x.match))
+        .slice(0, 5),
+    [changeEvents, matches],
+  );
+
   const compareTargets = followedTeams.slice(0, 2);
 
   return (
-    <SafeAreaScroll>
-      <Text style={styles.title}>{t('insights.title')}</Text>
-      <Text style={styles.subtitle}>{t('insights.slotsUsed', { used: followedTeams.length, total: MAX_FOLLOWED_TEAMS })}</Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>{t('insights.title')}</Text>
 
-      <View style={{ marginTop: 18, gap: 8 }}>
-        {followedTeams.map((team) => {
-          const status = teamStatus(team.id);
-          return (
-            <Pressable key={team.id} style={styles.teamRow} onLongPress={() => toggleTeam(team.id)}>
-              <View style={[styles.teamBadge, { backgroundColor: team.bg }]}>
-                <Text style={[styles.teamBadgeText, { color: team.fg }]}>{team.code}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.teamName}>{team.name}</Text>
-                <Text style={[styles.teamStatus, status.tone === 'success' && { color: colors.successText }, status.tone === 'warning' && { color: colors.warningText }]}>
-                  {status.text}
-                </Text>
-              </View>
-              {status.delta !== null ? (
-                <View style={[styles.deltaChip, { backgroundColor: status.delta >= 0 ? colors.successMuted : colors.warningMuted }]}>
-                  <Text style={[styles.deltaChipText, { color: status.delta >= 0 ? colors.successText : colors.warningText }]}>
-                    {status.delta > 0 ? '+' : ''}
-                    {status.delta}
+        <Text style={styles.kicker}>{t('insights.followingKicker')}</Text>
+        {followedTeams.length === 0 && (
+          <Text style={styles.followingEmptyText}>{t('insights.followingEmptyBody', { max: MAX_FOLLOWED_TEAMS })}</Text>
+        )}
+        {followedTeams.length > 0 && (
+          <Text style={styles.followingCountText}>{t('insights.followingCount', { count: followedTeams.length, max: MAX_FOLLOWED_TEAMS })}</Text>
+        )}
+
+        <View style={{ marginTop: 10, gap: 8 }}>
+          {followedTeams.map((team) => {
+            const status = teamStatus(team.id);
+            return (
+              <Pressable key={team.id} style={styles.teamRow} onLongPress={() => toggleTeam(team.id)}>
+                <View style={[styles.teamBadge, { backgroundColor: team.bg }]}>
+                  <Text style={[styles.teamBadgeText, { color: team.fg }]}>{team.code}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.teamName}>{team.name}</Text>
+                  <Text style={[styles.teamStatus, status.tone === 'success' && { color: colors.successText }, status.tone === 'warning' && { color: colors.warningText }]}>
+                    {status.text}
                   </Text>
                 </View>
-              ) : (
-                <BellIcon size={17} color={colors.textFainter} />
-              )}
-            </Pressable>
-          );
-        })}
+                {status.delta !== null ? (
+                  <View style={[styles.deltaChip, { backgroundColor: status.delta >= 0 ? colors.successMuted : colors.warningMuted }]}>
+                    <Text style={[styles.deltaChipText, { color: status.delta >= 0 ? colors.successText : colors.warningText }]}>
+                      {status.delta > 0 ? '+' : ''}
+                      {status.delta}
+                    </Text>
+                  </View>
+                ) : (
+                  <BellIcon size={17} color={colors.textFainter} />
+                )}
+              </Pressable>
+            );
+          })}
 
-        {canFollowMore && (
-          <Pressable style={styles.addButton} onPress={() => setShowPicker((v) => !v)}>
-            <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
-            <Text style={styles.addButtonText}>
-              {t('insights.addTeam', { count: followedTeams.length, max: MAX_FOLLOWED_TEAMS })}
+          {canFollowMore && (
+            <Pressable style={styles.addButton} onPress={() => setShowPicker((v) => !v)}>
+              <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
+              <Text style={styles.addButtonText}>{t('insights.addTeamShort')}</Text>
+            </Pressable>
+          )}
+          {showPicker && (
+            <View style={styles.pickerList}>
+              {availableTeams.map((team) => (
+                <Pressable
+                  key={team.id}
+                  style={styles.pickerRow}
+                  onPress={() => {
+                    toggleTeam(team.id);
+                    setShowPicker(false);
+                  }}
+                >
+                  <View style={[styles.teamBadge, { width: 26, height: 26, borderRadius: 13, backgroundColor: team.bg }]}>
+                    <Text style={[styles.teamBadgeText, { fontSize: 9, color: team.fg }]}>{team.code}</Text>
+                  </View>
+                  <Text style={styles.teamName}>{team.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.kicker}>{t('insights.recentChangesKicker')}</Text>
+        {recentChanges.length === 0 ? (
+          <Text style={styles.followingEmptyText}>{t('insights.recentChangesEmpty')}</Text>
+        ) : (
+          <View style={{ gap: 8, marginBottom: 16 }}>
+            {recentChanges.map(({ event, match }) => {
+              const delta = event.to - event.from;
+              return (
+                <Pressable
+                  key={event.id}
+                  style={styles.changeRow}
+                  onPress={() => router.push(`/match/${match.id}?tab=change`)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.changeMatchup} numberOfLines={1}>
+                      {match.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {match.away.name}
+                    </Text>
+                    <Text style={styles.changeDescription}>{t(`changeEvents.${event.key}`)}</Text>
+                  </View>
+                  <View style={[styles.deltaChip, { backgroundColor: delta >= 0 ? colors.successMuted : colors.warningMuted }]}>
+                    <Text style={[styles.deltaChipText, { color: delta >= 0 ? colors.successText : colors.warningText }]}>
+                      {delta > 0 ? '+' : ''}
+                      {delta}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {compareTargets.length === 2 && (
+          <Pressable
+            style={styles.compareButton}
+            onPress={() => router.push({ pathname: '/team-comparison', params: { a: compareTargets[0].id, b: compareTargets[1].id } })}
+          >
+            <ChartPolarIcon size={16} weight="bold" color={colors.primaryText} />
+            <Text style={styles.compareButtonText}>
+              {t('insights.compareLink', { a: compareTargets[0].name, b: compareTargets[1].name })}
             </Text>
           </Pressable>
         )}
-        {showPicker && (
-          <View style={styles.pickerList}>
-            {availableTeams.map((team) => (
-              <Pressable
-                key={team.id}
-                style={styles.pickerRow}
-                onPress={() => {
-                  toggleTeam(team.id);
-                  setShowPicker(false);
-                }}
-              >
-                <View style={[styles.teamBadge, { width: 26, height: 26, borderRadius: 13, backgroundColor: team.bg }]}>
-                  <Text style={[styles.teamBadgeText, { fontSize: 9, color: team.fg }]}>{team.code}</Text>
-                </View>
-                <Text style={styles.teamName}>{team.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <Text style={styles.kicker}>{t('insights.notifyMeAbout')}</Text>
-      <View style={styles.toggleCard}>
-        <ToggleRow
-          title={t('insights.confidenceChanges')}
-          subtitle={t('insights.confidenceChangesSubtitle')}
-          value={toggles.confidence}
-          onChange={(v) => setToggles((s) => ({ ...s, confidence: v }))}
-        />
-        <View style={styles.toggleDivider} />
-        <ToggleRow
-          title={t('insights.lineupsPublished')}
-          subtitle={t('insights.lineupsPublishedSubtitle')}
-          value={toggles.lineups}
-          onChange={(v) => setToggles((s) => ({ ...s, lineups: v }))}
-        />
-        <View style={styles.toggleDivider} />
-        <ToggleRow
-          title={t('insights.newAiInsight')}
-          subtitle={t('insights.newAiInsightSubtitle')}
-          value={toggles.newInsight}
-          onChange={(v) => setToggles((s) => ({ ...s, newInsight: v }))}
-        />
-      </View>
-
-      <Text style={styles.kicker}>{t('insights.latestAiInsights')}</Text>
-      <View style={{ gap: 8, marginBottom: 16 }}>
-        {topInsights.map((i) => (
-          <InsightCard key={i.id} insight={i} />
-        ))}
-      </View>
-
-      {compareTargets.length === 2 && (
-        <Pressable
-          style={styles.compareButton}
-          onPress={() => router.push({ pathname: '/team-comparison', params: { a: compareTargets[0].id, b: compareTargets[1].id } })}
-        >
-          <ChartPolarIcon size={16} weight="bold" color={colors.primaryText} />
-          <Text style={styles.compareButtonText}>
-            {t('insights.compareLink', { a: compareTargets[0].name, b: compareTargets[1].name })}
-          </Text>
-        </Pressable>
-      )}
-    </SafeAreaScroll>
-  );
-}
-
-function ToggleRow({ title, subtitle, value, onChange }: { title: string; subtitle: string; value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <View style={styles.toggleRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.toggleTitle}>{title}</Text>
-        <Text style={styles.toggleSubtitle}>{subtitle}</Text>
-      </View>
-      <Toggle value={value} onChange={onChange} />
-    </View>
-  );
-}
-
-function SafeAreaScroll({ children }: { children: React.ReactNode }) {
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {children}
       </ScrollView>
     </SafeAreaView>
   );
@@ -168,8 +160,10 @@ function SafeAreaScroll({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
-  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 4 },
-  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textFaint },
+  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 16 },
+  kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginTop: 20, marginBottom: 6 },
+  followingEmptyText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
+  followingCountText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
   teamRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   teamBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   teamBadgeText: { fontFamily: fonts.bodyBold, fontSize: 10 },
@@ -181,12 +175,19 @@ const styles = StyleSheet.create({
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   pickerList: { gap: 4, marginTop: 2 },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radius.sm, backgroundColor: colors.surfaceSubtle },
-  kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginTop: 24, marginBottom: 10 },
-  toggleCard: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, overflow: 'hidden' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, minHeight: 52 },
-  toggleDivider: { height: 1, backgroundColor: colors.divider },
-  toggleTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
-  toggleSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
+  changeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 13,
+  },
+  changeMatchup: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginBottom: 3 },
+  changeVs: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
+  changeDescription: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
   compareButton: {
     minHeight: 50,
     borderWidth: 1,
@@ -196,6 +197,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
+    marginTop: 8,
   },
   compareButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.primaryText },
 });

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ArrowRightIcon,
+  BellIcon,
   BookmarkSimpleIcon,
   CaretRightIcon,
   CpuIcon,
@@ -66,6 +67,7 @@ export default function ProfileScreen() {
   const rows = [
     { Icon: BookmarkSimpleIcon, label: t('profile.savedAnalyses'), value: String(matchIds.length), onPress: () => router.push('/my-matches') },
     { Icon: GlobeIcon, label: t('profile.language'), value: t(`language.${i18n.language}`), onPress: () => router.push('/language') },
+    { Icon: BellIcon, label: t('profile.notifications'), onPress: () => router.push('/notifications') },
     { Icon: CpuIcon, label: t('profile.howModelWorks'), onPress: () => router.push('/legal/methodology') },
     { Icon: ShieldCheckIcon, label: t('profile.legalAndTransparency'), onPress: () => router.push('/legal') },
   ];
