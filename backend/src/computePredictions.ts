@@ -39,12 +39,21 @@ function clampSplit(homeShare: number): { home: number; away: number } {
   return { home, away: 100 - home };
 }
 
+// Each raw share is floored at 1 before normalizing — a large enough formDelta/xgDelta
+// swing (e.g. a team on a perfect run against a winless one) can otherwise push
+// `BASE_AWAY - formDelta - xgDelta` negative, and dividing a negative share into the
+// total produces a negative percentage in the final output. computeBasketballPredictions.ts
+// already guards its own split the same way (Math.min/Math.max clamp); this is the
+// three-way (home/draw/away) equivalent for football's split.
 function normalizeOutcomes(home: number, draw: number, away: number) {
-  const total = home + draw + away;
+  const safeHome = Math.max(1, home);
+  const safeDraw = Math.max(1, draw);
+  const safeAway = Math.max(1, away);
+  const total = safeHome + safeDraw + safeAway;
   return {
-    home: Math.round((home / total) * 100),
-    draw: Math.round((draw / total) * 100),
-    away: Math.round((away / total) * 100),
+    home: Math.round((safeHome / total) * 100),
+    draw: Math.round((safeDraw / total) * 100),
+    away: Math.round((safeAway / total) * 100),
   };
 }
 

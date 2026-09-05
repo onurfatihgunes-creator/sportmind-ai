@@ -105,6 +105,15 @@ async function persistPlayerStats(match: CandidateMatch, event: BsdEvent) {
   // the value is a BSD id, never a fabricated name. team_name IS derivable
   // for free: BSD's own event.home_team_id/away_team_id tell us which side
   // s.team_id is, and match.homeName/awayName are the real SportMind names.
+  //
+  // WARNING for any future reader of match_player_stats: despite the column
+  // name, `player_name` here is NOT a display name — it is a raw numeric BSD
+  // player id, stringified. This table is public-read (see
+  // rls_read_only_bsd_enrichment.sql) and nothing in this codebase currently
+  // reads it back (verified — only ever written, from this one call site), but
+  // if that ever changes, `player_name` must be resolved to a real name (the
+  // same way player_availability's real names / bsd_players' cache already do
+  // it) before it reaches any user-facing surface — never rendered as-is.
   const rows = stats.map((s) => ({
     match_id: match.id,
     player_name: String(s.player_id),
