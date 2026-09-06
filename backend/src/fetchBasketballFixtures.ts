@@ -1,5 +1,5 @@
 import { BASKETBALL_ACTIVE_WINDOW_DAYS, FORM_LOOKBACK_DAYS } from './config.js';
-import { getAllTeams, getGamesInRange, sleep, type BdlGame, type BdlTeam } from './balldontlie.js';
+import { getGamesInRange, type BdlGame, type BdlTeam } from './balldontlie.js';
 import { supabase } from './supabaseClient.js';
 
 // Prefixed to keep NBA ids from colliding with football-data.org's numeric ids in the
@@ -66,15 +66,20 @@ async function recordFormIfFinished(game: BdlGame) {
 }
 
 /**
- * Pulls NBA teams + games in the active window (upcoming fixtures) and lookback window
- * (recent results, to feed team_form). Mirrors fetchFixtures.ts's shape but against
+ * Pulls NBA games in the active window (upcoming fixtures) and lookback window (recent
+ * results, to feed team_form). Mirrors fetchFixtures.ts's shape but against
  * balldontlie.io instead of football-data.org. Run on a schedule via GitHub Actions.
+ *
+ * Teams are upserted from the games themselves (each BdlGame already embeds its own
+ * home_team/visitor_team), not from a separate bulk /teams call — that endpoint returns
+ * balldontlie's entire cross-league team database (EuroLeague, NBL, historical defunct
+ * NBA/BAA franchises, etc.), not just current NBA teams. Confirmed live: upserting it
+ * wholesale had put 89 team rows in Supabase for only 30 real, game-referenced teams —
+ * 59 were orphaned entries (e.g. "Cleveland Rebels", "Real Madrid Real Madrid",
+ * "Perth Wildcats") that no ingested game would ever reference, cluttering any team list
+ * built from the `teams` table (e.g. the AI Insights "add team" picker).
  */
 export async function fetchBasketballFixtures() {
-  const teams = await getAllTeams();
-  for (const team of teams) await upsertTeam(team);
-  await sleep(13000);
-
   const today = new Date();
   const windowEnd = new Date(today);
   windowEnd.setDate(windowEnd.getDate() + BASKETBALL_ACTIVE_WINDOW_DAYS);
@@ -83,10 +88,19 @@ export async function fetchBasketballFixtures() {
 
   const games = await getGamesInRange(isoDate(formStart), isoDate(windowEnd));
 
+  const seenTeamIds = new Set<number>();
   for (const game of games) {
+    if (!seenTeamIds.has(game.home_team.id)) {
+      await upsertTeam(game.home_team);
+      seenTeamIds.add(game.home_team.id);
+    }
+    if (!seenTeamIds.has(game.visitor_team.id)) {
+      await upsertTeam(game.visitor_team);
+      seenTeamIds.add(game.visitor_team.id);
+    }
     await upsertMatch(game);
     await recordFormIfFinished(game);
   }
 
-  console.log(`  ${games.length} NBA games synced`);
+  console.log(`  ${games.length} NBA games synced (${seenTeamIds.size} teams)`);
 }
