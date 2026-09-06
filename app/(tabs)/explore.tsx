@@ -3,9 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BookmarkSimpleIcon, MagnifyingGlassIcon, SortDescendingIcon } from 'phosphor-react-native';
+import { BasketballIcon, BookmarkSimpleIcon, MagnifyingGlassIcon, SoccerBallIcon, SortDescendingIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome } from '@/data/mockData';
+import { favouredOutcome, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -23,6 +23,7 @@ export default function ExploreScreen() {
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
   const [search, setSearch] = useState('');
+  const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -32,7 +33,13 @@ export default function ExploreScreen() {
     if (params.league) setSelectedLeague(params.league);
   }, [params.league]);
 
-  const competitions = useMemo(() => Array.from(new Set(matches.map((m) => m.competition))), [matches]);
+  // Explore is the full discovery surface (not just Home's 6-match curation), so it needs
+  // the same sport boundary Home enforces: a league/competition list built across both
+  // sports would mix e.g. "NBA" into a row of football leagues. Switching sport resets the
+  // league filter, since a league selected under one sport won't exist under the other.
+  const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
+
+  const competitions = useMemo(() => Array.from(new Set(sportMatches.map((m) => m.competition))), [sportMatches]);
   const leagueOptions = useMemo(
     () => [{ key: 'all', label: t('explore.allLeagues') }, ...competitions.map((c) => ({ key: c, label: c }))],
     [competitions, t],
@@ -40,7 +47,7 @@ export default function ExploreScreen() {
 
   const filteredMatches = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return matches
+    return sportMatches
       .filter((m) => {
         if (selectedLeague !== 'all' && m.competition !== selectedLeague) return false;
         if (!query) return true;
@@ -55,7 +62,7 @@ export default function ExploreScreen() {
           ? favouredOutcome(a).probability - favouredOutcome(b).probability
           : favouredOutcome(b).probability - favouredOutcome(a).probability,
       );
-  }, [matches, search, selectedLeague, sortAsc]);
+  }, [sportMatches, search, selectedLeague, sortAsc]);
 
   const grouped = useMemo(() => {
     const buckets: Record<'today' | 'tomorrow' | 'later', typeof filteredMatches> = { today: [], tomorrow: [], later: [] };
@@ -78,6 +85,19 @@ export default function ExploreScreen() {
             placeholderTextColor={colors.textFainter}
           />
         </View>
+
+        <SegmentedControl
+          style={styles.sportSegment}
+          options={[
+            { key: 'football', label: t('home.football'), icon: <SoccerBallIcon size={14} weight="bold" color={colors.textSecondary} /> },
+            { key: 'basketball', label: t('home.basketball'), icon: <BasketballIcon size={14} weight="bold" color={colors.textSecondary} /> },
+          ]}
+          value={selectedSport}
+          onChange={(key) => {
+            setSelectedSport(key as Sport);
+            setSelectedLeague('all');
+          }}
+        />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
           <SegmentedControl options={leagueOptions} value={selectedLeague} onChange={setSelectedLeague} height={34} fontSize={11} />
@@ -159,7 +179,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary, padding: 0 },
-  filterRow: { marginTop: 14, marginBottom: 16 },
+  sportSegment: { marginTop: 14 },
+  filterRow: { marginTop: 12, marginBottom: 16 },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 9 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },

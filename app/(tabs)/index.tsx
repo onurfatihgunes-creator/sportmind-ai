@@ -66,30 +66,34 @@ export default function HomeScreen() {
   }, [sportMatches]);
 
   // Personalised, not a duplicate of Today's highlights above — this surfaces each
-  // followed team's own next match regardless of sport/competition, so a team with no
-  // upcoming match in the loaded window simply produces no row rather than an awkward
-  // placeholder.
+  // followed team's own next match. Scoped to the currently-selected sport, same as every
+  // other section on this screen: a followed football team's match must never appear
+  // while Basketball is selected (and vice versa) — the sport switch is a real data
+  // boundary, not just a filter on the Highlights carousel. A team with no upcoming match
+  // in the current sport/window simply produces no row rather than an awkward placeholder.
   const followingRows = useMemo(() => {
     return followedTeamIds
       .map((teamId) => {
-        const match = matches.find((m) => m.home.id === teamId || m.away.id === teamId);
+        const match = sportMatches.find((m) => m.home.id === teamId || m.away.id === teamId);
         if (!match) return null;
         const myTeam = match.home.id === teamId ? match.home : match.away;
         const opponent = match.home.id === teamId ? match.away : match.home;
         return { match, myTeam, opponent };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
-  }, [followedTeamIds, matches]);
+  }, [followedTeamIds, sportMatches]);
 
-  // Up to 3 most material real changes, most significant first — never padded, never
-  // invented; an empty list renders the honest empty state below instead of nothing.
+  // Up to 3 most material real changes for the CURRENT sport, most significant first —
+  // never padded, never invented; an empty list renders the honest empty state below
+  // instead of nothing. Sport-scoped for the same reason followingRows is: a football
+  // confidence change must never surface while Basketball is selected.
   const recentChanges = useMemo(() => {
     return [...changeEvents]
-      .sort((a, b) => Math.abs(b.to - b.from) - Math.abs(a.to - a.from))
-      .slice(0, 3)
-      .map((event) => ({ event, match: matches.find((m) => m.id === event.matchId) }))
-      .filter((row): row is { event: (typeof changeEvents)[number]; match: Match } => Boolean(row.match));
-  }, [changeEvents, matches]);
+      .map((event) => ({ event, match: sportMatches.find((m) => m.id === event.matchId) }))
+      .filter((row): row is { event: (typeof changeEvents)[number]; match: Match } => Boolean(row.match))
+      .sort((a, b) => Math.abs(b.event.to - b.event.from) - Math.abs(a.event.to - a.event.from))
+      .slice(0, 3);
+  }, [changeEvents, sportMatches]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

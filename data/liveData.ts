@@ -119,13 +119,34 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
   try {
     const windowStart = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
 
-    const { data: matchRows, error: matchErr } = await supabase
-      .from('matches')
-      .select('id, competition, sport, home_team_id, away_team_id, kickoff_at, status')
-      .gte('kickoff_at', windowStart)
-      .order('kickoff_at', { ascending: true })
-      .limit(30);
-    if (matchErr || !matchRows || matchRows.length === 0) return null;
+    // Fetched PER SPORT rather than one combined query: a single shared `.limit(30)`
+    // ordered by kickoff time silently starved basketball out entirely whenever football
+    // alone had 30+ upcoming fixtures in the window (confirmed live: 214 football rows vs
+    // 427 basketball rows, and every one of the first 30 chronologically was football —
+    // so `matches` never contained a single basketball row, regardless of how much real
+    // basketball data existed). Two scoped queries give each sport its own curation
+    // budget, so neither can push the other out.
+    const MATCHES_PER_SPORT_LIMIT = 30;
+    const matchSelect = 'id, competition, sport, home_team_id, away_team_id, kickoff_at, status';
+    const [{ data: footballRows, error: footballErr }, { data: basketballRows, error: basketballErr }] = await Promise.all([
+      supabase
+        .from('matches')
+        .select(matchSelect)
+        .eq('sport', 'football')
+        .gte('kickoff_at', windowStart)
+        .order('kickoff_at', { ascending: true })
+        .limit(MATCHES_PER_SPORT_LIMIT),
+      supabase
+        .from('matches')
+        .select(matchSelect)
+        .eq('sport', 'basketball')
+        .gte('kickoff_at', windowStart)
+        .order('kickoff_at', { ascending: true })
+        .limit(MATCHES_PER_SPORT_LIMIT),
+    ]);
+    if (footballErr || basketballErr) return null;
+    const matchRows = [...(footballRows ?? []), ...(basketballRows ?? [])];
+    if (matchRows.length === 0) return null;
 
     const matchIds = matchRows.map((m) => m.id);
     const teamIds = Array.from(new Set(matchRows.flatMap((m) => [m.home_team_id, m.away_team_id])));
