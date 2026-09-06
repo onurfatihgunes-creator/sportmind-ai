@@ -3,7 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BellIcon, ChartPolarIcon, MagnifyingGlassIcon, PlusIcon, XIcon } from 'phosphor-react-native';
+import { BellIcon, MagnifyingGlassIcon, PlusIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
@@ -51,8 +51,6 @@ export default function InsightsScreen() {
         .slice(0, 5),
     [changeEvents, matches],
   );
-
-  const compareTargets = followedTeams.slice(0, 2);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -186,25 +184,6 @@ export default function InsightsScreen() {
             })}
           </View>
         )}
-
-        {compareTargets.length === 2 && (
-          <>
-            {/* Its own labelled section — Compare is unrelated to the Following list filling
-                up (it just needs 2+ followed teams, independent of the 3-team cap above), but
-                sitting directly under a short/empty Recent Changes made it look like a
-                replacement for the vanished Add button rather than a separate feature. */}
-            <Text style={styles.kicker}>{t('insights.compareKicker')}</Text>
-            <Pressable
-              style={styles.compareButton}
-              onPress={() => router.push({ pathname: '/team-comparison', params: { a: compareTargets[0].id, b: compareTargets[1].id } })}
-            >
-              <ChartPolarIcon size={16} weight="bold" color={colors.primaryText} />
-              <Text style={styles.compareButtonText}>
-                {t('insights.compareLink', { a: compareTargets[0].name, b: compareTargets[1].name })}
-              </Text>
-            </Pressable>
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -264,16 +243,4 @@ const styles = StyleSheet.create({
   changeMatchup: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginBottom: 3 },
   changeVs: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
   changeDescription: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
-  compareButton: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  compareButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.primaryText },
 });

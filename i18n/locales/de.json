@@ -80,8 +80,6 @@
     "noTeamsMatch": "Keine Teams gefunden.",
     "recentChangesKicker": "Letzte Änderungen",
     "recentChangesEmpty": "Noch keine Änderungen. Schau kurz vor Anpfiff noch einmal vorbei.",
-    "compareKicker": "Team-Vergleich",
-    "compareLink": "{{a}} und {{b}} vergleichen",
     "stableNoChanges": "Stabil · keine Änderungen"
   },
   "notifications": {

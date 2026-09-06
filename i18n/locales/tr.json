@@ -80,8 +80,6 @@
     "noTeamsMatch": "Aramanla eşleşen takım yok.",
     "recentChangesKicker": "Son değişiklikler",
     "recentChangesEmpty": "Henüz değişiklik yok. Maçlar başlamaya yaklaştıkça buraya tekrar bakabilirsin.",
-    "compareKicker": "Takım karşılaştırma",
-    "compareLink": "{{a}} ve {{b}}'yi karşılaştır",
     "stableNoChanges": "Sabit · değişiklik yok"
   },
   "notifications": {

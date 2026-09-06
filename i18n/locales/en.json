@@ -80,8 +80,6 @@
     "noTeamsMatch": "No teams match your search.",
     "recentChangesKicker": "Recent changes",
     "recentChangesEmpty": "No changes yet. Check back once matches get closer to kickoff.",
-    "compareKicker": "Team comparison",
-    "compareLink": "Compare {{a}} and {{b}}",
     "stableNoChanges": "Stable · no changes"
   },
   "notifications": {

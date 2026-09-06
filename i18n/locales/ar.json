@@ -80,8 +80,6 @@
     "noTeamsMatch": "لا توجد فرق مطابقة لبحثك.",
     "recentChangesKicker": "أحدث التغييرات",
     "recentChangesEmpty": "لا توجد تغييرات بعد. تحقق مرة أخرى عندما تقترب المباريات من الانطلاق.",
-    "compareKicker": "مقارنة الفرق",
-    "compareLink": "قارن بين {{a}} و{{b}}",
     "stableNoChanges": "مستقر · لا تغييرات"
   },
   "notifications": {
