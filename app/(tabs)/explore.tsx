@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ export default function ExploreScreen() {
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
   const [sortAsc, setSortAsc] = useState(false);
@@ -75,12 +76,14 @@ export default function ExploreScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('explore.title')}</Text>
 
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, searchFocused && styles.searchBarFocused]}>
           <MagnifyingGlassIcon size={16} color={colors.textFainter} />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder={t('explore.searchPlaceholder')}
             placeholderTextColor={colors.textFainter}
           />
@@ -178,7 +181,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: 14,
   },
-  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary, padding: 0 },
+  // The browser's own default focus ring (an orange/yellow outline on this webview) is
+  // suppressed on the input itself below; this border-color swap on the container is the
+  // replacement focus indicator, consistent with the app's own accent color.
+  searchBarFocused: { borderColor: colors.primary },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.textPrimary,
+    padding: 0,
+    // outlineWidth: 0 alone isn't enough — Chromium's default outline-style is the
+    // special `auto` keyword, which some browsers render with a minimum visible width
+    // regardless of an explicit 0 override. Pinning outlineStyle to 'solid' first (a
+    // real, non-`auto` style) makes the 0 width actually take effect.
+    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
+  },
   sportSegment: { marginTop: 14 },
   filterRow: { marginTop: 12, marginBottom: 16 },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },

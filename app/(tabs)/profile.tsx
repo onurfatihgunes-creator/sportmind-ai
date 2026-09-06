@@ -153,7 +153,16 @@ const styles = StyleSheet.create({
   avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: fonts.headline, fontSize: 20, color: colors.primaryTint },
   name: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.textPrimary, marginBottom: 3 },
-  nameInput: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.primary, paddingVertical: 2, marginBottom: 3 },
+  nameInput: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 16,
+    color: colors.textPrimary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    paddingVertical: 2,
+    marginBottom: 3,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
+  },
   plan: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
   editButton: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   upsellCard: {

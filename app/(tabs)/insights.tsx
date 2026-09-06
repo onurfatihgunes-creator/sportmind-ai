@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ export default function InsightsScreen() {
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerSearchFocused, setPickerSearchFocused] = useState(false);
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
 
@@ -110,12 +111,14 @@ export default function InsightsScreen() {
           )}
           {showPicker && (
             <View style={styles.pickerBox}>
-              <View style={styles.pickerSearchBar}>
+              <View style={[styles.pickerSearchBar, pickerSearchFocused && styles.pickerSearchBarFocused]}>
                 <MagnifyingGlassIcon size={14} color={colors.textFainter} />
                 <TextInput
                   style={styles.pickerSearchInput}
                   value={pickerSearch}
                   onChangeText={setPickerSearch}
+                  onFocus={() => setPickerSearchFocused(true)}
+                  onBlur={() => setPickerSearchFocused(false)}
                   placeholder={t('insights.searchTeamsPlaceholder')}
                   placeholderTextColor={colors.textFainter}
                   autoFocus
@@ -236,7 +239,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: 12,
   },
-  pickerSearchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.textPrimary, padding: 0 },
+  pickerSearchBarFocused: { borderColor: colors.primary },
+  pickerSearchInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textPrimary,
+    padding: 0,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
+  },
   pickerSportHeader: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginTop: 8, marginBottom: 4 },
   pickerList: { gap: 4 },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radius.sm, backgroundColor: colors.surfaceSubtle },
