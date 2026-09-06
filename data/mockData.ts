@@ -28,6 +28,50 @@ export type Outcomes = { home: number; draw: number; away: number };
 /** A single reason behind the prediction, expressed as a head-to-head split between the two teams (home % + away % = 100). Ordered from most to least influential. `key` maps to a translation in i18n/locales/*.json under "factors". */
 export type MatchFactor = { key: string; home: number; away: number };
 
+/** Real head-to-head record from Supabase's `match_h2h` (BSD-sourced) — present only when
+ * BSD has indexed real history for this exact pair; absent (not zeroed) otherwise, since a
+ * missing record and a genuine 0-0 history are different things (never conflate them). */
+export type H2HRecord = {
+  totalMatches: number;
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  homeGoals: number;
+  awayGoals: number;
+  avgTotalGoals: number;
+  homeWinRate: number;
+  awayWinRate: number;
+};
+
+/** A single unavailable/doubtful player for this match, from Supabase's
+ * `player_availability` (real BSD-resolved name, never a raw id). `impact` mirrors
+ * backend/src/analysisEngine.ts's derivePlayerImpact rule exactly (certain absence
+ * statuses = 'injured'|'suspended'; 'high' only when a real market_value_eur from
+ * `bsd_players` clears the same 20M EUR floor used there) — this is a short, already-
+ * established display-classification rule being reapplied to data mobile now also reads
+ * directly, not a new or duplicated prediction computation. */
+export type PlayerImpactEntry = {
+  team: 'home' | 'away';
+  playerName: string;
+  status: string;
+  reason: string | null;
+  impact: 'low' | 'medium' | 'high';
+};
+
+/** A real Change Intelligence event from Supabase's `analysis_changes` (lineup/squad
+ * changes — distinct from the prediction-percentage deltas in `ChangeEvent`/
+ * `prediction_changes`). `newValue`/`previousValue` are already real resolved values from
+ * backend/src/analysisEngine.ts's change comparators (a lineup status string, or a real
+ * player name) — never a raw id. */
+export type AnalysisChangeEvent = {
+  id: string;
+  matchId: string;
+  timestamp: string;
+  changeType: 'lineup_status_changed' | 'player_unavailable' | 'player_available_again' | string;
+  previousValue: string | null;
+  newValue: string;
+};
+
 export type Match = {
   id: string;
   home: Team;
@@ -48,6 +92,12 @@ export type Match = {
   recentAvgGoalsHome: number;
   recentAvgGoalsAway: number;
   factors: MatchFactor[];
+  /** Real H2H record when BSD has indexed history for this pair — undefined (never a
+   * fabricated/zeroed record) when it hasn't. */
+  h2h?: H2HRecord;
+  /** Real unavailable/doubtful players for this match when BSD lineup data exists —
+   * undefined/empty when it doesn't, never invented. */
+  squadImpact?: PlayerImpactEntry[];
 };
 
 export const matches: Match[] = [
@@ -181,6 +231,12 @@ export const changeEvents: ChangeEvent[] = [
   { id: '2', matchId: 'rma-bar', timestamp: 'Yesterday, 18:40', key: 'lineupUpdated', from: 82, to: 79, tone: 'warning' },
   { id: '3', matchId: 'ars-liv', timestamp: 'Yesterday, 14:20', key: 'goalkeeperRuledOut', from: 74, to: 82, tone: 'danger' },
 ];
+
+/** No mock lineup/squad-change events — unlike the percentage-based mock above (a
+ * pre-existing, purely illustrative demo list), inventing plausible-looking fake player
+ * names/lineup changes here would risk being mistaken for real data. Empty until real
+ * Supabase data loads. */
+export const analysisChanges: AnalysisChangeEvent[] = [];
 
 /** One finished match where the model's pre-match favourite matched the actual
  * result — used on Home to build trust by showing real track record instead of

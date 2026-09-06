@@ -1,5 +1,13 @@
 import { supabase } from '@/lib/supabase';
-import type { ChangeEvent, Match, MatchFactor, Sport, Team, TrackRecordEntry } from './mockData';
+import type { AnalysisChangeEvent, ChangeEvent, H2HRecord, Match, MatchFactor, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
+
+// Mirrors backend/src/analysisEngine.ts's derivePlayerImpact rule exactly (see that
+// function's own doc comment) — a real, already-established display-classification rule,
+// not a new or duplicated prediction computation. Only raised above 'medium' when a real,
+// provider-sourced market value clears this same floor; otherwise stays capped, exactly
+// as that function already does server-side for Vera.
+const CERTAIN_ABSENCE_STATUSES = new Set(['injured', 'suspended']);
+const HIGH_IMPACT_MARKET_VALUE_EUR = 20_000_000;
 
 const PALETTE = [
   { bg: '#f2e2e2', fg: '#7d3535' },
@@ -41,6 +49,7 @@ export type LiveDataBundle = {
   teams: Record<string, Team>;
   matches: Match[];
   changeEvents: ChangeEvent[];
+  analysisChanges: AnalysisChangeEvent[];
   trackRecord: TrackRecordEntry[];
 };
 
@@ -227,9 +236,79 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       tone: c.to_home_win_pct >= c.from_home_win_pct ? 'success' : 'warning',
     }));
 
+    // AI Insights' per-team analysis (H2H, squad impact, richer "what changed") needs
+    // real Supabase tables no screen has read before — all public-read (see
+    // backend/sql/rls_read_only_match_h2h.sql / rls_read_only_bsd_enrichment.sql), so
+    // reachable the same way everything else here is: no new provider/service call, just
+    // extending this one existing fetch. Every one of these is best-effort: a missing row
+    // for a given match means that match's H2H/squad-impact section is simply omitted by
+    // the screen, never fabricated.
+    const [{ data: h2hRows }, { data: availabilityRows }, { data: analysisChangeRows }] = await Promise.all([
+      supabase.from('match_h2h').select('*').in('match_id', matchIds),
+      supabase.from('player_availability').select('match_id, team_id, player_name, status, reason, bsd_player_id').in('match_id', matchIds),
+      supabase.from('analysis_changes').select('*').in('match_id', matchIds).order('created_at', { ascending: false }),
+    ]);
+
+    const h2hByMatch: Record<string, H2HRecord> = {};
+    for (const row of h2hRows ?? []) {
+      h2hByMatch[row.match_id] = {
+        totalMatches: row.total_matches,
+        homeWins: row.home_wins,
+        draws: row.draws,
+        awayWins: row.away_wins,
+        homeGoals: row.home_goals,
+        awayGoals: row.away_goals,
+        avgTotalGoals: Number(row.avg_total_goals),
+        homeWinRate: Number(row.home_win_rate),
+        awayWinRate: Number(row.away_win_rate),
+      };
+    }
+
+    const bsdPlayerIds = Array.from(new Set((availabilityRows ?? []).map((r) => r.bsd_player_id).filter((id): id is number => id != null)));
+    const marketValueByBsdPlayerId: Record<number, number | null> = {};
+    if (bsdPlayerIds.length > 0) {
+      const { data: bsdPlayerRows } = await supabase.from('bsd_players').select('id, market_value_eur').in('id', bsdPlayerIds);
+      for (const row of bsdPlayerRows ?? []) marketValueByBsdPlayerId[row.id] = row.market_value_eur;
+    }
+
+    const squadImpactByMatch: Record<string, PlayerImpactEntry[]> = {};
+    for (const row of availabilityRows ?? []) {
+      const match = matchRows.find((m) => m.id === row.match_id);
+      if (!match) continue;
+      const team: 'home' | 'away' | null = row.team_id === match.home_team_id ? 'home' : row.team_id === match.away_team_id ? 'away' : null;
+      if (!team) continue;
+      const certain = CERTAIN_ABSENCE_STATUSES.has(row.status);
+      const marketValue = row.bsd_player_id != null ? marketValueByBsdPlayerId[row.bsd_player_id] : null;
+      const isKeyByMarketValue = certain && (marketValue ?? 0) >= HIGH_IMPACT_MARKET_VALUE_EUR;
+      const entry: PlayerImpactEntry = {
+        team,
+        playerName: row.player_name,
+        status: row.status,
+        reason: row.reason,
+        impact: isKeyByMarketValue ? 'high' : certain ? 'medium' : 'low',
+      };
+      (squadImpactByMatch[row.match_id] ??= []).push(entry);
+    }
+
+    for (const match of matches) {
+      const h2h = h2hByMatch[match.id];
+      if (h2h) match.h2h = h2h;
+      const squadImpact = squadImpactByMatch[match.id];
+      if (squadImpact && squadImpact.length > 0) match.squadImpact = squadImpact;
+    }
+
+    const analysisChanges: AnalysisChangeEvent[] = (analysisChangeRows ?? []).map((c) => ({
+      id: String(c.id),
+      matchId: String(c.match_id),
+      timestamp: new Date(c.created_at).toLocaleString(),
+      changeType: c.change_type,
+      previousValue: c.previous_value,
+      newValue: c.new_value,
+    }));
+
     const trackRecord = await fetchTrackRecord();
 
-    return { teams, matches, changeEvents, trackRecord };
+    return { teams, matches, changeEvents, analysisChanges, trackRecord };
   } catch {
     return null;
   }

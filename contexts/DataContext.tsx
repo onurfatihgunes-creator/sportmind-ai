@@ -1,12 +1,13 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import * as mock from '@/data/mockData';
-import type { ChangeEvent, Match, Team, TrackRecordEntry } from '@/data/mockData';
+import type { AnalysisChangeEvent, ChangeEvent, Match, Team, TrackRecordEntry } from '@/data/mockData';
 import { fetchLiveData } from '@/data/liveData';
 
 type AppData = {
   teams: Record<string, Team>;
   matches: Match[];
   changeEvents: ChangeEvent[];
+  analysisChanges: AnalysisChangeEvent[];
   trackRecord: TrackRecordEntry[];
   /** True once real Supabase data has loaded and replaced the mock data. */
   isLive: boolean;
@@ -17,6 +18,7 @@ const initialState: AppData = {
   teams: mock.teams,
   matches: mock.matches,
   changeEvents: mock.changeEvents,
+  analysisChanges: mock.analysisChanges,
   trackRecord: mock.trackRecord,
   isLive: false,
   loading: true,
