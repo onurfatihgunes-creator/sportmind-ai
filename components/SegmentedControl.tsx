@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, withTiming } from 'react-native-reanimated';
 import { colors, fonts, radius } from '@/constants/theme';
@@ -26,6 +26,15 @@ export default function SegmentedControl({ options, value, onChange, height = 38
   const [layouts, setLayouts] = useState<Record<string, { x: number; width: number }>>({});
   const reduceMotion = useReducedMotion();
 
+  // Forces every option to remount (and re-report a fresh onLayout) whenever the SET or
+  // ORDER of keys changes — e.g. Explore's league list reordering once live Supabase data
+  // replaces the initial mock data. Without this, a stale cached {x, width} can survive a
+  // pure reorder: web's onLayout only reliably re-fires on a SIZE change, not a same-size
+  // element merely sliding to a new x when a sibling before it changes — so a previously
+  // measured option can keep an old x forever while an unrelated option's width happens to
+  // update, producing a pill whose x and width visibly belong to two different options.
+  const layoutEpoch = useMemo(() => options.map((o) => o.key).join('|'), [options]);
+
   const active = layouts[value];
   const animatedPill = useAnimatedStyle(() => {
     if (!active) return { opacity: 0 };
@@ -50,7 +59,7 @@ export default function SegmentedControl({ options, value, onChange, height = 38
       />
       {options.map((opt) => (
         <Pressable
-          key={opt.key}
+          key={`${layoutEpoch}:${opt.key}`}
           onLayout={handleLayout(opt.key)}
           onPress={() => onChange(opt.key)}
           style={styles.option}
