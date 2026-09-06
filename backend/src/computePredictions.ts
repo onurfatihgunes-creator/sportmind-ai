@@ -45,16 +45,34 @@ function clampSplit(homeShare: number): { home: number; away: number } {
 // total produces a negative percentage in the final output. computeBasketballPredictions.ts
 // already guards its own split the same way (Math.min/Math.max clamp); this is the
 // three-way (home/draw/away) equivalent for football's split.
-function normalizeOutcomes(home: number, draw: number, away: number) {
+//
+// Uses the largest-remainder method rather than three independent Math.round calls —
+// confirmed live (backend/src/computePredictions.test.ts) that independently rounding
+// three shares can sum to 99 or 101 instead of 100 for ~9% of realistic form/xG inputs
+// (e.g. home 44 / draw 27 / away 30 = 101), a real, user-visible correctness bug for a
+// distribution the UI displays as a 100%-wide bar. Flooring each share and handing the
+// 0-2 leftover points to whichever share(s) lost the most to flooring guarantees the
+// three percentages always sum to exactly 100.
+export function normalizeOutcomes(home: number, draw: number, away: number) {
   const safeHome = Math.max(1, home);
   const safeDraw = Math.max(1, draw);
   const safeAway = Math.max(1, away);
   const total = safeHome + safeDraw + safeAway;
-  return {
-    home: Math.round((safeHome / total) * 100),
-    draw: Math.round((safeDraw / total) * 100),
-    away: Math.round((safeAway / total) * 100),
-  };
+
+  const shares = [
+    { key: 'home' as const, exact: (safeHome / total) * 100 },
+    { key: 'draw' as const, exact: (safeDraw / total) * 100 },
+    { key: 'away' as const, exact: (safeAway / total) * 100 },
+  ];
+  const floored = shares.map((s) => ({ key: s.key, base: Math.floor(s.exact), remainder: s.exact - Math.floor(s.exact) }));
+  const leftover = 100 - floored.reduce((sum, s) => sum + s.base, 0);
+
+  const result: Record<'home' | 'draw' | 'away', number> = { home: 0, draw: 0, away: 0 };
+  for (const s of floored) result[s.key] = s.base;
+  const byRemainderDesc = [...floored].sort((a, b) => b.remainder - a.remainder);
+  for (let i = 0; i < leftover; i++) result[byRemainderDesc[i % byRemainderDesc.length].key] += 1;
+
+  return result;
 }
 
 /**
