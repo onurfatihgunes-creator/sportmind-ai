@@ -72,6 +72,20 @@ export type AnalysisChangeEvent = {
   newValue: string;
 };
 
+/** A real starting-lineup entry from Supabase's `match_lineups` — real BSD-resolved name,
+ * never a raw id (see AvailabilityRow's own doc for the same guarantee). Deliberately does
+ * NOT carry a "form" rating: match_player_stats' player_name is a stringified BSD id, not
+ * a name, and even once resolved there's no built data path yet for a real per-player
+ * recent-form trend — see insights.tsx's own doc comment on why that's a "verified info
+ * only" section rather than an invented Strong/Stable/Weak label. */
+export type LineupPlayer = { name: string; position: string | null };
+
+export type MatchLineups = {
+  status: 'unavailable' | 'predicted' | 'confirmed';
+  home: LineupPlayer[] | null;
+  away: LineupPlayer[] | null;
+};
+
 export type Match = {
   id: string;
   home: Team;
@@ -98,6 +112,9 @@ export type Match = {
   /** Real unavailable/doubtful players for this match when BSD lineup data exists —
    * undefined/empty when it doesn't, never invented. */
   squadImpact?: PlayerImpactEntry[];
+  /** Real starting-lineup names when BSD has published/predicted one — undefined when it
+   * hasn't (most matches this far out). */
+  lineups?: MatchLineups;
 };
 
 export const matches: Match[] = [

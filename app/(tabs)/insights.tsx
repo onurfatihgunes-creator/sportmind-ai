@@ -3,16 +3,26 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CaretRightIcon, CheckIcon, LightningIcon, PlusIcon, ShieldWarningIcon, XIcon } from 'phosphor-react-native';
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  CaretDownIcon,
+  CaretRightIcon,
+  CaretUpIcon,
+  CheckIcon,
+  PlusIcon,
+  XIcon,
+} from 'phosphor-react-native';
 import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
-import type { AnalysisChangeEvent, ChangeEvent, Match, MatchFactor, PlayerImpactEntry, Team } from '@/data/mockData';
+import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, MatchFactor, PlayerImpactEntry, Team } from '@/data/mockData';
 import TeamPicker from '@/components/TeamPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import StackedDistributionBar from '@/components/StackedDistributionBar';
-import FactorBar from '@/components/FactorBar';
+import InfoToggle from '@/components/InfoToggle';
 import Disclaimer from '@/components/Disclaimer';
 
 /** Reframes a match's home/away outcome split from the selected team's own point of
@@ -122,7 +132,8 @@ export default function InsightsScreen() {
   // slicing — a change event can reference a match outside today's loaded window (e.g. a
   // different sport's top-30, or since aged out), and rendering would then have nothing
   // to show for it. Filtering first means an empty result here is a real "nothing to
-  // show" rather than 5 slots that all silently render nothing with no empty state.
+  // show" rather than 5 slots that all silently render nothing with no empty-state
+  // fallback.
   const recentChanges = useMemo(() => {
     const withMatch = changeEvents.filter((e) => matches.some((m) => m.id === e.matchId));
     return [...withMatch].sort((a, b) => (followedMatchIds.has(b.matchId) ? 1 : 0) - (followedMatchIds.has(a.matchId) ? 1 : 0)).slice(0, 5);
@@ -251,6 +262,13 @@ export default function InsightsScreen() {
   );
 }
 
+function factorDirection(factor: MatchFactor, isHome: boolean): 'up' | 'down' | 'neutral' {
+  const diff = factor.home - 50;
+  if (Math.abs(diff) <= 3) return 'neutral';
+  const favoursHome = diff > 0;
+  return (isHome ? favoursHome : !favoursHome) ? 'up' : 'down';
+}
+
 function SelectedTeamAnalysis({
   team,
   match,
@@ -265,17 +283,18 @@ function SelectedTeamAnalysis({
   hasAnyChange: boolean;
 }) {
   const { t } = useTranslation();
+  const [squadExpanded, setSquadExpanded] = useState(false);
   const isBasketball = match.sport === 'basketball';
   const p = perspective(match, team.id);
   const sortedFactors = factorsByStrength(match.factors);
   const topFactor = sortedFactors[0];
-  const mostDecisiveKey = topFactor?.key;
 
-  // "Favoured" is only ever said when this team's own win% genuinely is the single
-  // largest of the three outcomes — otherwise (e.g. a 27% away underdog vs a 46% home
-  // favourite) that word would overclaim, so a neutral "given an X% chance" phrasing is
-  // used instead. The real percentage is always shown either way, never softened.
+  // "Favoured"/the headline verdict is only ever said when this team's own win% genuinely
+  // is the single largest of the three outcomes — otherwise (e.g. a 27% away underdog vs
+  // a 46% home favourite) that word would overclaim. The real percentage is always shown
+  // either way via the ring/bar below, never softened.
   const isFavoured = p.winPct >= p.drawPct && p.winPct >= p.lossPct;
+  const headline = t(isFavoured ? 'insights.headlineFavoured' : 'insights.headlineUnderdog', { team: team.name });
   // Factor names stay in their own Title Case (matches factors.* elsewhere in the app) —
   // deliberately not lowercased for mid-sentence use, since German nouns are always
   // capitalized and lowercasing would be a real grammar error there, not a style choice.
@@ -285,10 +304,14 @@ function SelectedTeamAnalysis({
 
   const homeSquad = (match.squadImpact ?? []).filter((e) => e.team === 'home');
   const awaySquad = (match.squadImpact ?? []).filter((e) => e.team === 'away');
-  const worstImpact = (match.squadImpact ?? []).reduce<PlayerImpactEntry['impact'] | null>((worst, e) => {
-    const rank = { low: 0, medium: 1, high: 2 };
-    return !worst || rank[e.impact] > rank[worst] ? e.impact : worst;
-  }, null);
+  const unavailableCount = (match.squadImpact ?? []).length;
+  const ownLineup: LineupPlayer[] = (p.isHome ? match.lineups?.home : match.lineups?.away) ?? [];
+  const opponentLineup: LineupPlayer[] = (p.isHome ? match.lineups?.away : match.lineups?.home) ?? [];
+  const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0 || opponentLineup.length > 0;
+  const squadSummaryParts = [
+    unavailableCount > 0 ? t('insights.squadImpactSummary', { count: unavailableCount }) : null,
+    ownLineup.length > 0 ? t('insights.keyPlayersTrackedSummary', { count: ownLineup.length }) : null,
+  ].filter((part): part is string => Boolean(part));
 
   const changeDescription = analysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
 
@@ -310,10 +333,12 @@ function SelectedTeamAnalysis({
         </View>
       </Pressable>
 
+      {/* PRIMARY: the conclusion comes before the numbers — a user should understand
+          SportMind's verdict before being asked to interpret a percentage split. */}
       <View style={styles.card}>
-        <Text style={styles.cardKicker}>{t('insights.predictionTitle')}</Text>
+        <Text style={styles.sportMindThinksHeadline}>{headline}</Text>
         <View style={styles.predictionRow}>
-          <ConfidenceRing value={p.winPct} size={84} strokeWidth={7} caption={t('matchAnalysis.confidenceCaption')} />
+          <ConfidenceRing value={p.winPct} size={84} strokeWidth={7} caption={t('insights.winProbabilityCaption')} />
           <View style={{ flex: 1, gap: 8 }}>
             <StackedDistributionBar home={p.winPct} draw={isBasketball ? 0 : p.drawPct} away={p.lossPct} height={28} />
             <View style={styles.outcomeLegendRow}>
@@ -323,118 +348,88 @@ function SelectedTeamAnalysis({
             </View>
           </View>
         </View>
+        <InfoToggle label={t('insights.winProbabilityInfoLabel')} explanation={t('insights.winProbabilityInfoBody')} />
       </View>
 
       <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <LightningIcon size={14} weight="bold" color={colors.primary} />
-          <Text style={styles.cardTitle}>{t('insights.aiAnalysisTitle')}</Text>
-        </View>
+        <Text style={styles.cardTitle}>{t('insights.aiAnalysisTitle')}</Text>
         <Text style={styles.aiAnalysisBody}>{aiAnalysis}</Text>
       </View>
 
       {sortedFactors.length > 0 && (
         <View style={styles.card}>
-          <Text style={styles.cardKicker}>{t('insights.keyFactorsTitle')}</Text>
-          <View style={{ gap: 14 }}>
-            {sortedFactors.slice(0, 5).map((factor, index) => {
-              const diff = factor.home - 50;
-              const qualifier =
-                factor.key === mostDecisiveKey
-                  ? t('matchAnalysis.mostDecisive')
-                  : Math.abs(diff) <= 3
-                    ? t('matchAnalysis.balanced')
-                    : t('matchAnalysis.favours', { team: diff > 0 ? match.home.name : match.away.name });
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{t('insights.whyTitle')}</Text>
+          </View>
+          <View style={{ gap: 10 }}>
+            {sortedFactors.slice(0, 4).map((factor) => {
+              const direction = factorDirection(factor, p.isHome);
+              const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
+              const tone = direction === 'up' ? colors.successText : direction === 'down' ? colors.dangerText : colors.textFaint;
               return (
-                <FactorBar
-                  key={factor.key}
-                  label={t(`factors.${factor.key}`)}
-                  homePct={factor.home}
-                  awayPct={factor.away}
-                  homeName={match.home.name}
-                  awayName={match.away.name}
-                  qualifier={qualifier}
-                  highlighted={factor.key === mostDecisiveKey}
-                  delay={index * 60}
-                />
+                <View key={factor.key} style={styles.whyRow}>
+                  <Icon size={14} weight="bold" color={tone} />
+                  <Text style={styles.whyLabel}>{t(`factors.${factor.key}`)}</Text>
+                </View>
               );
             })}
           </View>
+          <InfoToggle label={t('insights.whyInfoLabel')} explanation={t('insights.whyInfoBody')} />
+        </View>
+      )}
+
+      {hasSquadSection && (
+        <View style={styles.card}>
+          <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
+              <Text style={styles.mutedBody}>{squadSummaryParts.join(' · ')}</Text>
+            </View>
+            {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
+          </Pressable>
+
+          {squadExpanded && (
+            <View style={{ gap: 14, marginTop: 12 }}>
+              {unavailableCount > 0 && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
+                  {[{ label: match.home.name, rows: homeSquad }, { label: match.away.name, rows: awaySquad }].map(
+                    (group) =>
+                      group.rows.length > 0 && (
+                        <View key={group.label} style={{ gap: 6 }}>
+                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
+                          {group.rows.map((entry, i) => (
+                            <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} />
+                          ))}
+                        </View>
+                      ),
+                  )}
+                </View>
+              )}
+
+              {(ownLineup.length > 0 || opponentLineup.length > 0) && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
+                  {[{ label: team.name, rows: ownLineup }, { label: p.opponent.name, rows: opponentLineup }].map(
+                    (group) =>
+                      group.rows.length > 0 && (
+                        <View key={group.label} style={{ gap: 4 }}>
+                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
+                          <Text style={styles.mutedBody}>{group.rows.map((pl) => pl.name).join(', ')}</Text>
+                        </View>
+                      ),
+                  )}
+                </View>
+              )}
+            </View>
+          )}
         </View>
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardKicker}>{t('insights.squadImpactTitle')}</Text>
-        {(match.squadImpact ?? []).length === 0 ? (
-          <Text style={styles.mutedBody}>{t('insights.noSquadImpact')}</Text>
-        ) : (
-          <View style={{ gap: 12 }}>
-            <View style={styles.squadSummaryRow}>
-              <ShieldWarningIcon size={14} weight="bold" color={worstImpact ? toneTextColor(worstImpact === 'low' ? 'success' : worstImpact === 'medium' ? 'warning' : 'danger') : colors.textFaint} />
-              <Text style={styles.squadSummaryText}>
-                {t('insights.squadImpactSummary', { count: (match.squadImpact ?? []).length })}
-                {worstImpact && ` · ${t(`insights.impact${worstImpact.charAt(0).toUpperCase()}${worstImpact.slice(1)}`)}`}
-              </Text>
-            </View>
-            {[{ label: match.home.name, rows: homeSquad }, { label: match.away.name, rows: awaySquad }].map(
-              (group) =>
-                group.rows.length > 0 && (
-                  <View key={group.label} style={{ gap: 6 }}>
-                    <Text style={styles.squadTeamLabel}>{group.label}</Text>
-                    {group.rows.map((entry, i) => {
-                      const tone = entry.impact === 'high' ? 'danger' : entry.impact === 'medium' ? 'warning' : 'success';
-                      return (
-                        <View key={`${entry.playerName}-${i}`} style={styles.playerRow}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.playerName}>{entry.playerName}</Text>
-                            <Text style={styles.playerStatus}>
-                              {PLAYER_STATUS_KEY[entry.status] ? t(PLAYER_STATUS_KEY[entry.status]) : entry.status}
-                              {entry.reason ? ` · ${humanizeReason(entry.reason)}` : ''}
-                            </Text>
-                          </View>
-                          <View style={[styles.impactChip, { backgroundColor: toneMutedColor(tone) }]}>
-                            <Text style={[styles.impactChipText, { color: toneTextColor(tone) }]}>{t(`insights.impact${entry.impact.charAt(0).toUpperCase()}${entry.impact.slice(1)}`)}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ),
-            )}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardKicker}>{t('insights.h2hTitle')}</Text>
-        {!match.h2h || match.h2h.totalMatches === 0 ? (
-          <Text style={styles.mutedBody}>{t('insights.noH2H')}</Text>
-        ) : (
-          <View>
-            <Text style={styles.h2hSummary}>
-              {t('insights.h2hRecord', {
-                team: team.name,
-                total: match.h2h.totalMatches,
-                // BSD's H2H record is computed specific to this match's home/away
-                // assignment, so "home wins" genuinely means "wins by the team that is
-                // home in this fixture" — reframed to the selected team's own wins/losses
-                // for consistency with the rest of this screen, same as the prediction.
-                ownWins: p.isHome ? match.h2h.homeWins : match.h2h.awayWins,
-                draws: match.h2h.draws,
-                oppWins: p.isHome ? match.h2h.awayWins : match.h2h.homeWins,
-              })}
-            </Text>
-            <Text style={styles.mutedBody}>{t('insights.h2hAvgGoals', { avg: match.h2h.avgTotalGoals.toFixed(1) })}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitle}>{t('whatChanged.title')}</Text>
-        </View>
+        <Text style={styles.cardTitle}>{t('whatChanged.title')}</Text>
         {hasAnyChange ? (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: 8, marginTop: 8 }}>
             {changeEvent && (
               <Text style={styles.mutedBody}>
                 {t('insights.predictionChangeLine', { from: changeEvent.from, to: changeEvent.to })}
@@ -443,8 +438,51 @@ function SelectedTeamAnalysis({
             {changeDescription && <Text style={styles.mutedBody}>{changeDescription}</Text>}
           </View>
         ) : (
-          <Text style={styles.mutedBody}>{t('insights.noSignificantChanges')}</Text>
+          <Text style={[styles.mutedBody, { marginTop: 8 }]}>{t('insights.noSignificantChanges')}</Text>
         )}
+      </View>
+
+      {match.h2h && match.h2h.totalMatches > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('insights.h2hTitle')}</Text>
+          <Text style={[styles.mutedBody, { marginTop: 8 }]}>
+            {t('insights.h2hRecord', {
+              team: team.name,
+              total: match.h2h.totalMatches,
+              // BSD's H2H record is computed specific to this match's home/away
+              // assignment, so "home wins" genuinely means "wins by the team that is
+              // home in this fixture" — reframed to the selected team's own wins/losses
+              // for consistency with the rest of this screen, same as the prediction.
+              ownWins: p.isHome ? match.h2h.homeWins : match.h2h.awayWins,
+              draws: match.h2h.draws,
+              oppWins: p.isHome ? match.h2h.awayWins : match.h2h.homeWins,
+            })}
+          </Text>
+        </View>
+      )}
+
+      <Pressable style={styles.viewFullAnalysisLink} onPress={() => router.push(`/match/${match.id}`)}>
+        <Text style={styles.viewFullAnalysisText}>{t('common.viewFullAnalysis')}</Text>
+        <ArrowRightIcon size={13} weight="bold" color={colors.primaryLink} />
+      </Pressable>
+    </View>
+  );
+}
+
+function PlayerImpactRow({ entry }: { entry: PlayerImpactEntry }) {
+  const { t } = useTranslation();
+  const tone = entry.impact === 'high' ? 'danger' : entry.impact === 'medium' ? 'warning' : 'success';
+  return (
+    <View style={styles.playerRow}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.playerName}>{entry.playerName}</Text>
+        <Text style={styles.playerStatus}>
+          {PLAYER_STATUS_KEY[entry.status] ? t(PLAYER_STATUS_KEY[entry.status]) : entry.status}
+          {entry.reason ? ` · ${humanizeReason(entry.reason)}` : ''}
+        </Text>
+      </View>
+      <View style={[styles.impactChip, { backgroundColor: toneMutedColor(tone) }]}>
+        <Text style={[styles.impactChipText, { color: toneTextColor(tone) }]}>{t(`insights.impact${entry.impact.charAt(0).toUpperCase()}${entry.impact.slice(1)}`)}</Text>
       </View>
     </View>
   );
@@ -482,23 +520,26 @@ const styles = StyleSheet.create({
   nextMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
   nextMatchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },
   card: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  cardKicker: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginBottom: 10 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  cardTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
-  predictionRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  cardTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 10 },
+  sportMindThinksHeadline: { fontFamily: fonts.headline, fontSize: 17, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 12 },
+  predictionRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 10 },
   outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between' },
   outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
   aiAnalysisBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   mutedBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
-  squadSummaryRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  squadSummaryText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  whyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  whyLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  collapsibleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  squadGroupLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.textFainter },
   squadTeamLabel: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textFaint },
   playerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   playerName: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
   playerStatus: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
   impactChip: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   impactChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10 },
-  h2hSummary: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginBottom: 4 },
+  viewFullAnalysisLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
+  viewFullAnalysisText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.primaryLink },
   changeRow: {
     flexDirection: 'row',
     alignItems: 'center',

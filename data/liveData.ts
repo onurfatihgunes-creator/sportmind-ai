@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { AnalysisChangeEvent, ChangeEvent, H2HRecord, Match, MatchFactor, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
+import type { AnalysisChangeEvent, ChangeEvent, H2HRecord, LineupPlayer, Match, MatchFactor, MatchLineups, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
 
 // Mirrors backend/src/analysisEngine.ts's derivePlayerImpact rule exactly (see that
 // function's own doc comment) — a real, already-established display-classification rule,
@@ -243,10 +243,11 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     // extending this one existing fetch. Every one of these is best-effort: a missing row
     // for a given match means that match's H2H/squad-impact section is simply omitted by
     // the screen, never fabricated.
-    const [{ data: h2hRows }, { data: availabilityRows }, { data: analysisChangeRows }] = await Promise.all([
+    const [{ data: h2hRows }, { data: availabilityRows }, { data: analysisChangeRows }, { data: lineupRows }] = await Promise.all([
       supabase.from('match_h2h').select('*').in('match_id', matchIds),
       supabase.from('player_availability').select('match_id, team_id, player_name, status, reason, bsd_player_id').in('match_id', matchIds),
       supabase.from('analysis_changes').select('*').in('match_id', matchIds).order('created_at', { ascending: false }),
+      supabase.from('match_lineups').select('match_id, lineup_status, home_players, away_players').in('match_id', matchIds),
     ]);
 
     const h2hByMatch: Record<string, H2HRecord> = {};
@@ -290,11 +291,24 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       (squadImpactByMatch[row.match_id] ??= []).push(entry);
     }
 
+    const lineupsByMatch: Record<string, MatchLineups> = {};
+    for (const row of lineupRows ?? []) {
+      const toPlayers = (raw: unknown): LineupPlayer[] | null =>
+        Array.isArray(raw) ? raw.map((p: any) => ({ name: p.name, position: p.position ?? null })) : null;
+      lineupsByMatch[row.match_id] = {
+        status: row.lineup_status,
+        home: toPlayers(row.home_players),
+        away: toPlayers(row.away_players),
+      };
+    }
+
     for (const match of matches) {
       const h2h = h2hByMatch[match.id];
       if (h2h) match.h2h = h2h;
       const squadImpact = squadImpactByMatch[match.id];
       if (squadImpact && squadImpact.length > 0) match.squadImpact = squadImpact;
+      const lineups = lineupsByMatch[match.id];
+      if (lineups) match.lineups = lineups;
     }
 
     const analysisChanges: AnalysisChangeEvent[] = (analysisChangeRows ?? []).map((c) => ({
