@@ -1,6 +1,7 @@
 {
   "common": {
     "cancel": "Cancel",
+    "close": "Close",
     "next": "Next",
     "skip": "Skip",
     "viewFullAnalysis": "View full analysis",
@@ -67,7 +68,11 @@
     "noResults": "No matches found.",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "later": "Upcoming"
+    "later": "Upcoming",
+    "competitionPickerTitle": "Competitions",
+    "searchCompetitionsPlaceholder": "Search competitions",
+    "noCompetitionsMatch": "No competitions match your search.",
+    "otherRegion": "Other"
   },
   "insights": {
     "title": "AI Insights",

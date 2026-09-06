@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BellIcon, MagnifyingGlassIcon, PlusIcon, XIcon } from 'phosphor-react-native';
+import { BellIcon, PlusIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
+import TeamPicker from '@/components/TeamPicker';
 
 export default function InsightsScreen() {
   const { t } = useTranslation();
@@ -14,23 +15,8 @@ export default function InsightsScreen() {
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
-  const [pickerSearchFocused, setPickerSearchFocused] = useState(false);
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
-
-  // Grouped by sport rather than one flat list — 244 real teams across football and
-  // basketball pooled together (89 of them basketball) made an already-long list actively
-  // misleading, not just long: a football-following feature silently offering NBA teams
-  // in the same unlabelled list. Search narrows the list; the sport headers keep what's
-  // left honestly labelled instead of just shorter.
-  const availableTeamsBySport = useMemo(() => {
-    const query = pickerSearch.trim().toLowerCase();
-    const notFollowed = Object.values(teams).filter((tm) => !teamIds.includes(tm.id));
-    const matching = query ? notFollowed.filter((tm) => tm.name.toLowerCase().includes(query)) : notFollowed;
-    const football = matching.filter((tm) => tm.sport === 'football').sort((a, b) => a.name.localeCompare(b.name));
-    const basketball = matching.filter((tm) => tm.sport === 'basketball').sort((a, b) => a.name.localeCompare(b.name));
-    return { football, basketball };
-  }, [teams, teamIds, pickerSearch]);
 
   const teamStatus = (teamId: string) => {
     const relevant = changeEvents
@@ -100,58 +86,28 @@ export default function InsightsScreen() {
           })}
 
           {canFollowMore ? (
-            <Pressable style={styles.addButton} onPress={() => setShowPicker((v) => !v)}>
+            <Pressable style={styles.addButton} onPress={() => setShowPicker(true)}>
               <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
               <Text style={styles.addButtonText}>{t('insights.addTeamShort')}</Text>
             </Pressable>
           ) : (
             <Text style={styles.maxReachedText}>{t('insights.maxTeamsReached', { max: MAX_FOLLOWED_TEAMS })}</Text>
           )}
-          {showPicker && (
-            <View style={styles.pickerBox}>
-              <View style={[styles.pickerSearchBar, pickerSearchFocused && styles.pickerSearchBarFocused]}>
-                <MagnifyingGlassIcon size={14} color={colors.textFainter} />
-                <TextInput
-                  style={styles.pickerSearchInput}
-                  value={pickerSearch}
-                  onChangeText={setPickerSearch}
-                  onFocus={() => setPickerSearchFocused(true)}
-                  onBlur={() => setPickerSearchFocused(false)}
-                  placeholder={t('insights.searchTeamsPlaceholder')}
-                  placeholderTextColor={colors.textFainter}
-                  autoFocus
-                />
-              </View>
-              <View style={styles.pickerList}>
-                {availableTeamsBySport.football.length === 0 && availableTeamsBySport.basketball.length === 0 && (
-                  <Text style={styles.followingEmptyText}>{t('insights.noTeamsMatch')}</Text>
-                )}
-                {(['football', 'basketball'] as const).map((sport) =>
-                  availableTeamsBySport[sport].length === 0 ? null : (
-                    <View key={sport}>
-                      <Text style={styles.pickerSportHeader}>{t(`home.${sport}`)}</Text>
-                      {availableTeamsBySport[sport].map((team) => (
-                        <Pressable
-                          key={team.id}
-                          style={styles.pickerRow}
-                          onPress={() => {
-                            toggleTeam(team.id);
-                            setShowPicker(false);
-                            setPickerSearch('');
-                          }}
-                        >
-                          <View style={[styles.teamBadge, { width: 26, height: 26, borderRadius: 13, backgroundColor: team.bg }]}>
-                            <Text style={[styles.teamBadgeText, { fontSize: 9, color: team.fg }]}>{team.code}</Text>
-                          </View>
-                          <Text style={styles.teamName}>{team.name}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  ),
-                )}
-              </View>
-            </View>
-          )}
+          <TeamPicker
+            visible={showPicker}
+            onClose={() => setShowPicker(false)}
+            teams={teams}
+            matches={matches}
+            excludeIds={teamIds}
+            search={pickerSearch}
+            onSearchChange={setPickerSearch}
+            title={t('insights.addTeamShort')}
+            onSelect={(teamId) => {
+              toggleTeam(teamId);
+              setShowPicker(false);
+              setPickerSearch('');
+            }}
+          />
         </View>
 
         <Text style={styles.kicker}>{t('insights.recentChangesKicker')}</Text>
@@ -206,30 +162,6 @@ const styles = StyleSheet.create({
   addButton: { minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderHover, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   maxReachedText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, textAlign: 'center', paddingVertical: 12 },
-  pickerBox: { marginTop: 8, gap: 8 },
-  pickerSearchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    height: 38,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-  },
-  pickerSearchBarFocused: { borderColor: colors.primary },
-  pickerSearchInput: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.textPrimary,
-    padding: 0,
-    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
-  },
-  pickerSportHeader: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginTop: 8, marginBottom: 4 },
-  pickerList: { gap: 4 },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radius.sm, backgroundColor: colors.surfaceSubtle },
   changeRow: {
     flexDirection: 'row',
     alignItems: 'center',

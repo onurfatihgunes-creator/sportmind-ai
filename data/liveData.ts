@@ -198,6 +198,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
         home,
         away,
         kickoff: formatKickoff(m.kickoff_at),
+        kickoffAt: m.kickoff_at,
         competition: m.competition,
         sport: (m.sport as Sport) ?? 'football',
         outcomes: { home: pred.home_win_pct, draw: pred.draw_pct, away: pred.away_win_pct },

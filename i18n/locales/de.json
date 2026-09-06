@@ -1,6 +1,7 @@
 {
   "common": {
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "next": "Weiter",
     "skip": "Überspringen",
     "viewFullAnalysis": "Vollständige Analyse ansehen",
@@ -67,7 +68,11 @@
     "noResults": "Keine Spiele gefunden.",
     "today": "Heute",
     "tomorrow": "Morgen",
-    "later": "Demnächst"
+    "later": "Demnächst",
+    "competitionPickerTitle": "Wettbewerbe",
+    "searchCompetitionsPlaceholder": "Wettbewerbe suchen",
+    "noCompetitionsMatch": "Keine Wettbewerbe gefunden.",
+    "otherRegion": "Andere"
   },
   "insights": {
     "title": "KI-Insights",

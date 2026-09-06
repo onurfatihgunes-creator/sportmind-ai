@@ -1,6 +1,7 @@
 {
   "common": {
     "cancel": "Vazgeç",
+    "close": "Kapat",
     "next": "İleri",
     "skip": "Atla",
     "viewFullAnalysis": "Tüm analizi görüntüle",
@@ -67,7 +68,11 @@
     "noResults": "Maç bulunamadı.",
     "today": "Bugün",
     "tomorrow": "Yarın",
-    "later": "Yaklaşan"
+    "later": "Yaklaşan",
+    "competitionPickerTitle": "Ligler",
+    "searchCompetitionsPlaceholder": "Lig ara",
+    "noCompetitionsMatch": "Aramanla eşleşen lig yok.",
+    "otherRegion": "Diğer"
   },
   "insights": {
     "title": "AI Öngörüler",

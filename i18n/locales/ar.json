@@ -1,6 +1,7 @@
 {
   "common": {
     "cancel": "إلغاء",
+    "close": "إغلاق",
     "next": "التالي",
     "skip": "تخطي",
     "viewFullAnalysis": "عرض التحليل الكامل",
@@ -67,7 +68,11 @@
     "noResults": "لم يتم العثور على مباريات.",
     "today": "اليوم",
     "tomorrow": "غدًا",
-    "later": "قادمًا"
+    "later": "قادمًا",
+    "competitionPickerTitle": "البطولات",
+    "searchCompetitionsPlaceholder": "ابحث عن بطولة",
+    "noCompetitionsMatch": "لا توجد بطولات مطابقة لبحثك.",
+    "otherRegion": "أخرى"
   },
   "insights": {
     "title": "تحليلات الذكاء الاصطناعي",

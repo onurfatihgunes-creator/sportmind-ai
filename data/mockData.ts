@@ -33,6 +33,11 @@ export type Match = {
   home: Team;
   away: Team;
   kickoff: string;
+  /** Real ISO kickoff timestamp, kept alongside the pre-formatted `kickoff` display
+   * string so screens that need real calendar-day grouping (Explore's date buckets)
+   * don't have to parse a locale-formatted display string. Optional because mock data
+   * doesn't carry real dates — callers needing calendar accuracy must handle its absence. */
+  kickoffAt?: string;
   competition: string;
   sport: Sport;
   outcomes: Outcomes;

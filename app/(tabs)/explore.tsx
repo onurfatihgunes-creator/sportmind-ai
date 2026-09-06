@@ -1,20 +1,47 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BasketballIcon, BookmarkSimpleIcon, MagnifyingGlassIcon, SoccerBallIcon, SortDescendingIcon } from 'phosphor-react-native';
+import { BasketballIcon, BookmarkSimpleIcon, CaretDownIcon, SoccerBallIcon, SortDescendingIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome, type Sport } from '@/data/mockData';
+import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import SegmentedControl from '@/components/SegmentedControl';
+import SearchBar from '@/components/SearchBar';
+import CompetitionPicker from '@/components/CompetitionPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
 
-function dayBucket(kickoff: string): 'today' | 'tomorrow' | 'later' {
-  if (kickoff.startsWith('Today')) return 'today';
-  if (kickoff.startsWith('Tomorrow')) return 'tomorrow';
-  return 'later';
+type DayGroup = { key: string; label: string; matches: Match[] };
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Calendar-accurate day grouping — replaces the old string-prefix check on the
+ * pre-formatted `kickoff` display string (which only ever recognised "Today"/"Tomorrow"
+ * and dumped everything else into one undifferentiated "later" bucket). Using the real
+ * `kickoffAt` ISO timestamp lets every day in the active window get its own group, keyed
+ * by calendar date (so two different Wednesdays a week apart never collapse into one
+ * bucket) and labelled with a real weekday name beyond tomorrow. Falls back to the old
+ * heuristic only when `kickoffAt` is missing (mock data has no real dates).
+ */
+function dayGroupFor(match: Match, t: (key: string) => string): { key: string; label: string } {
+  if (!match.kickoffAt) {
+    if (match.kickoff.startsWith('Today')) return { key: '0000-today', label: t('explore.today') };
+    if (match.kickoff.startsWith('Tomorrow')) return { key: '0001-tomorrow', label: t('explore.tomorrow') };
+    return { key: '9999-later', label: t('explore.later') };
+  }
+  const kickoffDate = new Date(match.kickoffAt);
+  const today = startOfDay(new Date());
+  const target = startOfDay(kickoffDate);
+  const dayDiff = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  const isoKey = target.toISOString().slice(0, 10);
+  if (dayDiff === 0) return { key: isoKey, label: t('explore.today') };
+  if (dayDiff === 1) return { key: isoKey, label: t('explore.tomorrow') };
+  return { key: isoKey, label: kickoffDate.toLocaleDateString(undefined, { weekday: 'long' }) };
 }
 
 export default function ExploreScreen() {
@@ -23,10 +50,11 @@ export default function ExploreScreen() {
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
   const [search, setSearch] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
   const [sortAsc, setSortAsc] = useState(false);
+  const [competitionPickerOpen, setCompetitionPickerOpen] = useState(false);
+  const [competitionSearch, setCompetitionSearch] = useState('');
 
   // Home links here with a `league` param (e.g. from its league chips) — re-apply it
   // whenever it changes, since expo-router reuses this screen's instance across tab visits.
@@ -41,10 +69,6 @@ export default function ExploreScreen() {
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
 
   const competitions = useMemo(() => Array.from(new Set(sportMatches.map((m) => m.competition))), [sportMatches]);
-  const leagueOptions = useMemo(
-    () => [{ key: 'all', label: t('explore.allLeagues') }, ...competitions.map((c) => ({ key: c, label: c }))],
-    [competitions, t],
-  );
 
   const filteredMatches = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -65,29 +89,22 @@ export default function ExploreScreen() {
       );
   }, [sportMatches, search, selectedLeague, sortAsc]);
 
-  const grouped = useMemo(() => {
-    const buckets: Record<'today' | 'tomorrow' | 'later', typeof filteredMatches> = { today: [], tomorrow: [], later: [] };
-    filteredMatches.forEach((m) => buckets[dayBucket(m.kickoff)].push(m));
-    return buckets;
-  }, [filteredMatches]);
+  const groupedByDay = useMemo(() => {
+    const groups = new Map<string, DayGroup>();
+    for (const m of filteredMatches) {
+      const { key, label } = dayGroupFor(m, t);
+      if (!groups.has(key)) groups.set(key, { key, label, matches: [] });
+      groups.get(key)!.matches.push(m);
+    }
+    return Array.from(groups.values()).sort((a, b) => a.key.localeCompare(b.key));
+  }, [filteredMatches, t]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('explore.title')}</Text>
 
-        <View style={[styles.searchBar, searchFocused && styles.searchBarFocused]}>
-          <MagnifyingGlassIcon size={16} color={colors.textFainter} />
-          <TextInput
-            style={styles.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder={t('explore.searchPlaceholder')}
-            placeholderTextColor={colors.textFainter}
-          />
-        </View>
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t('explore.searchPlaceholder')} />
 
         <SegmentedControl
           style={styles.sportSegment}
@@ -102,18 +119,41 @@ export default function ExploreScreen() {
           }}
         />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          <SegmentedControl options={leagueOptions} value={selectedLeague} onChange={setSelectedLeague} height={34} fontSize={11} />
-        </ScrollView>
+        <Pressable
+          style={styles.competitionTrigger}
+          onPress={() => setCompetitionPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('explore.competitionPickerTitle')}
+        >
+          <Text style={styles.competitionTriggerText} numberOfLines={1}>
+            {selectedLeague === 'all' ? t('explore.allLeagues') : selectedLeague}
+          </Text>
+          <CaretDownIcon size={13} weight="bold" color={colors.textSecondary} />
+        </Pressable>
+
+        <CompetitionPicker
+          visible={competitionPickerOpen}
+          onClose={() => setCompetitionPickerOpen(false)}
+          competitions={competitions}
+          selected={selectedLeague}
+          search={competitionSearch}
+          onSearchChange={setCompetitionSearch}
+          onSelect={(competition) => {
+            setSelectedLeague(competition);
+            setCompetitionPickerOpen(false);
+            setCompetitionSearch('');
+          }}
+        />
 
         {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
 
-        {(['today', 'tomorrow', 'later'] as const).map((bucket) =>
-          grouped[bucket].length === 0 ? null : (
-            <View key={bucket}>
+        {groupedByDay.map((group) => {
+          const isToday = group.label === t('explore.today');
+          return (
+            <View key={group.key}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.kicker}>{t(`explore.${bucket}`)}</Text>
-                {bucket === 'today' && (
+                <Text style={styles.kicker}>{group.label}</Text>
+                {isToday && (
                   <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
                     <SortDescendingIcon size={13} weight="bold" color={colors.primary} />
                     <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
@@ -121,13 +161,13 @@ export default function ExploreScreen() {
                 )}
               </View>
               <View style={styles.matchList}>
-                {grouped[bucket].map((m, index) => {
+                {group.matches.map((m, index) => {
                   const favourite = favouredOutcome(m);
                   const watched = isWatched(m.id);
                   return (
                     <Pressable
                       key={m.id}
-                      style={[styles.matchRow, bucket === 'today' && index === 0 && styles.matchRowFeatured]}
+                      style={[styles.matchRow, isToday && index === 0 && styles.matchRowFeatured]}
                       onPress={() => router.push(`/match/${m.id}`)}
                     >
                       <TeamBadgePair home={m.home} away={m.away} />
@@ -159,8 +199,8 @@ export default function ExploreScreen() {
                 })}
               </View>
             </View>
-          ),
-        )}
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -170,35 +210,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
   title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 14 },
-  searchBar: {
+  sportSegment: { marginTop: 14 },
+  competitionTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
-    height: 44,
+    justifyContent: 'space-between',
+    height: 40,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.xl,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
     paddingHorizontal: 14,
+    marginTop: 12,
+    marginBottom: 16,
   },
-  // The browser's own default focus ring (an orange/yellow outline on this webview) is
-  // suppressed on the input itself below; this border-color swap on the container is the
-  // replacement focus indicator, consistent with the app's own accent color.
-  searchBarFocused: { borderColor: colors.primary },
-  searchInput: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.textPrimary,
-    padding: 0,
-    // outlineWidth: 0 alone isn't enough — Chromium's default outline-style is the
-    // special `auto` keyword, which some browsers render with a minimum visible width
-    // regardless of an explicit 0 override. Pinning outlineStyle to 'solid' first (a
-    // real, non-`auto` style) makes the 0 width actually take effect.
-    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
-  },
-  sportSegment: { marginTop: 14 },
-  filterRow: { marginTop: 12, marginBottom: 16 },
+  competitionTriggerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginRight: 8 },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 9 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
