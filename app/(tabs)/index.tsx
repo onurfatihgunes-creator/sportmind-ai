@@ -12,7 +12,7 @@ import {
   SparkleIcon,
   TrayIcon,
 } from 'phosphor-react-native';
-import { colors, confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { colors, confidenceColor, fonts, PREMIUM_ENABLED, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
@@ -103,10 +103,12 @@ export default function HomeScreen() {
             <Text style={styles.greetingSmall}>{t('home.goodEvening')}</Text>
             <Text style={styles.greetingName}>{name}</Text>
           </View>
-          <Pressable style={styles.premiumButton} onPress={() => router.push('/(tabs)/premium')}>
-            <SparkleIcon size={14} weight="bold" color={colors.primaryLink} />
-            <Text style={styles.premiumButtonText}>{t('tabs.premium')}</Text>
-          </Pressable>
+          {PREMIUM_ENABLED && (
+            <Pressable style={styles.premiumButton} onPress={() => router.push('/(tabs)/premium')}>
+              <SparkleIcon size={14} weight="bold" color={colors.primaryLink} />
+              <Text style={styles.premiumButtonText}>{t('tabs.premium')}</Text>
+            </Pressable>
+          )}
         </View>
 
         <SegmentedControl

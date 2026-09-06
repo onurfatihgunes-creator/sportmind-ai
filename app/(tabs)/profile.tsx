@@ -16,7 +16,7 @@ import {
   ShieldCheckIcon,
   SparkleIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 
@@ -104,16 +104,18 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        <Pressable style={styles.upsellCard} onPress={() => router.push('/(tabs)/premium')}>
-          <View style={styles.upsellIcon}>
-            <SparkleIcon size={18} weight="bold" color={colors.primaryTint} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.upsellTitle}>{t('home.goPremium')}</Text>
-            <Text style={styles.upsellSubtitle}>{t('home.unlockUnlimited')}</Text>
-          </View>
-          <ArrowRightIcon size={15} weight="bold" color={colors.primary} />
-        </Pressable>
+        {PREMIUM_ENABLED && (
+          <Pressable style={styles.upsellCard} onPress={() => router.push('/(tabs)/premium')}>
+            <View style={styles.upsellIcon}>
+              <SparkleIcon size={18} weight="bold" color={colors.primaryTint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.upsellTitle}>{t('home.goPremium')}</Text>
+              <Text style={styles.upsellSubtitle}>{t('home.unlockUnlimited')}</Text>
+            </View>
+            <ArrowRightIcon size={15} weight="bold" color={colors.primary} />
+          </Pressable>
+        )}
 
         <View style={styles.group}>
           {rows.map((row, index) => (
