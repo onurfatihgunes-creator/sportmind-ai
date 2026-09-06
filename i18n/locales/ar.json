@@ -74,9 +74,13 @@
     "followingKicker": "المتابَعون",
     "followingCount": "تتم متابعة {{count}} من {{max}} فرق",
     "followingEmptyBody": "تابع حتى {{max}} فرق مجانًا لرؤية التغييرات المهمة لهم هنا.",
-    "addTeamShort": "+ إضافة فريق",
+    "addTeamShort": "إضافة فريق",
+    "maxTeamsReached": "أنت تتابع الحد الأقصى ({{max}}) من الفرق. أزل فريقًا لإضافة آخر.",
+    "searchTeamsPlaceholder": "ابحث عن فريق",
+    "noTeamsMatch": "لا توجد فرق مطابقة لبحثك.",
     "recentChangesKicker": "أحدث التغييرات",
     "recentChangesEmpty": "لا توجد تغييرات بعد. تحقق مرة أخرى عندما تقترب المباريات من الانطلاق.",
+    "compareKicker": "مقارنة الفرق",
     "compareLink": "قارن بين {{a}} و{{b}}",
     "stableNoChanges": "مستقر · لا تغييرات"
   },
@@ -200,12 +204,7 @@
     "title": "القانونية والشفافية",
     "privacyPolicy": "سياسة الخصوصية",
     "termsOfService": "شروط الخدمة",
-    "disclaimer": "إخلاء المسؤولية",
-    "responsibleAI": "الذكاء الاصطناعي المسؤول",
-    "responsibleUse": "الاستخدام المسؤول",
-    "methodology": "المنهجية",
-    "licences": "التراخيص والمصادر المفتوحة",
-    "dataSources": "مصادر البيانات"
+    "methodology": "المنهجية"
   },
   "methodology": {
     "title": "كيف يعمل الذكاء الاصطناعي لدينا",

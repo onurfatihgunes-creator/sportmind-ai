@@ -74,9 +74,13 @@
     "followingKicker": "Following",
     "followingCount": "{{count}} of {{max}} teams followed",
     "followingEmptyBody": "Follow up to {{max}} teams for free to see meaningful changes for them here.",
-    "addTeamShort": "+ Add team",
+    "addTeamShort": "Add team",
+    "maxTeamsReached": "You're following the maximum of {{max}} teams. Remove one to add another.",
+    "searchTeamsPlaceholder": "Search teams",
+    "noTeamsMatch": "No teams match your search.",
     "recentChangesKicker": "Recent changes",
     "recentChangesEmpty": "No changes yet. Check back once matches get closer to kickoff.",
+    "compareKicker": "Team comparison",
     "compareLink": "Compare {{a}} and {{b}}",
     "stableNoChanges": "Stable · no changes"
   },
@@ -200,12 +204,7 @@
     "title": "Legal and transparency",
     "privacyPolicy": "Privacy policy",
     "termsOfService": "Terms of service",
-    "disclaimer": "Disclaimer",
-    "responsibleAI": "Responsible AI",
-    "responsibleUse": "Responsible use",
-    "methodology": "Methodology",
-    "licences": "Licences and open source",
-    "dataSources": "Data sources"
+    "methodology": "Methodology"
   },
   "methodology": {
     "title": "How our AI works",

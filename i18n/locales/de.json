@@ -74,9 +74,13 @@
     "followingKicker": "Verfolgt",
     "followingCount": "{{count}} von {{max}} Teams gefolgt",
     "followingEmptyBody": "Folge bis zu {{max}} Teams kostenlos, um hier wichtige Änderungen für sie zu sehen.",
-    "addTeamShort": "+ Team hinzufügen",
+    "addTeamShort": "Team hinzufügen",
+    "maxTeamsReached": "Du folgst bereits der maximalen Anzahl von {{max}} Teams. Entferne eines, um ein weiteres hinzuzufügen.",
+    "searchTeamsPlaceholder": "Teams suchen",
+    "noTeamsMatch": "Keine Teams gefunden.",
     "recentChangesKicker": "Letzte Änderungen",
     "recentChangesEmpty": "Noch keine Änderungen. Schau kurz vor Anpfiff noch einmal vorbei.",
+    "compareKicker": "Team-Vergleich",
     "compareLink": "{{a}} und {{b}} vergleichen",
     "stableNoChanges": "Stabil · keine Änderungen"
   },
@@ -200,12 +204,7 @@
     "title": "Recht und Transparenz",
     "privacyPolicy": "Datenschutzerklärung",
     "termsOfService": "Nutzungsbedingungen",
-    "disclaimer": "Haftungsausschluss",
-    "responsibleAI": "Verantwortungsvolle KI",
-    "responsibleUse": "Verantwortungsvolle Nutzung",
-    "methodology": "Methodik",
-    "licences": "Lizenzen und Open Source",
-    "dataSources": "Datenquellen"
+    "methodology": "Methodik"
   },
   "methodology": {
     "title": "Wie unsere KI funktioniert",

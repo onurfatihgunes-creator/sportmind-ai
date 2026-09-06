@@ -1,17 +1,6 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ArrowLeftIcon,
-  CaretRightIcon,
-  CodeIcon,
-  CpuIcon,
-  DatabaseIcon,
-  FileIcon,
-  FileTextIcon,
-  HeartIcon,
-  ShieldIcon,
-  WarningCircleIcon,
-} from 'phosphor-react-native';
+import { ArrowLeftIcon, CaretRightIcon, CpuIcon, FileIcon, FileTextIcon } from 'phosphor-react-native';
 import type { Icon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -22,15 +11,17 @@ const TERMS_OF_SERVICE_URL = 'https://onurfatihgunes-creator.github.io/sportmind
 
 type LegalLink = { Icon: Icon; labelKey: string; onPress?: () => void };
 
+// Store-required and actually-reachable links only. The disclaimer/responsible-AI/
+// responsible-use/licences/data-sources rows that used to live here had no onPress at
+// all — dead taps. Removed rather than wired up: the disclaimer content they'd have
+// pointed to is already shown inline (see components/Disclaimer.tsx on Match/Team/My
+// Matches), and none of privacyPolicy/termsOfService/methodology's siblings are
+// themselves required by App Store/Play Store review — only Privacy Policy and Terms of
+// Service are (methodology stays because it already links to a real screen).
 const links: LegalLink[] = [
   { Icon: FileTextIcon, labelKey: 'privacyPolicy', onPress: () => Linking.openURL(PRIVACY_POLICY_URL) },
   { Icon: FileIcon, labelKey: 'termsOfService', onPress: () => Linking.openURL(TERMS_OF_SERVICE_URL) },
-  { Icon: WarningCircleIcon, labelKey: 'disclaimer' },
-  { Icon: ShieldIcon, labelKey: 'responsibleAI' },
-  { Icon: HeartIcon, labelKey: 'responsibleUse' },
   { Icon: CpuIcon, labelKey: 'methodology', onPress: () => router.push('/legal/methodology') },
-  { Icon: CodeIcon, labelKey: 'licences' },
-  { Icon: DatabaseIcon, labelKey: 'dataSources' },
 ];
 
 export default function LegalHubScreen() {

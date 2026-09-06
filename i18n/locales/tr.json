@@ -74,9 +74,13 @@
     "followingKicker": "Takip Edilenler",
     "followingCount": "{{max}} takımdan {{count}} tanesi takip ediliyor",
     "followingEmptyBody": "Anlamlı değişiklikleri burada görmek için ücretsiz olarak en fazla {{max}} takımı takip edebilirsin.",
-    "addTeamShort": "+ Takım ekle",
+    "addTeamShort": "Takım ekle",
+    "maxTeamsReached": "En fazla {{max}} takımı takip ediyorsun. Başka bir takım eklemek için önce birini çıkar.",
+    "searchTeamsPlaceholder": "Takım ara",
+    "noTeamsMatch": "Aramanla eşleşen takım yok.",
     "recentChangesKicker": "Son değişiklikler",
     "recentChangesEmpty": "Henüz değişiklik yok. Maçlar başlamaya yaklaştıkça buraya tekrar bakabilirsin.",
+    "compareKicker": "Takım karşılaştırma",
     "compareLink": "{{a}} ve {{b}}'yi karşılaştır",
     "stableNoChanges": "Sabit · değişiklik yok"
   },
@@ -200,12 +204,7 @@
     "title": "Yasal ve şeffaflık",
     "privacyPolicy": "Gizlilik politikası",
     "termsOfService": "Kullanım koşulları",
-    "disclaimer": "Sorumluluk reddi",
-    "responsibleAI": "Sorumlu AI",
-    "responsibleUse": "Sorumlu kullanım",
-    "methodology": "Metodoloji",
-    "licences": "Lisanslar ve açık kaynak",
-    "dataSources": "Veri kaynakları"
+    "methodology": "Metodoloji"
   },
   "methodology": {
     "title": "AI'mız nasıl çalışır",

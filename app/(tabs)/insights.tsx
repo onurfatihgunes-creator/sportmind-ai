@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BellIcon, ChartPolarIcon, PlusIcon } from 'phosphor-react-native';
+import { BellIcon, ChartPolarIcon, MagnifyingGlassIcon, PlusIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
@@ -13,12 +13,23 @@ export default function InsightsScreen() {
   const { teams, matches, changeEvents } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
   const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
-  const availableTeams = useMemo(
-    () => Object.values(teams).filter((tm) => !teamIds.includes(tm.id)),
-    [teams, teamIds],
-  );
+
+  // Grouped by sport rather than one flat list — 244 real teams across football and
+  // basketball pooled together (89 of them basketball) made an already-long list actively
+  // misleading, not just long: a football-following feature silently offering NBA teams
+  // in the same unlabelled list. Search narrows the list; the sport headers keep what's
+  // left honestly labelled instead of just shorter.
+  const availableTeamsBySport = useMemo(() => {
+    const query = pickerSearch.trim().toLowerCase();
+    const notFollowed = Object.values(teams).filter((tm) => !teamIds.includes(tm.id));
+    const matching = query ? notFollowed.filter((tm) => tm.name.toLowerCase().includes(query)) : notFollowed;
+    const football = matching.filter((tm) => tm.sport === 'football').sort((a, b) => a.name.localeCompare(b.name));
+    const basketball = matching.filter((tm) => tm.sport === 'basketball').sort((a, b) => a.name.localeCompare(b.name));
+    return { football, basketball };
+  }, [teams, teamIds, pickerSearch]);
 
   const teamStatus = (teamId: string) => {
     const relevant = changeEvents
@@ -79,33 +90,65 @@ export default function InsightsScreen() {
                 ) : (
                   <BellIcon size={17} color={colors.textFainter} />
                 )}
+                {/* Long-press also unfollows (kept for muscle memory), but that gesture has
+                    zero visual affordance — this X is the discoverable way to remove a
+                    followed team. */}
+                <Pressable hitSlop={10} onPress={() => toggleTeam(team.id)}>
+                  <XIcon size={16} color={colors.textFainter} />
+                </Pressable>
               </Pressable>
             );
           })}
 
-          {canFollowMore && (
+          {canFollowMore ? (
             <Pressable style={styles.addButton} onPress={() => setShowPicker((v) => !v)}>
               <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
               <Text style={styles.addButtonText}>{t('insights.addTeamShort')}</Text>
             </Pressable>
+          ) : (
+            <Text style={styles.maxReachedText}>{t('insights.maxTeamsReached', { max: MAX_FOLLOWED_TEAMS })}</Text>
           )}
           {showPicker && (
-            <View style={styles.pickerList}>
-              {availableTeams.map((team) => (
-                <Pressable
-                  key={team.id}
-                  style={styles.pickerRow}
-                  onPress={() => {
-                    toggleTeam(team.id);
-                    setShowPicker(false);
-                  }}
-                >
-                  <View style={[styles.teamBadge, { width: 26, height: 26, borderRadius: 13, backgroundColor: team.bg }]}>
-                    <Text style={[styles.teamBadgeText, { fontSize: 9, color: team.fg }]}>{team.code}</Text>
-                  </View>
-                  <Text style={styles.teamName}>{team.name}</Text>
-                </Pressable>
-              ))}
+            <View style={styles.pickerBox}>
+              <View style={styles.pickerSearchBar}>
+                <MagnifyingGlassIcon size={14} color={colors.textFainter} />
+                <TextInput
+                  style={styles.pickerSearchInput}
+                  value={pickerSearch}
+                  onChangeText={setPickerSearch}
+                  placeholder={t('insights.searchTeamsPlaceholder')}
+                  placeholderTextColor={colors.textFainter}
+                  autoFocus
+                />
+              </View>
+              <View style={styles.pickerList}>
+                {availableTeamsBySport.football.length === 0 && availableTeamsBySport.basketball.length === 0 && (
+                  <Text style={styles.followingEmptyText}>{t('insights.noTeamsMatch')}</Text>
+                )}
+                {(['football', 'basketball'] as const).map((sport) =>
+                  availableTeamsBySport[sport].length === 0 ? null : (
+                    <View key={sport}>
+                      <Text style={styles.pickerSportHeader}>{t(`home.${sport}`)}</Text>
+                      {availableTeamsBySport[sport].map((team) => (
+                        <Pressable
+                          key={team.id}
+                          style={styles.pickerRow}
+                          onPress={() => {
+                            toggleTeam(team.id);
+                            setShowPicker(false);
+                            setPickerSearch('');
+                          }}
+                        >
+                          <View style={[styles.teamBadge, { width: 26, height: 26, borderRadius: 13, backgroundColor: team.bg }]}>
+                            <Text style={[styles.teamBadgeText, { fontSize: 9, color: team.fg }]}>{team.code}</Text>
+                          </View>
+                          <Text style={styles.teamName}>{team.name}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ),
+                )}
+              </View>
             </View>
           )}
         </View>
@@ -142,15 +185,22 @@ export default function InsightsScreen() {
         )}
 
         {compareTargets.length === 2 && (
-          <Pressable
-            style={styles.compareButton}
-            onPress={() => router.push({ pathname: '/team-comparison', params: { a: compareTargets[0].id, b: compareTargets[1].id } })}
-          >
-            <ChartPolarIcon size={16} weight="bold" color={colors.primaryText} />
-            <Text style={styles.compareButtonText}>
-              {t('insights.compareLink', { a: compareTargets[0].name, b: compareTargets[1].name })}
-            </Text>
-          </Pressable>
+          <>
+            {/* Its own labelled section — Compare is unrelated to the Following list filling
+                up (it just needs 2+ followed teams, independent of the 3-team cap above), but
+                sitting directly under a short/empty Recent Changes made it look like a
+                replacement for the vanished Add button rather than a separate feature. */}
+            <Text style={styles.kicker}>{t('insights.compareKicker')}</Text>
+            <Pressable
+              style={styles.compareButton}
+              onPress={() => router.push({ pathname: '/team-comparison', params: { a: compareTargets[0].id, b: compareTargets[1].id } })}
+            >
+              <ChartPolarIcon size={16} weight="bold" color={colors.primaryText} />
+              <Text style={styles.compareButtonText}>
+                {t('insights.compareLink', { a: compareTargets[0].name, b: compareTargets[1].name })}
+              </Text>
+            </Pressable>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -173,7 +223,22 @@ const styles = StyleSheet.create({
   deltaChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11 },
   addButton: { minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderHover, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
-  pickerList: { gap: 4, marginTop: 2 },
+  maxReachedText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, textAlign: 'center', paddingVertical: 12 },
+  pickerBox: { marginTop: 8, gap: 8 },
+  pickerSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 38,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+  },
+  pickerSearchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.textPrimary, padding: 0 },
+  pickerSportHeader: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginTop: 8, marginBottom: 4 },
+  pickerList: { gap: 4 },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radius.sm, backgroundColor: colors.surfaceSubtle },
   changeRow: {
     flexDirection: 'row',
