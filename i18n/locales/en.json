@@ -64,6 +64,7 @@
     "title": "Explore",
     "searchPlaceholder": "Search team or league",
     "allLeagues": "All",
+    "selectCompetitionPlaceholder": "Select a league",
     "matches": "Matches",
     "noResults": "No matches found.",
     "today": "Today",

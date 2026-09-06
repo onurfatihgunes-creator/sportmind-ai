@@ -125,8 +125,11 @@ export default function ExploreScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('explore.competitionPickerTitle')}
         >
-          <Text style={styles.competitionTriggerText} numberOfLines={1}>
-            {selectedLeague === 'all' ? t('explore.allLeagues') : selectedLeague}
+          <Text
+            style={[styles.competitionTriggerText, selectedLeague === 'all' && styles.competitionTriggerPlaceholder]}
+            numberOfLines={1}
+          >
+            {selectedLeague === 'all' ? t('explore.selectCompetitionPlaceholder') : selectedLeague}
           </Text>
           <CaretDownIcon size={13} weight="bold" color={colors.textSecondary} />
         </Pressable>
@@ -225,6 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   competitionTriggerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginRight: 8 },
+  competitionTriggerPlaceholder: { color: colors.textFaint },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 9 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
