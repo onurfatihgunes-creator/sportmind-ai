@@ -262,11 +262,11 @@ function SignalRow({ label, direction }: { label: string; direction: SignalDir }
   );
 }
 
-function PlayerImpactRow({ entry }: { entry: PlayerImpactEntry }) {
+function PlayerImpactRow({ entry, first }: { entry: PlayerImpactEntry; first?: boolean }) {
   const { t } = useTranslation();
   const tone = entry.impact === 'high' ? 'danger' : entry.impact === 'medium' ? 'warning' : 'success';
   return (
-    <View style={styles.playerRow}>
+    <View style={[styles.playerRow, first && styles.playerRowFirst]}>
       <View style={{ flex: 1 }}>
         <Text style={styles.playerName}>{entry.playerName}</Text>
         <Text style={styles.playerStatus}>
@@ -298,7 +298,6 @@ function TeamIntelligence({
   const [squadExpanded, setSquadExpanded] = useState(false);
 
   const isHomeInNextMatch = nextMatch ? nextMatch.home.id === team.id : false;
-  const opponent = nextMatch ? (isHomeInNextMatch ? nextMatch.away : nextMatch.home) : null;
 
   // Real, team-level signals only — never match/opponent-relative (that's Match
   // Analysis's job). form comes from the team's own last-5 W/D/L; attack/defence come
@@ -325,16 +324,15 @@ function TeamIntelligence({
             ? 'mixed'
             : 'stable';
 
-  const homeSquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === 'home');
-  const awaySquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === 'away');
-  // Team-level, not match-level: only the followed team's own unavailable players count
-  // toward its squad status — the opponent's absences are Match Analysis's concern, not this
-  // team's signal.
-  const ownSquad = isHomeInNextMatch ? homeSquad : awaySquad;
+  // Team-level, not match-level: every player-facing section on this screen (unavailable
+  // players, key players, squad status) is scoped to the followed team's own side of its
+  // next match only — the opponent's players are Match Analysis's concern, never shown
+  // here. Filtered once, at this view-model boundary, from the match-scoped `squadImpact`/
+  // `lineups` data so no render path can accidentally reintroduce the opponent's side.
+  const ownSquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === (isHomeInNextMatch ? 'home' : 'away'));
   const unavailableCount = ownSquad.length;
   const ownLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.home : nextMatch?.lineups?.away) ?? [];
-  const opponentLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.away : nextMatch?.lineups?.home) ?? [];
-  const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0 || opponentLineup.length > 0;
+  const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0;
   const squadSummaryParts = [
     unavailableCount > 0 ? t('insights.squadImpactSummary', { count: unavailableCount }) : null,
     ownLineup.length > 0 ? t('insights.keyPlayersTrackedSummary', { count: ownLineup.length }) : null,
@@ -370,7 +368,7 @@ function TeamIntelligence({
   const changeDescription = analysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
 
   return (
-    <View style={{ gap: 14, marginTop: 4, marginBottom: 24 }}>
+    <View style={{ gap: 14, marginTop: 18, marginBottom: 24 }}>
       {/* PRIMARY: team-level conclusion — never a match win/draw/loss split, that's
           Match Analysis's job (see the product-boundary note at the top of this file's
           git history / commit message). */}
@@ -414,34 +412,20 @@ function TeamIntelligence({
           {squadExpanded && nextMatch && (
             <View style={{ gap: 14, marginTop: 12 }}>
               {unavailableCount > 0 && (
-                <View style={{ gap: 8 }}>
+                <View style={{ gap: 16 }}>
                   <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
-                  {[{ label: nextMatch.home.name, rows: homeSquad }, { label: nextMatch.away.name, rows: awaySquad }].map(
-                    (group) =>
-                      group.rows.length > 0 && (
-                        <View key={group.label} style={{ gap: 6 }}>
-                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
-                          {group.rows.map((entry, i) => (
-                            <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} />
-                          ))}
-                        </View>
-                      ),
-                  )}
+                  <View style={styles.squadTeamGroup}>
+                    {ownSquad.map((entry, i) => (
+                      <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} first={i === 0} />
+                    ))}
+                  </View>
                 </View>
               )}
 
-              {(ownLineup.length > 0 || opponentLineup.length > 0) && opponent && (
-                <View style={{ gap: 8 }}>
+              {ownLineup.length > 0 && (
+                <View style={{ gap: 14 }}>
                   <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
-                  {[{ label: team.name, rows: ownLineup }, { label: opponent.name, rows: opponentLineup }].map(
-                    (group) =>
-                      group.rows.length > 0 && (
-                        <View key={group.label} style={{ gap: 4 }}>
-                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
-                          <Text style={styles.mutedBody}>{group.rows.map((pl) => pl.name).join(', ')}</Text>
-                        </View>
-                      ),
-                  )}
+                  <Text style={styles.mutedBody}>{ownLineup.map((pl) => pl.name).join(', ')}</Text>
                 </View>
               )}
             </View>
@@ -547,10 +531,18 @@ const styles = StyleSheet.create({
   squadStatusValue: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
   collapsibleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   squadGroupLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.textFainter },
-  squadTeamLabel: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textFaint },
-  playerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  squadTeamGroup: { gap: 2 },
+  playerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  playerRowFirst: { borderTopWidth: 0, paddingTop: 0 },
   playerName: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
-  playerStatus: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
+  playerStatus: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },
   impactChip: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   impactChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10 },
   nextMatchCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
