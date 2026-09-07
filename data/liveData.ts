@@ -436,8 +436,10 @@ const EMPTY_SQUAD_SNAPSHOT: SquadSnapshot = { unavailable: [], lineup: null, sou
  * tables only, no new APIs) in this exact priority, never fabricating a result:
  *   1. nearest upcoming fixture with real availability data
  *   2. most recent past fixture with real availability data
- *   3. a lineup-only snapshot (real tracked players, no availability claim either way)
- *      from whichever of the above windows has one
+ *   3. a lineup-only snapshot from whichever of the above windows has a
+ *      provider-CONFIRMED lineup (never a 'predicted' one — see lineupFor's own doc
+ *      comment for the live example of why a predicted lineup isn't trustworthy as a
+ *      roster signal)
  *   4. the empty snapshot, only when truly nothing exists anywhere
  * Called on-demand per selected team (normal AI Insights and contextual Team Insights
  * both use it) rather than precomputed for every team in fetchLiveData — this data is
@@ -477,7 +479,7 @@ export async function getLatestSquadSnapshot(teamId: string): Promise<SquadSnaps
       .select('match_id, player_name, status, reason, bsd_player_id')
       .in('match_id', matchIds)
       .eq('team_id', teamId),
-    client.from('match_lineups').select('match_id, home_players, away_players').in('match_id', matchIds),
+    client.from('match_lineups').select('match_id, lineup_status, home_players, away_players').in('match_id', matchIds),
   ]);
 
   const bsdPlayerIds = Array.from(new Set((availRows ?? []).map((r) => r.bsd_player_id).filter((id): id is number => id != null)));
@@ -487,9 +489,20 @@ export async function getLatestSquadSnapshot(teamId: string): Promise<SquadSnaps
     for (const row of bsdPlayerRows ?? []) marketValueByBsdPlayerId[row.id] = row.market_value_eur;
   }
 
+  // Only a provider-CONFIRMED lineup is trusted as "key players tracked" — a 'predicted'
+  // one is a pre-match model guess (issued as far as ~13 days before kickoff) that can
+  // and does list players no longer on the team. Confirmed live: Göztepe's 'predicted'
+  // lineup for both of its next fixtures lists "Rhaldney" and "Amine Cherni", neither of
+  // whom exists anywhere in bsd_players (the provider's own player table) under any id in
+  // that lineup — while every one of Göztepe's real player_availability rows cross-
+  // references cleanly to a bsd_players row whose current_team_id matches Göztepe's own.
+  // match_lineups player ids don't reliably cross-reference bsd_players ids even for
+  // 'confirmed' rows either (spot-checked broadly: 0-1 of 11 resolve), so this is the
+  // strongest signal the data actually supports, not a fully verified one — but it beats
+  // presenting an algorithmic pre-match guess as current squad fact.
   const lineupFor = (matchId: string, homeTeamId: string): LineupPlayer[] | null => {
     const row = lineupRows?.find((r) => r.match_id === matchId);
-    if (!row) return null;
+    if (!row || row.lineup_status !== 'confirmed') return null;
     const raw = homeTeamId === teamId ? row.home_players : row.away_players;
     return Array.isArray(raw) ? raw.map((p: any) => ({ name: p.name, position: p.position ?? null })) : null;
   };
