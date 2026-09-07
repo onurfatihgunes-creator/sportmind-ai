@@ -54,8 +54,8 @@
     "tennis": "Tennis",
     "soon": "Soon",
     "noMatchesForSport": "No analysed matches in this sport right now.",
-    "sortHighToLow": "Confidence: high to low",
-    "sortLowToHigh": "Confidence: low to high"
+    "sortHighToLow": "Win probability: high to low",
+    "sortLowToHigh": "Win probability: low to high"
   },
   "matchCard": {
     "favoured": "AI prediction: {{team}} favoured",
@@ -141,7 +141,7 @@
   },
   "notifications": {
     "title": "Notifications",
-    "confidenceChanges": "Confidence changes",
+    "confidenceChanges": "Win probability changes",
     "confidenceChangesSubtitle": "±3 points or more",
     "lineupsPublished": "Lineups published",
     "lineupsPublishedSubtitle": "~1 hour before kickoff"
@@ -202,7 +202,7 @@
     "mostDecisive": "most decisive",
     "balanced": "balanced",
     "favours": "favours {{team}}",
-    "methodologyNote": "Confidence is calculated with a weighted statistical model from recent form, expected goals, and matchup context. It's an approximation, not a certainty.",
+    "methodologyNote": "Win probability is calculated with a weighted statistical model from recent form, expected goals, and matchup context. It's an approximation, not a certainty.",
     "compareTeams": "Compare {{a}} and {{b}}",
     "teamInsightsCta": "AI Insights",
     "teamInsightsCtaLabel": "View AI Insights for {{team}}"
@@ -268,7 +268,7 @@
     "title": "How our AI works",
     "dataSourcesTitle": "Data sources",
     "dataSourcesBody": "Licensed match, form, and injury data updated continuously from official statistics providers.",
-    "confidenceTitle": "How confidence is calculated",
+    "confidenceTitle": "How win probability is calculated",
     "confidenceBody": "A weighted statistical model estimates likelihood from recent form, expected goals, and matchup context. It is an approximation, not a certainty.",
     "whyChangeTitle": "Why analyses change",
     "whyChangeBody": "New data — injuries, lineups, weather — can shift the model's output. Every material change is logged in \"What changed?\".",
@@ -277,8 +277,8 @@
     "modelPerformanceTitle": "Model performance",
     "modelPerformanceBody": "The model correctly called these results before kickoff.",
     "modelPerformanceEmpty": "No finished matches to check yet — this fills in as real results come in.",
-    "trackRecordCalledTeam": "Model correctly called {{team}} at {{pct}}% confidence",
-    "trackRecordCalledDraw": "Model correctly called the draw at {{pct}}% confidence",
+    "trackRecordCalledTeam": "Model correctly called {{team}} at {{pct}}% win probability",
+    "trackRecordCalledDraw": "Model correctly called the draw at {{pct}}% win probability",
     "version": "Version 1.0 — last reviewed this week"
   },
   "language": {
@@ -293,7 +293,10 @@
     "matchTitle": "Match not available",
     "matchBody": "This match couldn't be found. It may have been removed or the link may be out of date.",
     "teamTitle": "Team not available",
-    "teamBody": "This team couldn't be found. It may have been removed or the link may be out of date."
+    "teamBody": "This team couldn't be found. It may have been removed or the link may be out of date.",
+    "routeTitle": "Oops!",
+    "routeBody": "This screen doesn't exist.",
+    "goHome": "Go to home screen!"
   },
   "configError": {
     "title": "SportMind isn't configured correctly",

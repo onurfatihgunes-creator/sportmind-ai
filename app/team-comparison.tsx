@@ -42,7 +42,7 @@ function teamAggregate(team: Team, matches: Match[]) {
 }
 
 export default function TeamComparisonScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
   const { teams, matches, isLive } = useAppData();
   const localTeamA = (a && teams[a]) || null;
@@ -123,9 +123,17 @@ export default function TeamComparisonScreen() {
     { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA!.homeFormScore, b: statsB!.homeFormScore },
   ];
 
+  // Lowercasing each axis label for mid-sentence embedding ("...the biggest gap is in
+  // form.") is correct for every axis except xG, whose "xG" casing is intentional in
+  // every locale and must never be lowered to "xg". Uses toLocaleLowerCase(currentLocale)
+  // rather than plain toLowerCase() so Turkish's "İç saha" lowercases to the correct
+  // dotless "iç saha" instead of JS's locale-unaware "i̇ç saha".
   const gaps = axes
     .filter((ax) => ax.a !== null && ax.b !== null)
-    .map((ax) => ({ label: ax.label, diff: (ax.a as number) - (ax.b as number) }));
+    .map((ax) => ({
+      label: ax.key === 'axisXg' ? ax.label : ax.label.toLocaleLowerCase(i18n.language),
+      diff: (ax.a as number) - (ax.b as number),
+    }));
   const biggestForA = [...gaps].sort((x, y) => y.diff - x.diff)[0];
   const biggestForB = [...gaps].sort((x, y) => x.diff - y.diff)[0];
 
@@ -172,13 +180,13 @@ export default function TeamComparisonScreen() {
         {biggestForA && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
-            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForA.label.toLowerCase() })}</Text>
+            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForA.label })}</Text>
           </View>
         )}
         {biggestForB && (
           <View style={[styles.summaryCard, { marginBottom: 0 }]}>
             <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
-            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForB.label.toLowerCase() })}</Text>
+            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForB.label })}</Text>
           </View>
         )}
       </ScrollView>

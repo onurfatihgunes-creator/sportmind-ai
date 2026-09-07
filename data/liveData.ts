@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { AnalysisChangeEvent, ChangeEvent, H2HRecord, LineupPlayer, Match, MatchFactor, MatchLineups, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
+import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, MatchFactor, MatchLineups, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
 
 // Mirrors backend/src/analysisEngine.ts's derivePlayerImpact rule exactly (see that
 // function's own doc comment) — a real, already-established display-classification rule,
@@ -315,34 +315,23 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       tone: c.to_home_win_pct >= c.from_home_win_pct ? 'success' : 'warning',
     }));
 
-    // AI Insights' per-team analysis (H2H, squad impact, richer "what changed") needs
-    // real Supabase tables no screen has read before — all public-read (see
-    // backend/sql/rls_read_only_match_h2h.sql / rls_read_only_bsd_enrichment.sql), so
-    // reachable the same way everything else here is: no new provider/service call, just
-    // extending this one existing fetch. Every one of these is best-effort: a missing row
-    // for a given match means that match's H2H/squad-impact section is simply omitted by
-    // the screen, never fabricated.
-    const [{ data: h2hRows }, { data: availabilityRows }, { data: analysisChangeRows }, { data: lineupRows }] = await Promise.all([
-      supabase.from('match_h2h').select('*').in('match_id', matchIds),
+    // AI Insights' per-team analysis (squad impact, richer "what changed") needs real
+    // Supabase tables no screen had read before — all public-read (see
+    // backend/sql/rls_read_only_bsd_enrichment.sql), so reachable the same way everything
+    // else here is: no new provider/service call, just extending this one existing fetch.
+    // Every one of these is best-effort: a missing row for a given match means that
+    // match's squad-impact section is simply omitted by the screen, never fabricated.
+    // (match_h2h is deliberately NOT fetched here: H2H was removed from AI Insights and
+    // was never rendered anywhere in Match Analysis either — confirmed via a repo-wide
+    // audit finding zero UI consumers of Match.h2h — so this used to be a real, pure-
+    // overhead network round-trip and JSON assembly on every fetchLiveData() call with no
+    // product benefit. The match_h2h table, its RLS policy, and the BSD ingestion that
+    // populates it are untouched; only this unused client-side read was removed.)
+    const [{ data: availabilityRows }, { data: analysisChangeRows }, { data: lineupRows }] = await Promise.all([
       supabase.from('player_availability').select('match_id, team_id, player_name, status, reason, bsd_player_id').in('match_id', matchIds),
       supabase.from('analysis_changes').select('*').in('match_id', matchIds).order('created_at', { ascending: false }),
       supabase.from('match_lineups').select('match_id, lineup_status, home_players, away_players').in('match_id', matchIds),
     ]);
-
-    const h2hByMatch: Record<string, H2HRecord> = {};
-    for (const row of h2hRows ?? []) {
-      h2hByMatch[row.match_id] = {
-        totalMatches: row.total_matches,
-        homeWins: row.home_wins,
-        draws: row.draws,
-        awayWins: row.away_wins,
-        homeGoals: row.home_goals,
-        awayGoals: row.away_goals,
-        avgTotalGoals: Number(row.avg_total_goals),
-        homeWinRate: Number(row.home_win_rate),
-        awayWinRate: Number(row.away_win_rate),
-      };
-    }
 
     const bsdPlayerIds = Array.from(new Set((availabilityRows ?? []).map((r) => r.bsd_player_id).filter((id): id is number => id != null)));
     const marketValueByBsdPlayerId: Record<number, number | null> = {};
@@ -390,8 +379,6 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     }
 
     for (const match of matches) {
-      const h2h = h2hByMatch[match.id];
-      if (h2h) match.h2h = h2h;
       const squadImpact = squadImpactByMatch[match.id];
       if (squadImpact && squadImpact.length > 0) match.squadImpact = squadImpact;
       const lineups = lineupsByMatch[match.id];

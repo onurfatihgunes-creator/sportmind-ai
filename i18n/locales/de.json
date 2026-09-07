@@ -54,8 +54,8 @@
     "tennis": "Tennis",
     "soon": "Bald",
     "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele.",
-    "sortHighToLow": "Konfidenz: hoch zu niedrig",
-    "sortLowToHigh": "Konfidenz: niedrig zu hoch"
+    "sortHighToLow": "Gewinnwahrscheinlichkeit: hoch zu niedrig",
+    "sortLowToHigh": "Gewinnwahrscheinlichkeit: niedrig zu hoch"
   },
   "matchCard": {
     "favoured": "KI-Prognose: {{team}} favorisiert",
@@ -141,7 +141,7 @@
   },
   "notifications": {
     "title": "Benachrichtigungen",
-    "confidenceChanges": "Änderungen der Modellsicherheit",
+    "confidenceChanges": "Änderungen der Gewinnwahrscheinlichkeit",
     "confidenceChangesSubtitle": "±3 Punkte oder mehr",
     "lineupsPublished": "Veröffentlichte Aufstellungen",
     "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff"
@@ -202,7 +202,7 @@
     "mostDecisive": "am entscheidendsten",
     "balanced": "ausgeglichen",
     "favours": "favorisiert {{team}}",
-    "methodologyNote": "Die Konfidenz wird mit einem gewichteten statistischen Modell aus aktueller Form, erwarteten Toren und Spielkontext berechnet. Das ist eine Annäherung, keine Gewissheit.",
+    "methodologyNote": "Die Gewinnwahrscheinlichkeit wird mit einem gewichteten statistischen Modell aus aktueller Form, erwarteten Toren und Spielkontext berechnet. Das ist eine Annäherung, keine Gewissheit.",
     "compareTeams": "{{a}} und {{b}} vergleichen",
     "teamInsightsCta": "KI-Insights",
     "teamInsightsCtaLabel": "KI-Insights für {{team}} ansehen"
@@ -268,7 +268,7 @@
     "title": "Wie unsere KI funktioniert",
     "dataSourcesTitle": "Datenquellen",
     "dataSourcesBody": "Lizenzierte Spiel-, Form- und Verletzungsdaten, laufend aktualisiert von offiziellen Statistikanbietern.",
-    "confidenceTitle": "Wie die Modellsicherheit berechnet wird",
+    "confidenceTitle": "Wie die Gewinnwahrscheinlichkeit berechnet wird",
     "confidenceBody": "Ein gewichtetes statistisches Modell schätzt die Wahrscheinlichkeit aus aktueller Form, erwarteten Toren und Spielkontext. Das ist eine Annäherung, keine Gewissheit.",
     "whyChangeTitle": "Warum sich Analysen ändern",
     "whyChangeBody": "Neue Daten — Verletzungen, Aufstellungen, Wetter — können das Modellergebnis verschieben. Jede wesentliche Änderung wird unter \"Was hat sich geändert?\" protokolliert.",
@@ -277,8 +277,8 @@
     "modelPerformanceTitle": "Modellleistung",
     "modelPerformanceBody": "Das Modell hat diese Ergebnisse vor dem Anpfiff korrekt vorhergesagt.",
     "modelPerformanceEmpty": "Noch keine abgeschlossenen Spiele zum Abgleich — das füllt sich, sobald echte Ergebnisse eintreffen.",
-    "trackRecordCalledTeam": "Modell lag mit {{team}} bei {{pct}}% Vertrauen richtig",
-    "trackRecordCalledDraw": "Modell lag mit dem Unentschieden bei {{pct}}% Vertrauen richtig",
+    "trackRecordCalledTeam": "Modell lag mit {{team}} bei {{pct}}% Gewinnwahrscheinlichkeit richtig",
+    "trackRecordCalledDraw": "Modell lag mit dem Unentschieden bei {{pct}}% Gewinnwahrscheinlichkeit richtig",
     "version": "Version 1.0 — diese Woche überprüft"
   },
   "language": {
@@ -293,7 +293,10 @@
     "matchTitle": "Spiel nicht verfügbar",
     "matchBody": "Dieses Spiel konnte nicht gefunden werden. Es wurde möglicherweise entfernt oder der Link ist nicht mehr aktuell.",
     "teamTitle": "Team nicht verfügbar",
-    "teamBody": "Dieses Team konnte nicht gefunden werden. Es wurde möglicherweise entfernt oder der Link ist nicht mehr aktuell."
+    "teamBody": "Dieses Team konnte nicht gefunden werden. Es wurde möglicherweise entfernt oder der Link ist nicht mehr aktuell.",
+    "routeTitle": "Hoppla!",
+    "routeBody": "Diesen Bildschirm gibt es nicht.",
+    "goHome": "Zum Startbildschirm!"
   },
   "configError": {
     "title": "SportMind ist nicht korrekt konfiguriert",

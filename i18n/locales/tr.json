@@ -54,8 +54,8 @@
     "tennis": "Tenis",
     "soon": "Yakında",
     "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok.",
-    "sortHighToLow": "Güven oranı: yüksekten düşüğe",
-    "sortLowToHigh": "Güven oranı: düşükten yükseğe"
+    "sortHighToLow": "Kazanma olasılığı: yüksekten düşüğe",
+    "sortLowToHigh": "Kazanma olasılığı: düşükten yükseğe"
   },
   "matchCard": {
     "favoured": "AI öngörüsü: {{team}} favori",
@@ -141,7 +141,7 @@
   },
   "notifications": {
     "title": "Bildirimler",
-    "confidenceChanges": "Güven değişimleri",
+    "confidenceChanges": "Kazanma olasılığı değişimleri",
     "confidenceChangesSubtitle": "±3 puan ve üzeri",
     "lineupsPublished": "Kadro açıklandığında",
     "lineupsPublishedSubtitle": "Maçtan ~1 saat önce"
@@ -202,7 +202,7 @@
     "mostDecisive": "en belirleyici",
     "balanced": "dengeli",
     "favours": "{{team}} lehine",
-    "methodologyNote": "Güven, son form, beklenen gol ve eşleşme bağlamından ağırlıklı bir istatistik modeliyle hesaplanır. Kesinlik değil, yaklaşımdır.",
+    "methodologyNote": "Kazanma olasılığı, son form, beklenen gol ve eşleşme bağlamından ağırlıklı bir istatistik modeliyle hesaplanır. Kesinlik değil, yaklaşımdır.",
     "compareTeams": "{{a}} ve {{b}}'yi karşılaştır",
     "teamInsightsCta": "AI Analizi",
     "teamInsightsCtaLabel": "{{team}} için AI Analizi"
@@ -268,7 +268,7 @@
     "title": "AI'mız nasıl çalışır",
     "dataSourcesTitle": "Veri kaynakları",
     "dataSourcesBody": "Resmi istatistik sağlayıcılarından sürekli güncellenen lisanslı maç, form ve sakatlık verisi.",
-    "confidenceTitle": "Güven skoru nasıl hesaplanır",
+    "confidenceTitle": "Kazanma olasılığı nasıl hesaplanır",
     "confidenceBody": "Ağırlıklı bir istatistiksel model; son form, beklenen gol ve maç bağlamından olasılık tahmini üretir. Bu bir yaklaşıklıktır, kesinlik değil.",
     "whyChangeTitle": "Analizler neden değişir",
     "whyChangeBody": "Sakatlık, kadro ve hava durumu gibi yeni veriler modelin çıktısını değiştirebilir. Her önemli değişiklik \"Ne değişti?\" bölümünde kayıt altına alınır.",
@@ -277,8 +277,8 @@
     "modelPerformanceTitle": "Model performansı",
     "modelPerformanceBody": "Model bu maçların sonucunu maç öncesinde doğru öngörmüştü.",
     "modelPerformanceEmpty": "Henüz kontrol edilecek biten maç yok — gerçek sonuçlar geldikçe burası dolacak.",
-    "trackRecordCalledTeam": "Model %{{pct}} güvenle {{team}}'i doğru bildi",
-    "trackRecordCalledDraw": "Model %{{pct}} güvenle beraberliği doğru bildi",
+    "trackRecordCalledTeam": "Model %{{pct}} kazanma olasılığıyla {{team}}'i doğru bildi",
+    "trackRecordCalledDraw": "Model %{{pct}} kazanma olasılığıyla beraberliği doğru bildi",
     "version": "Sürüm 1.0 — bu hafta gözden geçirildi"
   },
   "language": {
@@ -293,7 +293,10 @@
     "matchTitle": "Maç bulunamadı",
     "matchBody": "Bu maç bulunamadı. Kaldırılmış olabilir veya bağlantı güncel olmayabilir.",
     "teamTitle": "Takım bulunamadı",
-    "teamBody": "Bu takım bulunamadı. Kaldırılmış olabilir veya bağlantı güncel olmayabilir."
+    "teamBody": "Bu takım bulunamadı. Kaldırılmış olabilir veya bağlantı güncel olmayabilir.",
+    "routeTitle": "Hata!",
+    "routeBody": "Bu ekran mevcut değil.",
+    "goHome": "Ana ekrana dön!"
   },
   "configError": {
     "title": "SportMind doğru yapılandırılmamış",
