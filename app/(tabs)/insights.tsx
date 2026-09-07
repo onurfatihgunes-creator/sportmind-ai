@@ -315,6 +315,33 @@ function TeamIntelligence({
 
   const isHomeInNextMatch = nextMatch ? nextMatch.home.id === team.id : false;
 
+  // H2H, converted to the selected team's own perspective (never raw home/away) — same
+  // real match_h2h row regardless of which team is selected, just read from the other
+  // side when the selected team is the away side of its next match.
+  const h2h = nextMatch?.h2h;
+  const opponent = nextMatch ? (isHomeInNextMatch ? nextMatch.away : nextMatch.home) : null;
+  const h2hOwnWins = h2h ? (isHomeInNextMatch ? h2h.homeWins : h2h.awayWins) : 0;
+  const h2hOppWins = h2h ? (isHomeInNextMatch ? h2h.awayWins : h2h.homeWins) : 0;
+  const h2hDraws = h2h?.draws ?? 0;
+  // One short, discrete interpretation sentence — never a repetition of the numbers
+  // above it. Whichever real outcome (own wins / draws / opponent wins) is strictly the
+  // most common; an exact tie between two or more gets an honest "evenly split" line
+  // instead of an arbitrary tiebreak.
+  let h2hInsightBody: string | null = null;
+  if (h2h && h2h.totalMatches > 0 && opponent) {
+    const maxCount = Math.max(h2hOwnWins, h2hDraws, h2hOppWins);
+    const leaders = [h2hOwnWins === maxCount, h2hDraws === maxCount, h2hOppWins === maxCount].filter(Boolean).length;
+    if (leaders > 1) {
+      h2hInsightBody = t('insights.h2hInsightMixed', { team: team.name, opponent: opponent.name, count: h2h.totalMatches });
+    } else if (h2hOwnWins === maxCount) {
+      h2hInsightBody = t('insights.h2hInsightOwnWins', { team: team.name });
+    } else if (h2hDraws === maxCount) {
+      h2hInsightBody = t('insights.h2hInsightDraws', { count: h2h.totalMatches });
+    } else {
+      h2hInsightBody = t('insights.h2hInsightOppWins', { opponent: opponent.name });
+    }
+  }
+
   // Real, team-level signals only — never match/opponent-relative (that's Match
   // Analysis's job). form comes from the team's own last-5 W/D/L; attack/defence come
   // from a real before/after comparison of the team's own goals_for/goals_against
@@ -484,22 +511,22 @@ function TeamIntelligence({
       )}
 
       {/* HEAD-TO-HEAD is supporting context, not a primary signal — visually lighter
-          (no border/shadow weight of its own) than SportMind View and Team Signals. */}
-      {nextMatch?.h2h && nextMatch.h2h.totalMatches > 0 && (
+          (no border/shadow weight of its own) than SportMind View and Team Signals. Badges
+          are plain informational chips (the shared, non-interactive `Chip`) — never a
+          Pressable, so there's no press/navigation behavior to accidentally add here. */}
+      {h2h && h2h.totalMatches > 0 && (
         <View style={styles.h2hCard}>
           <Text style={styles.cardTitle}>{t('insights.h2hTitle')}</Text>
-          <View style={{ marginBottom: 6 }}>
-            <Chip label={t('insights.h2hMeetingsChip', { count: nextMatch.h2h.totalMatches })} tone="neutral" />
+          <View style={{ marginBottom: 10 }}>
+            <Chip label={t('insights.h2hMeetingsChip', { count: h2h.totalMatches })} tone="neutral" />
           </View>
-          <Text style={styles.mutedBody}>
-            {t('insights.h2hRecord', {
-              team: team.name,
-              total: nextMatch.h2h.totalMatches,
-              ownWins: isHomeInNextMatch ? nextMatch.h2h.homeWins : nextMatch.h2h.awayWins,
-              draws: nextMatch.h2h.draws,
-              oppWins: isHomeInNextMatch ? nextMatch.h2h.awayWins : nextMatch.h2h.homeWins,
-            })}
-          </Text>
+          <Text style={styles.h2hTeamLabel}>{team.name}</Text>
+          <View style={styles.h2hBadgeRow}>
+            <Chip label={t('insights.h2hWinBadge', { count: h2hOwnWins })} tone="success" />
+            <Chip label={t('insights.h2hDrawBadge', { count: h2hDraws })} tone="warning" />
+            <Chip label={t('insights.h2hLossBadge', { count: h2hOppWins })} tone="danger" />
+          </View>
+          {h2hInsightBody && <Text style={[styles.mutedBody, { marginTop: 10 }]}>{h2hInsightBody}</Text>}
         </View>
       )}
 
@@ -587,6 +614,8 @@ const styles = StyleSheet.create({
   collapsedSummaryRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   collapsibleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   h2hCard: { padding: 14, borderRadius: radius.md, backgroundColor: colors.surfaceSubtle },
+  h2hTeamLabel: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.textSecondary, marginBottom: 8 },
+  h2hBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   squadGroupLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.textFainter },
   squadTeamGroup: { gap: 2 },
   playerRow: {
