@@ -94,12 +94,12 @@ export default function MatchAnalysisScreen() {
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
-            <ConfidenceRing value={favourite.probability} size={112} strokeWidth={9} caption={t('matchAnalysis.confidenceCaption')} />
+            <ConfidenceRing value={favourite.probability} size={112} strokeWidth={9} caption={t('matchAnalysis.winProbabilityCaption')} />
             <View style={styles.heroInfo}>
               <Text style={styles.heroLine}>
                 {favourite.team
-                  ? t('matchAnalysis.teamWinProbability', { team: favourite.team.name, pct: favourite.probability })
-                  : t('matchAnalysis.drawProbabilityLine', { pct: favourite.probability })}
+                  ? t('matchAnalysis.teamWinProbability', { team: favourite.team.name })
+                  : t('matchAnalysis.drawProbabilityLine')}
               </Text>
               <Text style={styles.heroCaption}>{t('matchAnalysis.predictionStability')}</Text>
               {matchChangeEvents.length === 0 && (
@@ -159,15 +159,9 @@ export default function MatchAnalysisScreen() {
               </View>
             </View>
 
-            <View style={styles.statPairRow}>
-              <View style={styles.statPairCard}>
-                <Text style={styles.statPairLabel}>{t(isBasketball ? 'matchAnalysis.combinedExpectedPoints' : 'matchAnalysis.combinedExpectedGoals')}</Text>
-                <Text style={styles.statPairValue}>{formatStat(match.xgHome + match.xgAway)}</Text>
-              </View>
-              <View style={styles.statPairCard}>
-                <Text style={styles.statPairLabel}>{t('matchAnalysis.homeAdvantagePct')}</Text>
-                <Text style={styles.statPairValue}>+{match.factors.find((f) => f.key === 'homeAdvantage')?.home ?? '—'}%</Text>
-              </View>
+            <View style={styles.card}>
+              <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.combinedExpectedPoints' : 'matchAnalysis.combinedExpectedGoals')}</Text>
+              <Text style={styles.statPairValue}>{formatStat(match.xgHome + match.xgAway)}</Text>
             </View>
 
             <View style={styles.card}>
@@ -242,19 +236,27 @@ export default function MatchAnalysisScreen() {
   );
 }
 
+// Some real teams (confirmed live: e.g. Feyenoord Rotterdam, FC Porto — newly-tracked
+// teams with no finished matches recorded anywhere yet, not a query/rendering bug) have
+// zero team_form rows, so `form` can legitimately be empty. Rendered as an explicit,
+// localized empty state rather than a silently blank row — never a fabricated result.
 function FormRow({ name, form }: { name: string; form: ('W' | 'D' | 'L')[] }) {
   const { t } = useTranslation();
   const tone = { W: { bg: colors.successMuted, fg: colors.successText }, D: { bg: colors.divider, fg: colors.textSecondaryAlt }, L: { bg: colors.dangerMuted, fg: colors.dangerText } };
   return (
     <View style={styles.formRow}>
       <Text style={styles.formTeamName}>{name}</Text>
-      <View style={{ flexDirection: 'row', gap: 4 }}>
-        {form.map((r, i) => (
-          <View key={i} style={[styles.formTile, { backgroundColor: tone[r].bg }]}>
-            <Text style={[styles.formTileText, { color: tone[r].fg }]}>{t(`teamProfile.form${r}`)}</Text>
-          </View>
-        ))}
-      </View>
+      {form.length === 0 ? (
+        <Text style={styles.formEmptyText}>{t('matchAnalysis.noRecentResults')}</Text>
+      ) : (
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {form.map((r, i) => (
+            <View key={i} style={[styles.formTile, { backgroundColor: tone[r].bg }]}>
+              <Text style={[styles.formTileText, { color: tone[r].fg }]}>{t(`teamProfile.form${r}`)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -332,12 +334,10 @@ const styles = StyleSheet.create({
   xgTrack: { height: 5, borderRadius: 3, backgroundColor: colors.divider, overflow: 'hidden' },
   xgFill: { height: '100%', borderRadius: 3 },
   xgDivider: { width: 1, backgroundColor: colors.border },
-  statPairRow: { flexDirection: 'row', gap: 10 },
-  statPairCard: { flex: 1, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  statPairLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginBottom: 6 },
   statPairValue: { fontFamily: fonts.headline, fontSize: 22, letterSpacing: -0.4, color: colors.textPrimary },
   formRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 9 },
   formTeamName: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary },
+  formEmptyText: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
   formTile: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   formTileText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   whyTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginBottom: 3 },

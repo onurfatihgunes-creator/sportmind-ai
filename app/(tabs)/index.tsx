@@ -168,7 +168,7 @@ export default function HomeScreen() {
                       </Text>
                       <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
                     </View>
-                    <ConfidenceRing value={favourite.probability} caption={t('matchAnalysis.confidenceCaption')} />
+                    <ConfidenceRing value={favourite.probability} caption={t('matchAnalysis.winProbabilityCaption')} />
                   </View>
                   <StackedDistributionBar
                     home={match.outcomes.home}
