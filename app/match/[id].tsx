@@ -61,7 +61,7 @@ export default function MatchAnalysisScreen() {
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
-              onPress={() => router.push({ pathname: '/insights', params: { team: match.home.id, teamNonce: String(Date.now()) } })}
+              onPress={() => router.push(`/team-insights/${match.home.id}`)}
               accessibilityRole="button"
               accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.home.name })}
             >
@@ -82,7 +82,7 @@ export default function MatchAnalysisScreen() {
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
-              onPress={() => router.push({ pathname: '/insights', params: { team: match.away.id, teamNonce: String(Date.now()) } })}
+              onPress={() => router.push(`/team-insights/${match.away.id}`)}
               accessibilityRole="button"
               accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.away.name })}
             >

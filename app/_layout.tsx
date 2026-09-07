@@ -88,6 +88,7 @@ export default function RootLayout() {
                 <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
                 <Stack.Screen name="match/[id]" />
                 <Stack.Screen name="team/[id]" />
+                <Stack.Screen name="team-insights/[teamId]" />
                 <Stack.Screen name="my-matches" />
                 <Stack.Screen name="notifications" />
                 <Stack.Screen name="team-comparison" />
