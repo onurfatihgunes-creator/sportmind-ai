@@ -78,7 +78,7 @@
   "insights": {
     "title": "AI Insights",
     "subtitle": "Discover SportMind's current view of your team. See their form, squad status, and recent developments in one place.",
-    "followingKicker": "Following",
+    "teamsKicker": "Teams",
     "followingEmptyBody": "Follow up to {{max}} teams for free to see meaningful changes for them here.",
     "addTeamShort": "Add team",
     "maxTeamsReached": "You're following the maximum of {{max}} teams. Remove one to add another.",
@@ -132,7 +132,8 @@
     "changePlayerAvailableAgain": "{{name}} is available again.",
     "changeLineupConfirmed": "Starting lineup confirmed.",
     "changeLineupPredicted": "Lineup prediction updated.",
-    "changeLineupUnavailable": "Lineup information no longer available."
+    "changeLineupUnavailable": "Lineup information no longer available.",
+    "followingKicker": "Following"
   },
   "notifications": {
     "title": "Notifications",

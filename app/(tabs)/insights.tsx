@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -127,6 +128,34 @@ export default function InsightsScreen() {
   }, [params.team, params.teamNonce, teams, followedTeams, selectedTeamId]);
 
   const selectedTeam: Team | null = (selectedTeamId && teams[selectedTeamId]) || null;
+  // Following and viewing are different concepts: a team reached via an external CTA
+  // (not followed) is only ever a temporary viewing state, never silently promoted to
+  // "followed". It's still shown as a chip so the user always knows which team the page
+  // is about, appended after the real followed teams rather than replacing them.
+  const isTemporaryView = Boolean(selectedTeam) && !followedTeams.some((tm) => tm.id === selectedTeam!.id);
+  const displayTeams = isTemporaryView && selectedTeam ? [...followedTeams, selectedTeam] : followedTeams;
+
+  // If the user leaves AI Insights entirely while temporarily viewing an unfollowed team
+  // (e.g. switches to another tab) and later comes back normally — not via a fresh CTA
+  // nonce — the temporary view should not persist: dropping the selection here lets the
+  // priority effect above fall back to the followed-team context on the next focus. A
+  // team the user does follow is left completely alone.
+  //
+  // `followedTeams` is a fresh array every render (plain .map(), not memoized), so it
+  // can't be a useCallback dependency here — that identity change on every render would
+  // make useFocusEffect tear down and re-register on every render while focused, firing
+  // this "drop the temp view" cleanup immediately after Priority 1 above sets it,
+  // clobbering the just-arrived CTA selection back to null. Read the latest value from a
+  // ref instead, updated during render, so the focus callback's identity stays stable.
+  const followedTeamsRef = useRef(followedTeams);
+  followedTeamsRef.current = followedTeams;
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setSelectedTeamId((current) => (current && !followedTeamsRef.current.some((tm) => tm.id === current) ? null : current));
+      };
+    }, []),
+  );
 
   // Team-level, not match-level: this is the team's own next scheduled fixture, used only
   // as (a) the source for squad-status/lineup facts that genuinely are match-scoped in the
@@ -158,8 +187,8 @@ export default function InsightsScreen() {
         <Text style={styles.title}>{t('insights.title')}</Text>
         <Text style={styles.subtitle}>{t('insights.subtitle')}</Text>
 
-        <Text style={styles.kicker}>{t('insights.followingKicker')}</Text>
-        {followedTeams.length === 0 ? (
+        <Text style={styles.kicker}>{t('insights.teamsKicker')}</Text>
+        {displayTeams.length === 0 ? (
           <>
             <Text style={styles.followingEmptyText}>{t('insights.followingEmptyBody', { max: MAX_FOLLOWED_TEAMS })}</Text>
             <Pressable style={styles.addButton} onPress={() => setShowPicker(true)}>
@@ -169,8 +198,9 @@ export default function InsightsScreen() {
           </>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {followedTeams.map((team) => {
+            {displayTeams.map((team) => {
               const selected = team.id === selectedTeamId;
+              const isViewingOnly = isTemporaryView && team.id === selectedTeamId;
               return (
                 <Pressable
                   key={team.id}
@@ -186,7 +216,11 @@ export default function InsightsScreen() {
                   </Text>
                   <Pressable
                     hitSlop={8}
-                    onPress={() => toggleTeam(team.id)}
+                    // A temporarily-viewed (unfollowed) team's own chip never calls
+                    // toggleTeam — that would actually *follow* it (toggle adds when
+                    // absent). Its "x" just drops the view instead, same effect as
+                    // leaving and coming back without a fresh CTA.
+                    onPress={() => (isViewingOnly ? setSelectedTeamId(null) : toggleTeam(team.id))}
                     accessibilityRole="button"
                     accessibilityLabel={t('insights.chipRemoveLabel', { team: team.name })}
                   >

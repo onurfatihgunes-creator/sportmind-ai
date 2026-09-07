@@ -78,7 +78,7 @@
   "insights": {
     "title": "تحليلات الذكاء الاصطناعي",
     "subtitle": "اكتشف رأي SportMind الحالي في فريقك. شاهد الفورمة وحالة التشكيلة وأحدث التطورات في مكان واحد.",
-    "followingKicker": "المتابَعون",
+    "teamsKicker": "الفرق",
     "followingEmptyBody": "تابع حتى {{max}} فرق مجانًا لرؤية التغييرات المهمة لهم هنا.",
     "addTeamShort": "إضافة فريق",
     "maxTeamsReached": "أنت تتابع الحد الأقصى ({{max}}) من الفرق. أزل فريقًا لإضافة آخر.",
@@ -140,7 +140,8 @@
     "changePlayerAvailableAgain": "{{name}} أصبح متاحًا مرة أخرى.",
     "changeLineupConfirmed": "تم تأكيد التشكيلة الأساسية.",
     "changeLineupPredicted": "تم تحديث التشكيلة المتوقعة.",
-    "changeLineupUnavailable": "معلومات التشكيلة لم تعد متاحة."
+    "changeLineupUnavailable": "معلومات التشكيلة لم تعد متاحة.",
+    "followingKicker": "المتابَعون"
   },
   "notifications": {
     "title": "الإشعارات",

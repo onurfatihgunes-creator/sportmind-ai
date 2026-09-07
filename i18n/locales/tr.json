@@ -78,7 +78,7 @@
   "insights": {
     "title": "AI Öngörüler",
     "subtitle": "SportMind'ın takımınla ilgili güncel görüşünü keşfet. Formunu, kadro durumunu ve son gelişmeleri tek yerde gör.",
-    "followingKicker": "Takip Edilenler",
+    "teamsKicker": "Takımlar",
     "followingEmptyBody": "Anlamlı değişiklikleri burada görmek için ücretsiz olarak en fazla {{max}} takımı takip edebilirsin.",
     "addTeamShort": "Takım ekle",
     "maxTeamsReached": "En fazla {{max}} takımı takip ediyorsun. Başka bir takım eklemek için önce birini çıkar.",
@@ -132,7 +132,8 @@
     "changePlayerAvailableAgain": "{{name}} tekrar forma giyebilir.",
     "changeLineupConfirmed": "İlk 11 netleşti.",
     "changeLineupPredicted": "Muhtemel 11 güncellendi.",
-    "changeLineupUnavailable": "Kadro bilgisi artık mevcut değil."
+    "changeLineupUnavailable": "Kadro bilgisi artık mevcut değil.",
+    "followingKicker": "Takip Edilenler"
   },
   "notifications": {
     "title": "Bildirimler",

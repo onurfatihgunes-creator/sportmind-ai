@@ -78,7 +78,7 @@
   "insights": {
     "title": "KI-Insights",
     "subtitle": "Entdecke SportMinds aktuelle Einschätzung zu deinem Team. Sieh Form, Kaderstatus und aktuelle Entwicklungen an einem Ort.",
-    "followingKicker": "Verfolgt",
+    "teamsKicker": "Teams",
     "followingEmptyBody": "Folge bis zu {{max}} Teams kostenlos, um hier wichtige Änderungen für sie zu sehen.",
     "addTeamShort": "Team hinzufügen",
     "maxTeamsReached": "Du folgst bereits der maximalen Anzahl von {{max}} Teams. Entferne eines, um ein weiteres hinzuzufügen.",
@@ -132,7 +132,8 @@
     "changePlayerAvailableAgain": "{{name}} ist wieder verfügbar.",
     "changeLineupConfirmed": "Startaufstellung bestätigt.",
     "changeLineupPredicted": "Voraussichtliche Aufstellung aktualisiert.",
-    "changeLineupUnavailable": "Aufstellungsinformationen nicht mehr verfügbar."
+    "changeLineupUnavailable": "Aufstellungsinformationen nicht mehr verfügbar.",
+    "followingKicker": "Verfolgt"
   },
   "notifications": {
     "title": "Benachrichtigungen",
