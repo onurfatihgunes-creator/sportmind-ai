@@ -17,6 +17,31 @@ test('SUM: home + draw + away always equals exactly 100, never 99 or 101', () =>
   assert.equal(regression.home + regression.draw + regression.away, 100);
 });
 
+test('BOUNDARY: an exact .5 fractional share on both home and away never sums to 101', () => {
+  // Real, currently-live production reproduction (match 564670, Real Racing Club de
+  // Santander vs Deportivo Alavés, still reachable in the app's window as of this audit):
+  // real team_form/xG inputs land on formDelta -6, xgDelta -3.500000000000001, producing
+  // raw shares (35.5, 27, 37.5) into this function. JS's Math.round has no round-half-to-
+  // even behaviour — it rounds every positive .5 up — so the OLD three-independent-
+  // Math.round implementation rounds BOTH home (35.5->36) and away (37.5->38) up
+  // simultaneously, producing {home:36, draw:27, away:38} = 101. This is the exact bug
+  // still live in production right now: the fix below (committed in 5168cea) exists only
+  // in this local history and has never been pushed, so the real GitHub Actions cron
+  // (.github/workflows/data-pipeline.yml, every 6h against origin/main) is still running
+  // the old code and re-persisting 101 on every run for any match whose inputs land on a
+  // .5 boundary. This test locks in that the *code*, once actually deployed, is correct.
+  const boundary = normalizeOutcomes(35.5, 27, 37.5);
+  assert.equal(boundary.home + boundary.draw + boundary.away, 100);
+});
+
+test('BOUNDARY: fractional shares that would each independently round down never sum to 99', () => {
+  // Synthetic but realistic triple (44.4/27.3/28.3, summing to exactly 100 before
+  // rounding) where every individual share's fractional part is below .5 — the OLD
+  // three-independent-Math.round implementation rounds all three DOWN (44/27/28 = 99).
+  const wouldBeNinetyNine = normalizeOutcomes(44.4, 27.3, 28.3);
+  assert.equal(wouldBeNinetyNine.home + wouldBeNinetyNine.draw + wouldBeNinetyNine.away, 100);
+});
+
 test('SUM: holds across a broad sweep of realistic form/xG-driven inputs', () => {
   const BASE_HOME = 45;
   const BASE_DRAW = 27;
