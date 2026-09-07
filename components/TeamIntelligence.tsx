@@ -15,6 +15,7 @@ import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team 
 import { getLatestSquadSnapshot, type SquadSnapshot } from '@/data/liveData';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
+import SkeletonBlock from '@/components/SkeletonBlock';
 
 const EMPTY_SNAPSHOT: SquadSnapshot = { unavailable: [], lineup: null, sourceMatchId: null };
 
@@ -241,11 +242,15 @@ export default function TeamIntelligence({
         </View>
         <Text style={styles.trendHeadline}>{t(trendHeadlineKey)}</Text>
         <Text style={styles.aiAnalysisBody}>{synthesisBody}</Text>
-        {unavailableCount > 0 && (
+        {unavailableCount > 0 ? (
           <View style={{ marginTop: 10 }}>
             <Chip label={t('insights.squadUncertaintyChipLabel')} tone="warning" />
           </View>
-        )}
+        ) : squadLoading ? (
+          <View style={{ marginTop: 10 }}>
+            <SkeletonBlock width={130} />
+          </View>
+        ) : null}
       </View>
 
       {signals.length > 0 && (
@@ -256,11 +261,15 @@ export default function TeamIntelligence({
               <SignalChip key={s.key} label={signalLabel(s.key)} direction={s.dir} />
             ))}
           </View>
-          {unavailableCount > 0 && (
+          {unavailableCount > 0 ? (
             <View style={{ marginTop: 10 }}>
               <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
             </View>
-          )}
+          ) : squadLoading ? (
+            <View style={{ marginTop: 10 }}>
+              <SkeletonBlock width={150} />
+            </View>
+          ) : null}
           <View style={{ marginTop: 10 }}>
             <InfoToggle label={t('insights.teamSignalsInfoLabel')} explanation={t('insights.teamSignalsInfoBody')} />
           </View>
@@ -279,7 +288,9 @@ export default function TeamIntelligence({
         <Text style={styles.cardTitle}>{t('insights.squadStatusCardTitle')}</Text>
         {unavailableCount > 0 ? (
           <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
-        ) : squadLoading ? null : (
+        ) : squadLoading ? (
+          <SkeletonBlock width={150} />
+        ) : (
           <Text style={styles.mutedBody}>{t('insights.squadStatusEmptyState')}</Text>
         )}
       </View>
@@ -329,7 +340,11 @@ export default function TeamIntelligence({
         ) : (
           <>
             <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
-            {!squadLoading && <Text style={styles.mutedBody}>{t('insights.playerStatusEmptyState')}</Text>}
+            {squadLoading ? (
+              <SkeletonBlock width="70%" height={14} radius={4} />
+            ) : (
+              <Text style={styles.mutedBody}>{t('insights.playerStatusEmptyState')}</Text>
+            )}
           </>
         )}
       </View>
