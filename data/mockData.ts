@@ -7,6 +7,13 @@ export type Team = {
   bg: string;
   fg: string;
   form: ('W' | 'D' | 'L')[];
+  /** Real team-level trend from comparing the team's own last-5 vs prior-5 real
+   * `team_form.goals_for`/`goals_against` — undefined (not a guess) when there isn't
+   * enough real history yet for a fair before/after comparison (a team early in a
+   * season, for example). 'up' always means "genuinely improving" for that signal
+   * (goals_against trending down already counts as defence 'up'). */
+  attackTrend?: 'up' | 'down' | 'neutral';
+  defenceTrend?: 'up' | 'down' | 'neutral';
   sport: Sport;
 };
 

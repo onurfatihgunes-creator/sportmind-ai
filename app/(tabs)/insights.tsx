@@ -17,27 +17,24 @@ import {
 import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
-import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, MatchFactor, PlayerImpactEntry, Team } from '@/data/mockData';
+import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
 import TeamPicker from '@/components/TeamPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
-import ConfidenceRing from '@/components/ConfidenceRing';
-import StackedDistributionBar from '@/components/StackedDistributionBar';
 import InfoToggle from '@/components/InfoToggle';
 import Disclaimer from '@/components/Disclaimer';
 
-/** Reframes a match's home/away outcome split from the selected team's own point of
- * view — "my team's win/draw/loss", not "home/draw/away" — matching how a
- * followed-team-centric screen should read regardless of which side that team is on. */
-function perspective(match: Match, teamId: string) {
-  const isHome = match.home.id === teamId;
-  const opponent = isHome ? match.away : match.home;
-  const winPct = isHome ? match.outcomes.home : match.outcomes.away;
-  const lossPct = isHome ? match.outcomes.away : match.outcomes.home;
-  return { isHome, opponent, winPct, drawPct: match.outcomes.draw, lossPct };
-}
+type SignalDir = 'up' | 'down' | 'neutral';
 
-function factorsByStrength(factors: MatchFactor[]) {
-  return [...factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50));
+/** Real, deterministic team-level FORM read from the team's own last-5 W/D/L —
+ * mirrors the same kind of simple, documented threshold already used for player-impact
+ * classification. undefined only when there's no form history at all yet. */
+function formDirection(team: Team): SignalDir | undefined {
+  if (team.form.length === 0) return undefined;
+  const wins = team.form.filter((r) => r === 'W').length;
+  const losses = team.form.filter((r) => r === 'L').length;
+  if (wins >= 3) return 'up';
+  if (losses >= 3) return 'down';
+  return 'neutral';
 }
 
 /** BSD's `player_availability.reason` is free text and usually already a real phrase
@@ -69,10 +66,9 @@ const LINEUP_VALUE_KEY: Record<string, string> = {
   unavailable: 'insights.changeLineupUnavailable',
 };
 
-/** One real, human-readable "what changed" line for this match, built only from change
- * records that actually exist (prediction_changes' percentage delta and/or
- * analysis_changes' lineup/availability events) — never a fabricated reason. Prefers the
- * most recent event of each real kind rather than picking one arbitrarily. */
+/** One real, human-readable "recent development" line, built only from change records
+ * that actually exist (prediction_changes' percentage delta and/or analysis_changes'
+ * lineup/availability events) — never a fabricated reason. */
 function describeChange(event: AnalysisChangeEvent, t: (key: string, opts?: Record<string, unknown>) => string): string | null {
   if (event.changeType === 'lineup_status_changed') {
     const key = LINEUP_VALUE_KEY[event.newValue];
@@ -107,33 +103,30 @@ export default function InsightsScreen() {
 
   const selectedTeam: Team | null = followedTeams.find((tm) => tm.id === selectedTeamId) ?? null;
 
-  const selectedMatch = useMemo(() => {
+  // Team-level, not match-level: this is the team's own next scheduled fixture, used only
+  // as (a) the source for squad-status/lineup facts that genuinely are match-scoped in the
+  // data model, and (b) a small contextual link to the existing Match Analysis screen —
+  // never as the primary subject of this screen anymore.
+  const nextMatch = useMemo(() => {
     if (!selectedTeam) return null;
     return matches.find((m) => m.home.id === selectedTeam.id || m.away.id === selectedTeam.id) ?? null;
   }, [matches, selectedTeam]);
 
-  // Real Change Intelligence for this exact match only — combines both existing sources
-  // (prediction_changes' win% delta, analysis_changes' lineup/availability events) rather
-  // than picking one; each is shown only when it's real for this match.
   const matchChangeEvent = useMemo(
-    () => (selectedMatch ? [...changeEvents].filter((e) => e.matchId === selectedMatch.id).sort((a, b) => b.id.localeCompare(a.id))[0] : undefined),
-    [changeEvents, selectedMatch],
+    () => (nextMatch ? [...changeEvents].filter((e) => e.matchId === nextMatch.id).sort((a, b) => b.id.localeCompare(a.id))[0] : undefined),
+    [changeEvents, nextMatch],
   );
-  const matchAnalysisChanges = useMemo(
-    () => (selectedMatch ? analysisChanges.filter((e) => e.matchId === selectedMatch.id) : []),
-    [analysisChanges, selectedMatch],
-  );
+  const matchAnalysisChanges = useMemo(() => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []), [analysisChanges, nextMatch]);
   const hasAnyChange = Boolean(matchChangeEvent) || matchAnalysisChanges.length > 0;
 
   // Followed-team changes surface first — a change on a match the user has no connection
   // to is still real Change Intelligence, but far less relevant than the state above it.
   const followedMatchIds = useMemo(() => new Set(matches.filter((m) => teamIds.includes(m.home.id) || teamIds.includes(m.away.id)).map((m) => m.id)), [matches, teamIds]);
   // Filtered to events whose match is actually in the currently-loaded set BEFORE
-  // slicing — a change event can reference a match outside today's loaded window (e.g. a
-  // different sport's top-30, or since aged out), and rendering would then have nothing
-  // to show for it. Filtering first means an empty result here is a real "nothing to
-  // show" rather than 5 slots that all silently render nothing with no empty-state
-  // fallback.
+  // slicing — a change event can reference a match outside today's loaded window, and
+  // rendering would then have nothing to show for it. Filtering first means an empty
+  // result here is a real "nothing to show" rather than 5 slots that all silently render
+  // nothing with no empty-state fallback.
   const recentChanges = useMemo(() => {
     const withMatch = changeEvents.filter((e) => matches.some((m) => m.id === e.matchId));
     return [...withMatch].sort((a, b) => (followedMatchIds.has(b.matchId) ? 1 : 0) - (followedMatchIds.has(a.matchId) ? 1 : 0)).slice(0, 5);
@@ -211,16 +204,10 @@ export default function InsightsScreen() {
           }}
         />
 
-        {selectedTeam && !selectedMatch && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.followingEmptyText}>{t('insights.noUpcomingMatch', { team: selectedTeam.name })}</Text>
-          </View>
-        )}
-
-        {selectedTeam && selectedMatch && (
-          <SelectedTeamAnalysis
+        {selectedTeam && (
+          <TeamIntelligence
             team={selectedTeam}
-            match={selectedMatch}
+            nextMatch={nextMatch}
             changeEvent={matchChangeEvent}
             analysisChanges={matchAnalysisChanges}
             hasAnyChange={hasAnyChange}
@@ -262,209 +249,15 @@ export default function InsightsScreen() {
   );
 }
 
-function factorDirection(factor: MatchFactor, isHome: boolean): 'up' | 'down' | 'neutral' {
-  const diff = factor.home - 50;
-  if (Math.abs(diff) <= 3) return 'neutral';
-  const favoursHome = diff > 0;
-  return (isHome ? favoursHome : !favoursHome) ? 'up' : 'down';
-}
-
-function SelectedTeamAnalysis({
-  team,
-  match,
-  changeEvent,
-  analysisChanges,
-  hasAnyChange,
-}: {
-  team: Team;
-  match: Match;
-  changeEvent: ChangeEvent | undefined;
-  analysisChanges: AnalysisChangeEvent[];
-  hasAnyChange: boolean;
-}) {
-  const { t } = useTranslation();
-  const [squadExpanded, setSquadExpanded] = useState(false);
-  const isBasketball = match.sport === 'basketball';
-  const p = perspective(match, team.id);
-  const sortedFactors = factorsByStrength(match.factors);
-  const topFactor = sortedFactors[0];
-
-  // "Favoured"/the headline verdict is only ever said when this team's own win% genuinely
-  // is the single largest of the three outcomes — otherwise (e.g. a 27% away underdog vs
-  // a 46% home favourite) that word would overclaim. The real percentage is always shown
-  // either way via the ring/bar below, never softened.
-  const isFavoured = p.winPct >= p.drawPct && p.winPct >= p.lossPct;
-  const headline = t(isFavoured ? 'insights.headlineFavoured' : 'insights.headlineUnderdog', { team: team.name });
-  // Factor names stay in their own Title Case (matches factors.* elsewhere in the app) —
-  // deliberately not lowercased for mid-sentence use, since German nouns are always
-  // capitalized and lowercasing would be a real grammar error there, not a style choice.
-  const aiAnalysis = topFactor
-    ? t(isFavoured ? 'insights.aiAnalysisBody' : 'insights.aiAnalysisBodyUnderdog', { team: team.name, pct: p.winPct, factor: t(`factors.${topFactor.key}`) })
-    : t(isFavoured ? 'insights.aiAnalysisFallbackBody' : 'insights.aiAnalysisFallbackBodyUnderdog', { team: team.name, pct: p.winPct });
-
-  const homeSquad = (match.squadImpact ?? []).filter((e) => e.team === 'home');
-  const awaySquad = (match.squadImpact ?? []).filter((e) => e.team === 'away');
-  const unavailableCount = (match.squadImpact ?? []).length;
-  const ownLineup: LineupPlayer[] = (p.isHome ? match.lineups?.home : match.lineups?.away) ?? [];
-  const opponentLineup: LineupPlayer[] = (p.isHome ? match.lineups?.away : match.lineups?.home) ?? [];
-  const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0 || opponentLineup.length > 0;
-  const squadSummaryParts = [
-    unavailableCount > 0 ? t('insights.squadImpactSummary', { count: unavailableCount }) : null,
-    ownLineup.length > 0 ? t('insights.keyPlayersTrackedSummary', { count: ownLineup.length }) : null,
-  ].filter((part): part is string => Boolean(part));
-
-  const changeDescription = analysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
-
+function SignalRow({ label, direction }: { label: string; direction: SignalDir }) {
+  const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
+  const tone = direction === 'up' ? colors.successText : direction === 'down' ? colors.dangerText : colors.textFaint;
   return (
-    <View style={{ gap: 14, marginTop: 4, marginBottom: 24 }}>
-      <Pressable style={styles.nextMatchCard} onPress={() => router.push(`/match/${match.id}`)}>
-        <Text style={styles.nextMatchKicker}>{t('insights.nextMatchTitle')}</Text>
-        <View style={styles.nextMatchRow}>
-          <TeamBadgePair home={match.home} away={match.away} size={30} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.nextMatchTitle} numberOfLines={1}>
-              {match.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {match.away.name}
-            </Text>
-            <Text style={styles.nextMatchSubtitle} numberOfLines={1}>
-              {match.competition} · {match.kickoff}
-            </Text>
-          </View>
-          <CaretRightIcon size={16} color={colors.textFainter} />
-        </View>
-      </Pressable>
-
-      {/* PRIMARY: the conclusion comes before the numbers — a user should understand
-          SportMind's verdict before being asked to interpret a percentage split. */}
-      <View style={styles.card}>
-        <Text style={styles.sportMindThinksHeadline}>{headline}</Text>
-        <View style={styles.predictionRow}>
-          <ConfidenceRing value={p.winPct} size={84} strokeWidth={7} caption={t('insights.winProbabilityCaption')} />
-          <View style={{ flex: 1, gap: 8 }}>
-            <StackedDistributionBar home={p.winPct} draw={isBasketball ? 0 : p.drawPct} away={p.lossPct} height={28} />
-            <View style={styles.outcomeLegendRow}>
-              <Text style={styles.outcomeLegendText}>{t('insights.win')}</Text>
-              {!isBasketball && <Text style={styles.outcomeLegendText}>{t('insights.draw')}</Text>}
-              <Text style={styles.outcomeLegendText}>{t('insights.loss')}</Text>
-            </View>
-          </View>
-        </View>
-        <InfoToggle label={t('insights.winProbabilityInfoLabel')} explanation={t('insights.winProbabilityInfoBody')} />
+    <View style={styles.signalRow}>
+      <Text style={styles.signalLabel}>{label}</Text>
+      <View style={styles.signalValue}>
+        <Icon size={13} weight="bold" color={tone} />
       </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('insights.aiAnalysisTitle')}</Text>
-        <Text style={styles.aiAnalysisBody}>{aiAnalysis}</Text>
-      </View>
-
-      {sortedFactors.length > 0 && (
-        <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>{t('insights.whyTitle')}</Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            {sortedFactors.slice(0, 4).map((factor) => {
-              const direction = factorDirection(factor, p.isHome);
-              const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
-              const tone = direction === 'up' ? colors.successText : direction === 'down' ? colors.dangerText : colors.textFaint;
-              return (
-                <View key={factor.key} style={styles.whyRow}>
-                  <Icon size={14} weight="bold" color={tone} />
-                  <Text style={styles.whyLabel}>{t(`factors.${factor.key}`)}</Text>
-                </View>
-              );
-            })}
-          </View>
-          <InfoToggle label={t('insights.whyInfoLabel')} explanation={t('insights.whyInfoBody')} />
-        </View>
-      )}
-
-      {hasSquadSection && (
-        <View style={styles.card}>
-          <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
-              <Text style={styles.mutedBody}>{squadSummaryParts.join(' · ')}</Text>
-            </View>
-            {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
-          </Pressable>
-
-          {squadExpanded && (
-            <View style={{ gap: 14, marginTop: 12 }}>
-              {unavailableCount > 0 && (
-                <View style={{ gap: 8 }}>
-                  <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
-                  {[{ label: match.home.name, rows: homeSquad }, { label: match.away.name, rows: awaySquad }].map(
-                    (group) =>
-                      group.rows.length > 0 && (
-                        <View key={group.label} style={{ gap: 6 }}>
-                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
-                          {group.rows.map((entry, i) => (
-                            <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} />
-                          ))}
-                        </View>
-                      ),
-                  )}
-                </View>
-              )}
-
-              {(ownLineup.length > 0 || opponentLineup.length > 0) && (
-                <View style={{ gap: 8 }}>
-                  <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
-                  {[{ label: team.name, rows: ownLineup }, { label: p.opponent.name, rows: opponentLineup }].map(
-                    (group) =>
-                      group.rows.length > 0 && (
-                        <View key={group.label} style={{ gap: 4 }}>
-                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
-                          <Text style={styles.mutedBody}>{group.rows.map((pl) => pl.name).join(', ')}</Text>
-                        </View>
-                      ),
-                  )}
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-      )}
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('whatChanged.title')}</Text>
-        {hasAnyChange ? (
-          <View style={{ gap: 8, marginTop: 8 }}>
-            {changeEvent && (
-              <Text style={styles.mutedBody}>
-                {t('insights.predictionChangeLine', { from: changeEvent.from, to: changeEvent.to })}
-              </Text>
-            )}
-            {changeDescription && <Text style={styles.mutedBody}>{changeDescription}</Text>}
-          </View>
-        ) : (
-          <Text style={[styles.mutedBody, { marginTop: 8 }]}>{t('insights.noSignificantChanges')}</Text>
-        )}
-      </View>
-
-      {match.h2h && match.h2h.totalMatches > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t('insights.h2hTitle')}</Text>
-          <Text style={[styles.mutedBody, { marginTop: 8 }]}>
-            {t('insights.h2hRecord', {
-              team: team.name,
-              total: match.h2h.totalMatches,
-              // BSD's H2H record is computed specific to this match's home/away
-              // assignment, so "home wins" genuinely means "wins by the team that is
-              // home in this fixture" — reframed to the selected team's own wins/losses
-              // for consistency with the rest of this screen, same as the prediction.
-              ownWins: p.isHome ? match.h2h.homeWins : match.h2h.awayWins,
-              draws: match.h2h.draws,
-              oppWins: p.isHome ? match.h2h.awayWins : match.h2h.homeWins,
-            })}
-          </Text>
-        </View>
-      )}
-
-      <Pressable style={styles.viewFullAnalysisLink} onPress={() => router.push(`/match/${match.id}`)}>
-        <Text style={styles.viewFullAnalysisText}>{t('common.viewFullAnalysis')}</Text>
-        <ArrowRightIcon size={13} weight="bold" color={colors.primaryLink} />
-      </Pressable>
     </View>
   );
 }
@@ -484,6 +277,234 @@ function PlayerImpactRow({ entry }: { entry: PlayerImpactEntry }) {
       <View style={[styles.impactChip, { backgroundColor: toneMutedColor(tone) }]}>
         <Text style={[styles.impactChipText, { color: toneTextColor(tone) }]}>{t(`insights.impact${entry.impact.charAt(0).toUpperCase()}${entry.impact.slice(1)}`)}</Text>
       </View>
+    </View>
+  );
+}
+
+function TeamIntelligence({
+  team,
+  nextMatch,
+  changeEvent,
+  analysisChanges,
+  hasAnyChange,
+}: {
+  team: Team;
+  nextMatch: Match | null;
+  changeEvent: ChangeEvent | undefined;
+  analysisChanges: AnalysisChangeEvent[];
+  hasAnyChange: boolean;
+}) {
+  const { t } = useTranslation();
+  const [squadExpanded, setSquadExpanded] = useState(false);
+
+  const isHomeInNextMatch = nextMatch ? nextMatch.home.id === team.id : false;
+  const opponent = nextMatch ? (isHomeInNextMatch ? nextMatch.away : nextMatch.home) : null;
+
+  // Real, team-level signals only — never match/opponent-relative (that's Match
+  // Analysis's job). form comes from the team's own last-5 W/D/L; attack/defence come
+  // from a real before/after comparison of the team's own goals_for/goals_against
+  // history (see data/liveData.ts's goalsTrend). Any signal without enough real history
+  // is simply absent, never guessed.
+  const form = formDirection(team);
+  const signals: { key: 'form' | 'attack' | 'defence'; dir: SignalDir }[] = [
+    form ? { key: 'form' as const, dir: form } : null,
+    team.attackTrend ? { key: 'attack' as const, dir: team.attackTrend } : null,
+    team.defenceTrend ? { key: 'defence' as const, dir: team.defenceTrend } : null,
+  ].filter((s): s is { key: 'form' | 'attack' | 'defence'; dir: SignalDir } => s !== null);
+
+  const upSignals = signals.filter((s) => s.dir === 'up');
+  const downSignals = signals.filter((s) => s.dir === 'down');
+  const overallTrend: 'positive' | 'negative' | 'stable' | 'mixed' | 'unknown' =
+    signals.length === 0
+      ? 'unknown'
+      : upSignals.length > downSignals.length
+        ? 'positive'
+        : downSignals.length > upSignals.length
+          ? 'negative'
+          : upSignals.length > 0 && downSignals.length > 0
+            ? 'mixed'
+            : 'stable';
+
+  const homeSquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === 'home');
+  const awaySquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === 'away');
+  // Team-level, not match-level: only the followed team's own unavailable players count
+  // toward its squad status — the opponent's absences are Match Analysis's concern, not this
+  // team's signal.
+  const ownSquad = isHomeInNextMatch ? homeSquad : awaySquad;
+  const unavailableCount = ownSquad.length;
+  const ownLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.home : nextMatch?.lineups?.away) ?? [];
+  const opponentLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.away : nextMatch?.lineups?.home) ?? [];
+  const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0 || opponentLineup.length > 0;
+  const squadSummaryParts = [
+    unavailableCount > 0 ? t('insights.squadImpactSummary', { count: unavailableCount }) : null,
+    ownLineup.length > 0 ? t('insights.keyPlayersTrackedSummary', { count: ownLineup.length }) : null,
+  ].filter((part): part is string => Boolean(part));
+
+  // Trend headline + synthesis body: a small set of discrete, whole-sentence templates
+  // (not runtime clause-concatenation) keyed by overall trend + which single signal is
+  // most notable — safe across locales with very different word order/grammar, unlike
+  // stitching independent phrase fragments together. Squad status is called out as a
+  // separate trailing sentence (never blended into the up/down tally) only when there's
+  // a real, current squad concern for the team's next match.
+  const priority: ('form' | 'attack' | 'defence')[] = ['form', 'attack', 'defence'];
+  const topPositiveKey = priority.find((k) => upSignals.some((s) => s.key === k));
+  const topNegativeKey = priority.find((k) => downSignals.some((s) => s.key === k));
+  const signalLabel = (key: 'form' | 'attack' | 'defence') => t(`insights.signalLabel${key.charAt(0).toUpperCase()}${key.slice(1)}`);
+
+  let synthesisBody: string;
+  if (overallTrend === 'unknown') {
+    synthesisBody = t('insights.teamViewInsufficientData', { team: team.name });
+  } else if (overallTrend === 'positive' && topPositiveKey) {
+    synthesisBody = t('insights.teamViewPositive', { team: team.name, signal: signalLabel(topPositiveKey) });
+  } else if (overallTrend === 'negative' && topNegativeKey) {
+    synthesisBody = t('insights.teamViewNegative', { team: team.name, signal: signalLabel(topNegativeKey) });
+  } else if (overallTrend === 'mixed' && topPositiveKey && topNegativeKey) {
+    synthesisBody = t('insights.teamViewMixed', { team: team.name, positive: signalLabel(topPositiveKey), negative: signalLabel(topNegativeKey) });
+  } else {
+    synthesisBody = t('insights.teamViewStable', { team: team.name });
+  }
+  const squadCaveat = unavailableCount > 0 ? t('insights.teamViewSquadCaveat') : null;
+
+  const trendHeadlineKey = { positive: 'insights.trendPositive', negative: 'insights.trendNegative', mixed: 'insights.trendMixed', stable: 'insights.trendStable', unknown: 'insights.trendUnknown' }[overallTrend];
+
+  const changeDescription = analysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
+
+  return (
+    <View style={{ gap: 14, marginTop: 4, marginBottom: 24 }}>
+      {/* PRIMARY: team-level conclusion — never a match win/draw/loss split, that's
+          Match Analysis's job (see the product-boundary note at the top of this file's
+          git history / commit message). */}
+      <View style={styles.card}>
+        <Text style={styles.sportMindViewKicker}>{t('insights.sportMindViewTitle')}</Text>
+        <Text style={styles.trendHeadline}>{t(trendHeadlineKey)}</Text>
+        <Text style={styles.aiAnalysisBody}>{synthesisBody}</Text>
+        {squadCaveat && <Text style={[styles.aiAnalysisBody, { marginTop: 4 }]}>{squadCaveat}</Text>}
+      </View>
+
+      {signals.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('insights.teamSignalsTitle')}</Text>
+          <View style={{ gap: 10 }}>
+            {signals.map((s) => (
+              <SignalRow key={s.key} label={signalLabel(s.key)} direction={s.dir} />
+            ))}
+            {unavailableCount > 0 && (
+              <View style={styles.signalRow}>
+                <Text style={styles.signalLabel}>{t('insights.signalLabelSquad')}</Text>
+                <Text style={styles.squadStatusValue}>{t('insights.squadImpactSummary', { count: unavailableCount })}</Text>
+              </View>
+            )}
+          </View>
+          <View style={{ marginTop: 10 }}>
+            <InfoToggle label={t('insights.teamSignalsInfoLabel')} explanation={t('insights.teamSignalsInfoBody')} />
+          </View>
+        </View>
+      )}
+
+      {hasSquadSection && (
+        <View style={styles.card}>
+          <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
+              <Text style={styles.mutedBody}>{squadSummaryParts.join(' · ')}</Text>
+            </View>
+            {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
+          </Pressable>
+
+          {squadExpanded && nextMatch && (
+            <View style={{ gap: 14, marginTop: 12 }}>
+              {unavailableCount > 0 && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
+                  {[{ label: nextMatch.home.name, rows: homeSquad }, { label: nextMatch.away.name, rows: awaySquad }].map(
+                    (group) =>
+                      group.rows.length > 0 && (
+                        <View key={group.label} style={{ gap: 6 }}>
+                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
+                          {group.rows.map((entry, i) => (
+                            <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} />
+                          ))}
+                        </View>
+                      ),
+                  )}
+                </View>
+              )}
+
+              {(ownLineup.length > 0 || opponentLineup.length > 0) && opponent && (
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
+                  {[{ label: team.name, rows: ownLineup }, { label: opponent.name, rows: opponentLineup }].map(
+                    (group) =>
+                      group.rows.length > 0 && (
+                        <View key={group.label} style={{ gap: 4 }}>
+                          <Text style={styles.squadTeamLabel}>{group.label}</Text>
+                          <Text style={styles.mutedBody}>{group.rows.map((pl) => pl.name).join(', ')}</Text>
+                        </View>
+                      ),
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      )}
+
+      {nextMatch && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('insights.recentDevelopmentsTitle')}</Text>
+          {hasAnyChange ? (
+            <View style={{ gap: 8, marginTop: 4 }}>
+              {changeEvent && <Text style={styles.mutedBody}>{t('insights.predictionChangeLine', { from: changeEvent.from, to: changeEvent.to })}</Text>}
+              {changeDescription && <Text style={styles.mutedBody}>{changeDescription}</Text>}
+            </View>
+          ) : (
+            <Text style={[styles.mutedBody, { marginTop: 4 }]}>{t('insights.noSignificantChanges')}</Text>
+          )}
+        </View>
+      )}
+
+      {nextMatch?.h2h && nextMatch.h2h.totalMatches > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('insights.h2hTitle')}</Text>
+          <Text style={[styles.mutedBody, { marginTop: 4 }]}>
+            {t('insights.h2hRecord', {
+              team: team.name,
+              total: nextMatch.h2h.totalMatches,
+              ownWins: isHomeInNextMatch ? nextMatch.h2h.homeWins : nextMatch.h2h.awayWins,
+              draws: nextMatch.h2h.draws,
+              oppWins: isHomeInNextMatch ? nextMatch.h2h.awayWins : nextMatch.h2h.homeWins,
+            })}
+          </Text>
+        </View>
+      )}
+
+      {/* NEXT MATCH is contextual navigation only from here on — no prediction numbers.
+          That detail lives in Match Analysis; this just links to it. */}
+      {nextMatch ? (
+        <Pressable style={styles.nextMatchCard} onPress={() => router.push(`/match/${nextMatch.id}`)}>
+          <Text style={styles.nextMatchKicker}>{t('insights.nextMatchTitle')}</Text>
+          <View style={styles.nextMatchRow}>
+            <TeamBadgePair home={nextMatch.home} away={nextMatch.away} size={30} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.nextMatchTitle} numberOfLines={1}>
+                {nextMatch.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {nextMatch.away.name}
+              </Text>
+              <Text style={styles.nextMatchSubtitle} numberOfLines={1}>
+                {nextMatch.competition} · {nextMatch.kickoff}
+              </Text>
+            </View>
+            <CaretRightIcon size={16} color={colors.textFainter} />
+          </View>
+          <View style={styles.viewFullAnalysisLink}>
+            <Text style={styles.viewFullAnalysisText}>{t('common.viewFullAnalysis')}</Text>
+            <ArrowRightIcon size={13} weight="bold" color={colors.primaryLink} />
+          </View>
+        </Pressable>
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.followingEmptyText}>{t('insights.noUpcomingMatch', { team: team.name })}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -514,22 +535,16 @@ const styles = StyleSheet.create({
   addButton: { marginTop: 10, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderHover, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   emptyCard: { marginTop: 14, padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  nextMatchCard: { marginTop: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  nextMatchKicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
-  nextMatchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  nextMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
-  nextMatchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },
   card: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   cardTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 10 },
-  sportMindThinksHeadline: { fontFamily: fonts.headline, fontSize: 17, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 12 },
-  predictionRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 10 },
-  outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
+  sportMindViewKicker: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginBottom: 6 },
+  trendHeadline: { fontFamily: fonts.headline, fontSize: 18, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 8 },
   aiAnalysisBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   mutedBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
-  whyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  whyLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  signalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  signalLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  signalValue: { width: 24, alignItems: 'flex-end' },
+  squadStatusValue: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
   collapsibleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   squadGroupLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.textFainter },
   squadTeamLabel: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textFaint },
@@ -538,7 +553,12 @@ const styles = StyleSheet.create({
   playerStatus: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
   impactChip: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   impactChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10 },
-  viewFullAnalysisLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
+  nextMatchCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
+  nextMatchKicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
+  nextMatchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  nextMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
+  nextMatchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },
+  viewFullAnalysisLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   viewFullAnalysisText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.primaryLink },
   changeRow: {
     flexDirection: 'row',

@@ -125,6 +125,7 @@ async function fetchTrackRecord(): Promise<TrackRecordEntry[]> {
  * callers can fall back to mock data instead of showing a broken screen. */
 export async function fetchLiveData(): Promise<LiveDataBundle | null> {
   if (!supabase) return null;
+  const client = supabase;
   try {
     const windowStart = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
 
@@ -160,24 +161,67 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     const matchIds = matchRows.map((m) => m.id);
     const teamIds = Array.from(new Set(matchRows.flatMap((m) => [m.home_team_id, m.away_team_id])));
 
-    const [{ data: teamRows }, { data: predictionRows }, { data: formRows }] = await Promise.all([
+    // Fetched per-team (not one bulk `.in('team_id', teamIds)` query) because Postgrest
+    // caps any single request at 1000 rows: with ~90 teams in a typical loaded window
+    // and thousands of team_form rows total, a single global-order-by-date query silently
+    // drops older rows for whichever teams happen to sort past that cutoff — confirmed
+    // live (Union Berlin's 10th-most-recent match fell just past the cutoff, truncating
+    // its trend window to 9 rows and flipping a real defensive improvement to "neutral").
+    // A per-team query with its own `.limit(10)` guarantees each team gets its own real
+    // most-recent rows regardless of how many other teams are loaded.
+    const [{ data: teamRows }, { data: predictionRows }, teamFormResults] = await Promise.all([
       supabase.from('teams').select('id, name, short_code, sport').in('id', teamIds),
       supabase.from('predictions').select('*').in('match_id', matchIds),
-      supabase
-        .from('team_form')
-        .select('team_id, match_date, result')
-        .in('team_id', teamIds)
-        .order('match_date', { ascending: false }),
+      Promise.all(
+        teamIds.map((id) =>
+          client
+            .from('team_form')
+            .select('team_id, match_date, result, goals_for, goals_against')
+            .eq('team_id', id)
+            .order('match_date', { ascending: false })
+            .limit(10),
+        ),
+      ),
     ]);
 
     if (!teamRows || teamRows.length === 0 || !predictionRows || predictionRows.length === 0) return null;
 
+    // Up to 10 real recent matches per team: the first 5 back `Team.form` (unchanged
+    // behaviour/shape), all up to 10 back AI Insights' team-level attack/defence trend
+    // (recent-5 vs previous-5 real goals averages).
     const formByTeam: Record<string, ('W' | 'D' | 'L')[]> = {};
-    for (const row of formRows ?? []) {
-      const arr = formByTeam[row.team_id] ?? (formByTeam[row.team_id] = []);
-      if (arr.length < 5) arr.push(row.result as 'W' | 'D' | 'L');
+    const formHistoryByTeam: Record<string, { goalsFor: number; goalsAgainst: number }[]> = {};
+    teamIds.forEach((id, i) => {
+      const rows = teamFormResults[i].data ?? [];
+      formByTeam[id] = rows.slice(0, 5).map((r) => r.result as 'W' | 'D' | 'L').reverse();
+      formHistoryByTeam[id] = rows.map((r) => ({ goalsFor: r.goals_for, goalsAgainst: r.goals_against }));
+    });
+
+    // Simple, deterministic before/after comparison over real historical goals —
+    // mirrors the same "small documented threshold, no ML/LLM" methodology already used
+    // for player-impact classification. Requires at least 3 real matches in BOTH the
+    // recent and prior window; a team with less history than that gets no trend rather
+    // than a guess from a too-small sample (rows are already ordered most-recent-first,
+    // so index 0-4 is "recent" and 5-9 is "prior").
+    const TREND_THRESHOLD = 0.4;
+    function goalsTrend(history: { goalsFor: number; goalsAgainst: number }[], key: 'goalsFor' | 'goalsAgainst'): 'up' | 'down' | 'neutral' | undefined {
+      const recent = history.slice(0, 5);
+      const prior = history.slice(5, 10);
+      if (recent.length < 3 || prior.length < 3) return undefined;
+      const avg = (rows: typeof history) => rows.reduce((sum, r) => sum + r[key], 0) / rows.length;
+      const delta = avg(recent) - avg(prior);
+      if (Math.abs(delta) < TREND_THRESHOLD) return 'neutral';
+      return delta > 0 ? 'up' : 'down';
     }
-    Object.values(formByTeam).forEach((arr) => arr.reverse());
+    const attackTrendByTeam: Record<string, 'up' | 'down' | 'neutral' | undefined> = {};
+    const defenceTrendByTeam: Record<string, 'up' | 'down' | 'neutral' | undefined> = {};
+    for (const teamId of Object.keys(formHistoryByTeam)) {
+      const history = formHistoryByTeam[teamId];
+      attackTrendByTeam[teamId] = goalsTrend(history, 'goalsFor');
+      // Lower goals-against is the improvement direction for defence — flip the raw delta.
+      const rawDefence = goalsTrend(history, 'goalsAgainst');
+      defenceTrendByTeam[teamId] = rawDefence === 'up' ? 'down' : rawDefence === 'down' ? 'up' : rawDefence;
+    }
 
     const teams: Record<string, Team> = {};
     for (const row of teamRows) {
@@ -189,6 +233,8 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
         bg: palette.bg,
         fg: palette.fg,
         form: formByTeam[row.id] ?? [],
+        attackTrend: attackTrendByTeam[row.id],
+        defenceTrend: defenceTrendByTeam[row.id],
         sport: (row.sport as Sport) ?? 'football',
       };
     }
