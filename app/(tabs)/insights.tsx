@@ -14,10 +14,10 @@ import {
   PlusIcon,
   XIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor, type ChangeTone } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
-import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
+import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
 import TeamPicker from '@/components/TeamPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
@@ -112,12 +112,7 @@ export default function InsightsScreen() {
     return matches.find((m) => m.home.id === selectedTeam.id || m.away.id === selectedTeam.id) ?? null;
   }, [matches, selectedTeam]);
 
-  const matchChangeEvent = useMemo(
-    () => (nextMatch ? [...changeEvents].filter((e) => e.matchId === nextMatch.id).sort((a, b) => b.id.localeCompare(a.id))[0] : undefined),
-    [changeEvents, nextMatch],
-  );
   const matchAnalysisChanges = useMemo(() => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []), [analysisChanges, nextMatch]);
-  const hasAnyChange = Boolean(matchChangeEvent) || matchAnalysisChanges.length > 0;
 
   // Followed-team changes surface first — a change on a match the user has no connection
   // to is still real Change Intelligence, but far less relevant than the state above it.
@@ -136,6 +131,7 @@ export default function InsightsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('insights.title')}</Text>
+        <Text style={styles.subtitle}>{t('insights.subtitle')}</Text>
 
         <Text style={styles.kicker}>{t('insights.followingKicker')}</Text>
         {followedTeams.length === 0 ? (
@@ -204,15 +200,7 @@ export default function InsightsScreen() {
           }}
         />
 
-        {selectedTeam && (
-          <TeamIntelligence
-            team={selectedTeam}
-            nextMatch={nextMatch}
-            changeEvent={matchChangeEvent}
-            analysisChanges={matchAnalysisChanges}
-            hasAnyChange={hasAnyChange}
-          />
-        )}
+        {selectedTeam && <TeamIntelligence team={selectedTeam} nextMatch={nextMatch} analysisChanges={matchAnalysisChanges} />}
 
         <Text style={styles.kicker}>{t('insights.recentChangesKicker')}</Text>
         {recentChanges.length === 0 ? (
@@ -249,15 +237,22 @@ export default function InsightsScreen() {
   );
 }
 
-function SignalRow({ label, direction }: { label: string; direction: SignalDir }) {
+function SignalChip({ label, direction }: { label: string; direction: SignalDir }) {
   const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
-  const tone = direction === 'up' ? colors.successText : direction === 'down' ? colors.dangerText : colors.textFaint;
+  const tone = direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'neutral';
+  const textColor = toneTextColor(tone);
   return (
-    <View style={styles.signalRow}>
-      <Text style={styles.signalLabel}>{label}</Text>
-      <View style={styles.signalValue}>
-        <Icon size={13} weight="bold" color={tone} />
-      </View>
+    <View style={[styles.signalChip, { backgroundColor: toneMutedColor(tone) }]}>
+      <Text style={[styles.signalChipText, { color: textColor }]}>{label}</Text>
+      <Icon size={12} weight="bold" color={textColor} />
+    </View>
+  );
+}
+
+function Chip({ label, tone }: { label: string; tone: ChangeTone }) {
+  return (
+    <View style={[styles.smallChip, { backgroundColor: toneMutedColor(tone) }]}>
+      <Text style={[styles.smallChipText, { color: toneTextColor(tone) }]}>{label}</Text>
     </View>
   );
 }
@@ -284,15 +279,11 @@ function PlayerImpactRow({ entry, first }: { entry: PlayerImpactEntry; first?: b
 function TeamIntelligence({
   team,
   nextMatch,
-  changeEvent,
   analysisChanges,
-  hasAnyChange,
 }: {
   team: Team;
   nextMatch: Match | null;
-  changeEvent: ChangeEvent | undefined;
   analysisChanges: AnalysisChangeEvent[];
-  hasAnyChange: boolean;
 }) {
   const { t } = useTranslation();
   const [squadExpanded, setSquadExpanded] = useState(false);
@@ -333,10 +324,6 @@ function TeamIntelligence({
   const unavailableCount = ownSquad.length;
   const ownLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.home : nextMatch?.lineups?.away) ?? [];
   const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0;
-  const squadSummaryParts = [
-    unavailableCount > 0 ? t('insights.squadImpactSummary', { count: unavailableCount }) : null,
-    ownLineup.length > 0 ? t('insights.keyPlayersTrackedSummary', { count: ownLineup.length }) : null,
-  ].filter((part): part is string => Boolean(part));
 
   // Trend headline + synthesis body: a small set of discrete, whole-sentence templates
   // (not runtime clause-concatenation) keyed by overall trend + which single signal is
@@ -348,51 +335,67 @@ function TeamIntelligence({
   const topPositiveKey = priority.find((k) => upSignals.some((s) => s.key === k));
   const topNegativeKey = priority.find((k) => downSignals.some((s) => s.key === k));
   const signalLabel = (key: 'form' | 'attack' | 'defence') => t(`insights.signalLabel${key.charAt(0).toUpperCase()}${key.slice(1)}`);
+  // A separate, more natural noun phrase for embedding inside a sentence ("attacking
+  // performance") — kept distinct from the short chip label ("Attack") so the compact
+  // Team Signals chips stay scannable while the SportMind View sentence still reads
+  // naturally, in every locale.
+  const signalPhrase = (key: 'form' | 'attack' | 'defence') => t(`insights.signalPhrase${key.charAt(0).toUpperCase()}${key.slice(1)}`);
 
   let synthesisBody: string;
   if (overallTrend === 'unknown') {
     synthesisBody = t('insights.teamViewInsufficientData', { team: team.name });
   } else if (overallTrend === 'positive' && topPositiveKey) {
-    synthesisBody = t('insights.teamViewPositive', { team: team.name, signal: signalLabel(topPositiveKey) });
+    synthesisBody = t('insights.teamViewPositive', { team: team.name, signal: signalPhrase(topPositiveKey) });
   } else if (overallTrend === 'negative' && topNegativeKey) {
-    synthesisBody = t('insights.teamViewNegative', { team: team.name, signal: signalLabel(topNegativeKey) });
+    synthesisBody = t('insights.teamViewNegative', { team: team.name, signal: signalPhrase(topNegativeKey) });
   } else if (overallTrend === 'mixed' && topPositiveKey && topNegativeKey) {
-    synthesisBody = t('insights.teamViewMixed', { team: team.name, positive: signalLabel(topPositiveKey), negative: signalLabel(topNegativeKey) });
+    synthesisBody = t('insights.teamViewMixed', { team: team.name, positive: signalPhrase(topPositiveKey), negative: signalPhrase(topNegativeKey) });
   } else {
     synthesisBody = t('insights.teamViewStable', { team: team.name });
   }
-  const squadCaveat = unavailableCount > 0 ? t('insights.teamViewSquadCaveat') : null;
 
   const trendHeadlineKey = { positive: 'insights.trendPositive', negative: 'insights.trendNegative', mixed: 'insights.trendMixed', stable: 'insights.trendStable', unknown: 'insights.trendUnknown' }[overallTrend];
 
-  const changeDescription = analysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
+  // Team-scoped Change Intelligence only: a player-named event (ruled out / available
+  // again) is included only when it's resolved to this team's own side (see
+  // AnalysisChangeEvent.team's doc comment) — an event whose side couldn't be
+  // determined is excluded rather than risked. Non-player lineup-status events carry no
+  // team at all and are match-level, so they're always kept.
+  const ownAnalysisChanges = analysisChanges.filter((e) => e.team === undefined || e.team === (isHomeInNextMatch ? 'home' : 'away'));
+  const changeDescription = ownAnalysisChanges.map((e) => describeChange(e, t)).find((d): d is string => Boolean(d));
 
   return (
     <View style={{ gap: 14, marginTop: 18, marginBottom: 24 }}>
       {/* PRIMARY: team-level conclusion — never a match win/draw/loss split, that's
           Match Analysis's job (see the product-boundary note at the top of this file's
-          git history / commit message). */}
-      <View style={styles.card}>
-        <Text style={styles.sportMindViewKicker}>{t('insights.sportMindViewTitle')}</Text>
+          git history / commit message). Strongest visual identity on the page: a subtle
+          purple/lilac tint, reserved for this one card. */}
+      <View style={[styles.card, styles.sportMindCard]}>
+        <View style={styles.sportMindKickerChip}>
+          <Text style={styles.sportMindKickerChipText}>{t('insights.sportMindViewTitle')}</Text>
+        </View>
         <Text style={styles.trendHeadline}>{t(trendHeadlineKey)}</Text>
         <Text style={styles.aiAnalysisBody}>{synthesisBody}</Text>
-        {squadCaveat && <Text style={[styles.aiAnalysisBody, { marginTop: 4 }]}>{squadCaveat}</Text>}
+        {unavailableCount > 0 && (
+          <View style={{ marginTop: 10 }}>
+            <Chip label={t('insights.squadUncertaintyChipLabel')} tone="warning" />
+          </View>
+        )}
       </View>
 
       {signals.length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('insights.teamSignalsTitle')}</Text>
-          <View style={{ gap: 10 }}>
+          <View style={styles.signalChipRow}>
             {signals.map((s) => (
-              <SignalRow key={s.key} label={signalLabel(s.key)} direction={s.dir} />
+              <SignalChip key={s.key} label={signalLabel(s.key)} direction={s.dir} />
             ))}
-            {unavailableCount > 0 && (
-              <View style={styles.signalRow}>
-                <Text style={styles.signalLabel}>{t('insights.signalLabelSquad')}</Text>
-                <Text style={styles.squadStatusValue}>{t('insights.squadImpactSummary', { count: unavailableCount })}</Text>
-              </View>
-            )}
           </View>
+          {unavailableCount > 0 && (
+            <View style={{ marginTop: 10 }}>
+              <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
+            </View>
+          )}
           <View style={{ marginTop: 10 }}>
             <InfoToggle label={t('insights.teamSignalsInfoLabel')} explanation={t('insights.teamSignalsInfoBody')} />
           </View>
@@ -402,9 +405,12 @@ function TeamIntelligence({
       {hasSquadSection && (
         <View style={styles.card}>
           <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, gap: 6 }}>
               <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
-              <Text style={styles.mutedBody}>{squadSummaryParts.join(' · ')}</Text>
+              <View style={styles.collapsedSummaryRow}>
+                {unavailableCount > 0 && <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />}
+                {ownLineup.length > 0 && <Text style={styles.mutedBody}>{t('insights.keyPlayersTrackedSummary', { count: ownLineup.length })}</Text>}
+              </View>
             </View>
             {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
           </Pressable>
@@ -436,21 +442,31 @@ function TeamIntelligence({
       {nextMatch && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('insights.recentDevelopmentsTitle')}</Text>
-          {hasAnyChange ? (
-            <View style={{ gap: 8, marginTop: 4 }}>
-              {changeEvent && <Text style={styles.mutedBody}>{t('insights.predictionChangeLine', { from: changeEvent.from, to: changeEvent.to })}</Text>}
-              {changeDescription && <Text style={styles.mutedBody}>{changeDescription}</Text>}
-            </View>
-          ) : (
-            <Text style={[styles.mutedBody, { marginTop: 4 }]}>{t('insights.noSignificantChanges')}</Text>
-          )}
+          <View style={{ gap: 8, marginTop: 4 }}>
+            {changeDescription ? (
+              <>
+                <Chip label={t('insights.developmentTagSquad')} tone="info" />
+                <Text style={styles.mutedBody}>{changeDescription}</Text>
+              </>
+            ) : (
+              <>
+                <Chip label={t('insights.developmentTagStable')} tone="neutral" />
+                <Text style={styles.mutedBody}>{t('insights.noSignificantChanges')}</Text>
+              </>
+            )}
+          </View>
         </View>
       )}
 
+      {/* HEAD-TO-HEAD is supporting context, not a primary signal — visually lighter
+          (no border/shadow weight of its own) than SportMind View and Team Signals. */}
       {nextMatch?.h2h && nextMatch.h2h.totalMatches > 0 && (
-        <View style={styles.card}>
+        <View style={styles.h2hCard}>
           <Text style={styles.cardTitle}>{t('insights.h2hTitle')}</Text>
-          <Text style={[styles.mutedBody, { marginTop: 4 }]}>
+          <View style={{ marginBottom: 6 }}>
+            <Chip label={t('insights.h2hMeetingsChip', { count: nextMatch.h2h.totalMatches })} tone="neutral" />
+          </View>
+          <Text style={styles.mutedBody}>
             {t('insights.h2hRecord', {
               team: team.name,
               total: nextMatch.h2h.totalMatches,
@@ -466,7 +482,10 @@ function TeamIntelligence({
           That detail lives in Match Analysis; this just links to it. */}
       {nextMatch ? (
         <Pressable style={styles.nextMatchCard} onPress={() => router.push(`/match/${nextMatch.id}`)}>
-          <Text style={styles.nextMatchKicker}>{t('insights.nextMatchTitle')}</Text>
+          <View style={styles.nextMatchHeaderRow}>
+            <Text style={styles.nextMatchKicker}>{t('insights.nextMatchTitle')}</Text>
+            <Chip label={nextMatch.competition} tone="neutral" />
+          </View>
           <View style={styles.nextMatchRow}>
             <TeamBadgePair home={nextMatch.home} away={nextMatch.away} size={30} />
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -474,7 +493,7 @@ function TeamIntelligence({
                 {nextMatch.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {nextMatch.away.name}
               </Text>
               <Text style={styles.nextMatchSubtitle} numberOfLines={1}>
-                {nextMatch.competition} · {nextMatch.kickoff}
+                {nextMatch.kickoff}
               </Text>
             </View>
             <CaretRightIcon size={16} color={colors.textFainter} />
@@ -496,7 +515,8 @@ function TeamIntelligence({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
-  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 16 },
+  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 4 },
+  subtitle: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textFaint, marginBottom: 16 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginTop: 20, marginBottom: 6 },
   followingEmptyText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
   chipRow: { gap: 8, paddingVertical: 2, paddingRight: 4 },
@@ -521,15 +541,27 @@ const styles = StyleSheet.create({
   emptyCard: { marginTop: 14, padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   card: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   cardTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 10 },
-  sportMindViewKicker: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginBottom: 6 },
+  sportMindCard: { backgroundColor: colors.primaryTint, borderColor: colors.borderAccent },
+  sportMindKickerChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primaryTintStrong,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  sportMindKickerChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.primaryText },
   trendHeadline: { fontFamily: fonts.headline, fontSize: 18, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 8 },
   aiAnalysisBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   mutedBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
-  signalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  signalLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
-  signalValue: { width: 24, alignItems: 'flex-end' },
-  squadStatusValue: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
+  signalChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  signalChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
+  signalChipText: { fontFamily: fonts.bodySemiBold, fontSize: 12 },
+  smallChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  smallChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11 },
+  collapsedSummaryRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   collapsibleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  h2hCard: { padding: 14, borderRadius: radius.md, backgroundColor: colors.surfaceSubtle },
   squadGroupLabel: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.textFainter },
   squadTeamGroup: { gap: 2 },
   playerRow: {
@@ -546,7 +578,8 @@ const styles = StyleSheet.create({
   impactChip: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   impactChipText: { fontFamily: fonts.bodySemiBold, fontSize: 10 },
   nextMatchCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  nextMatchKicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
+  nextMatchHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  nextMatchKicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textFaint },
   nextMatchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   nextMatchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
   nextMatchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },

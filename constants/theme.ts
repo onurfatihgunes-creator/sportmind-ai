@@ -51,6 +51,10 @@ export const colors = {
   dangerMuted: '#f4e6e3',
   dangerBorder: '#e8d6d2',
 
+  info: '#3d6fa8',
+  infoText: '#3d5a80',
+  infoMuted: '#e3e9f5',
+
   highlightBg: '#5d5294',
   highlightBgAlt: '#796cbf',
   highlightText: '#fdfdff',
@@ -108,16 +112,16 @@ export function confidenceBadgeBg(value: number) {
   return value >= 55 ? colors.primaryTintStrong : colors.divider;
 }
 
-export type ChangeTone = 'success' | 'warning' | 'danger';
+export type ChangeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 export function toneColor(tone: ChangeTone) {
-  return { success: colors.success, warning: colors.warning, danger: colors.danger }[tone];
+  return { success: colors.success, warning: colors.warning, danger: colors.danger, info: colors.info, neutral: colors.textSecondaryAlt }[tone];
 }
 
 export function toneTextColor(tone: ChangeTone) {
-  return { success: colors.successText, warning: colors.warningText, danger: colors.dangerText }[tone];
+  return { success: colors.successText, warning: colors.warningText, danger: colors.dangerText, info: colors.infoText, neutral: colors.textSecondaryAlt }[tone];
 }
 
 export function toneMutedColor(tone: ChangeTone) {
-  return { success: colors.successMuted, warning: colors.warningMuted, danger: colors.dangerMuted }[tone];
+  return { success: colors.successMuted, warning: colors.warningMuted, danger: colors.dangerMuted, info: colors.infoMuted, neutral: colors.divider }[tone];
 }

@@ -318,12 +318,23 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       for (const row of bsdPlayerRows ?? []) marketValueByBsdPlayerId[row.id] = row.market_value_eur;
     }
 
+    // `analysis_changes` rows carry no team_id (see AnalysisChangeEvent's own doc comment),
+    // so a player-named event can't be attributed to a side directly. Resolved instead by
+    // matching that same real player name against this match's own team-attributed rosters
+    // — the union of who's in player_availability (team_id-backed) and match_lineups'
+    // home/away arrays — built once here and reused below.
+    const playerTeamByMatch: Record<string, Record<string, 'home' | 'away'>> = {};
+    const registerPlayer = (matchId: string, name: string, team: 'home' | 'away') => {
+      (playerTeamByMatch[matchId] ??= {})[name] = team;
+    };
+
     const squadImpactByMatch: Record<string, PlayerImpactEntry[]> = {};
     for (const row of availabilityRows ?? []) {
       const match = matchRows.find((m) => m.id === row.match_id);
       if (!match) continue;
       const team: 'home' | 'away' | null = row.team_id === match.home_team_id ? 'home' : row.team_id === match.away_team_id ? 'away' : null;
       if (!team) continue;
+      registerPlayer(row.match_id, row.player_name, team);
       const certain = CERTAIN_ABSENCE_STATUSES.has(row.status);
       const marketValue = row.bsd_player_id != null ? marketValueByBsdPlayerId[row.bsd_player_id] : null;
       const isKeyByMarketValue = certain && (marketValue ?? 0) >= HIGH_IMPACT_MARKET_VALUE_EUR;
@@ -341,11 +352,11 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     for (const row of lineupRows ?? []) {
       const toPlayers = (raw: unknown): LineupPlayer[] | null =>
         Array.isArray(raw) ? raw.map((p: any) => ({ name: p.name, position: p.position ?? null })) : null;
-      lineupsByMatch[row.match_id] = {
-        status: row.lineup_status,
-        home: toPlayers(row.home_players),
-        away: toPlayers(row.away_players),
-      };
+      const home = toPlayers(row.home_players);
+      const away = toPlayers(row.away_players);
+      home?.forEach((p) => registerPlayer(row.match_id, p.name, 'home'));
+      away?.forEach((p) => registerPlayer(row.match_id, p.name, 'away'));
+      lineupsByMatch[row.match_id] = { status: row.lineup_status, home, away };
     }
 
     for (const match of matches) {
@@ -357,6 +368,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       if (lineups) match.lineups = lineups;
     }
 
+    const PLAYER_CHANGE_TYPES = new Set(['player_unavailable', 'player_available_again']);
     const analysisChanges: AnalysisChangeEvent[] = (analysisChangeRows ?? []).map((c) => ({
       id: String(c.id),
       matchId: String(c.match_id),
@@ -364,6 +376,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       changeType: c.change_type,
       previousValue: c.previous_value,
       newValue: c.new_value,
+      team: PLAYER_CHANGE_TYPES.has(c.change_type) ? playerTeamByMatch[c.match_id]?.[c.new_value] : undefined,
     }));
 
     const trackRecord = await fetchTrackRecord();

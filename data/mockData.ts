@@ -77,6 +77,13 @@ export type AnalysisChangeEvent = {
   changeType: 'lineup_status_changed' | 'player_unavailable' | 'player_available_again' | string;
   previousValue: string | null;
   newValue: string;
+  /** Which side of the match this event's player belongs to — resolved by matching
+   * `newValue` against that match's real, team-attributed player_availability/lineup
+   * names (the row itself carries no team_id). `undefined` for non-player events
+   * (`lineup_status_changed`) and for the rare player name that matches neither side's
+   * known roster — never guessed, so a team-scoped screen can safely exclude anything
+   * it can't attribute rather than risk showing the opponent's player. */
+  team?: 'home' | 'away';
 };
 
 /** A real starting-lineup entry from Supabase's `match_lineups` — real BSD-resolved name,
