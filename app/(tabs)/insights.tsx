@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowDownIcon,
@@ -82,26 +82,51 @@ export default function InsightsScreen() {
   const { t } = useTranslation();
   const { teams, matches, changeEvents, analysisChanges } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
+  const params = useLocalSearchParams<{ team?: string; teamNonce?: string }>();
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
 
-  // First followed team selected by default; if the selection becomes invalid (removed,
-  // or nothing followed yet), fall back to the new first team rather than showing a dead
-  // selection — never assumes exactly 3 teams, works for any follow limit.
+  // Single effect, evaluated in priority order, so an incoming CTA selection and the
+  // "default to first followed team" fallback can never race each other (they did as two
+  // separate effects: both read the same stale pre-update `selectedTeamId` within one
+  // commit, and the fallback effect unconditionally overwrote the CTA's choice whenever
+  // this screen happened to remount for the navigation — which it does, since pushing a
+  // tab route from a stack screen doesn't just refocus the persistent tab instance here).
+  //
+  // Priority 1 — a team-specific CTA elsewhere (e.g. Match Analysis's "AI Insights" button
+  // under each team) navigates here with `?team=<id>&teamNonce=<timestamp>`. The nonce
+  // (unique per tap, not per team) is what gets deduped against, so this acts as a
+  // one-shot "select this team" instruction: it won't fight the user's own later chip taps
+  // within this screen (params.team/teamNonce simply stop changing), but tapping the very
+  // same team's CTA again later still re-selects it, since that tap carries a fresh nonce
+  // even though the team id repeats — deduping on the team id itself would miss exactly
+  // that case. Explicitly does NOT follow the team — following stays entirely separate
+  // (FollowedTeamsContext).
+  //
+  // Priority 2 — keep a valid existing selection alone, even if that team isn't followed;
+  // AI Insights must stay viewable for an unfollowed team (reached via the CTA above)
+  // without silently snapping back to a followed one.
+  //
+  // Priority 3 — nothing valid selected yet: default to the first followed team, or clear.
+  const lastConsumedNonce = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (followedTeams.length === 0) {
-      if (selectedTeamId !== null) setSelectedTeamId(null);
+    if (params.team && params.teamNonce && params.teamNonce !== lastConsumedNonce.current && teams[params.team]) {
+      lastConsumedNonce.current = params.teamNonce;
+      setSelectedTeamId(params.team);
       return;
     }
-    if (!selectedTeamId || !followedTeams.some((tm) => tm.id === selectedTeamId)) {
+    if (selectedTeamId && teams[selectedTeamId]) return;
+    if (followedTeams.length > 0) {
       setSelectedTeamId(followedTeams[0].id);
+    } else if (selectedTeamId !== null) {
+      setSelectedTeamId(null);
     }
-  }, [followedTeams, selectedTeamId]);
+  }, [params.team, params.teamNonce, teams, followedTeams, selectedTeamId]);
 
-  const selectedTeam: Team | null = followedTeams.find((tm) => tm.id === selectedTeamId) ?? null;
+  const selectedTeam: Team | null = (selectedTeamId && teams[selectedTeamId]) || null;
 
   // Team-level, not match-level: this is the team's own next scheduled fixture, used only
   // as (a) the source for squad-status/lineup facts that genuinely are match-scoped in the

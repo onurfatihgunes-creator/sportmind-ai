@@ -202,7 +202,9 @@
     "balanced": "balanced",
     "favours": "favours {{team}}",
     "methodologyNote": "Confidence is calculated with a weighted statistical model from recent form, expected goals, and matchup context. It's an approximation, not a certainty.",
-    "compareTeams": "Compare {{a}} and {{b}}"
+    "compareTeams": "Compare {{a}} and {{b}}",
+    "teamInsightsCta": "AI Insights",
+    "teamInsightsCtaLabel": "View AI Insights for {{team}}"
   },
   "factors": {
     "recentForm": "Recent form",

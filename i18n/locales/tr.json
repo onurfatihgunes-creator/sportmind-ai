@@ -202,7 +202,9 @@
     "balanced": "dengeli",
     "favours": "{{team}} lehine",
     "methodologyNote": "Güven, son form, beklenen gol ve eşleşme bağlamından ağırlıklı bir istatistik modeliyle hesaplanır. Kesinlik değil, yaklaşımdır.",
-    "compareTeams": "{{a}} ve {{b}}'yi karşılaştır"
+    "compareTeams": "{{a}} ve {{b}}'yi karşılaştır",
+    "teamInsightsCta": "AI Analizi",
+    "teamInsightsCtaLabel": "{{team}} için AI Analizi"
   },
   "factors": {
     "recentForm": "Son form",

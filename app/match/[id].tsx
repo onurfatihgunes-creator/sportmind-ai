@@ -52,22 +52,44 @@ export default function MatchAnalysisScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.matchupCard}>
-          <Pressable style={styles.teamCol} onPress={() => router.push(`/team/${match.home.id}`)}>
-            <View style={[styles.crest, { backgroundColor: match.home.bg }]}>
-              <Text style={[styles.crestText, { color: match.home.fg }]}>{match.home.code}</Text>
-            </View>
-            <Text style={styles.teamName}>{match.home.name}</Text>
-          </Pressable>
+          <View style={styles.teamCol}>
+            <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.home.id}`)}>
+              <View style={[styles.crest, { backgroundColor: match.home.bg }]}>
+                <Text style={[styles.crestText, { color: match.home.fg }]}>{match.home.code}</Text>
+              </View>
+              <Text style={styles.teamName} numberOfLines={2}>{match.home.name}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
+              onPress={() => router.push({ pathname: '/insights', params: { team: match.home.id, teamNonce: String(Date.now()) } })}
+              accessibilityRole="button"
+              accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.home.name })}
+            >
+              <Text style={styles.teamInsightsCtaText} numberOfLines={1}>{t('matchAnalysis.teamInsightsCta')}</Text>
+              <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
+            </Pressable>
+          </View>
           <View style={styles.kickoffCol}>
             <Text style={styles.kickoffDay}>{match.kickoff.split(',')[0]}</Text>
             <Text style={styles.kickoffTime}>{match.kickoff.split(',')[1]?.trim()}</Text>
           </View>
-          <Pressable style={styles.teamCol} onPress={() => router.push(`/team/${match.away.id}`)}>
-            <View style={[styles.crest, { backgroundColor: match.away.bg }]}>
-              <Text style={[styles.crestText, { color: match.away.fg }]}>{match.away.code}</Text>
-            </View>
-            <Text style={styles.teamName}>{match.away.name}</Text>
-          </Pressable>
+          <View style={styles.teamCol}>
+            <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.away.id}`)}>
+              <View style={[styles.crest, { backgroundColor: match.away.bg }]}>
+                <Text style={[styles.crestText, { color: match.away.fg }]}>{match.away.code}</Text>
+              </View>
+              <Text style={styles.teamName} numberOfLines={2}>{match.away.name}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
+              onPress={() => router.push({ pathname: '/insights', params: { team: match.away.id, teamNonce: String(Date.now()) } })}
+              accessibilityRole="button"
+              accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.away.name })}
+            >
+              <Text style={styles.teamInsightsCtaText} numberOfLines={1}>{t('matchAnalysis.teamInsightsCta')}</Text>
+              <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.hero}>
@@ -255,9 +277,30 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   teamCol: { flex: 1, alignItems: 'center' },
+  teamProfileTouchable: { alignItems: 'center' },
   crest: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   crestText: { fontFamily: fonts.bodyBold, fontSize: 11 },
   teamName: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary, textAlign: 'center' },
+  teamInsightsCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    maxWidth: '100%',
+  },
+  teamInsightsCtaPressed: { backgroundColor: colors.primaryLinkHover },
+  teamInsightsCtaText: {
+    flexShrink: 1,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    color: colors.highlightText,
+  },
   kickoffCol: { alignItems: 'center', paddingHorizontal: 8 },
   kickoffDay: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter, marginBottom: 2 },
   kickoffTime: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },

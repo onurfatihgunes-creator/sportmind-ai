@@ -202,7 +202,9 @@
     "balanced": "ausgeglichen",
     "favours": "favorisiert {{team}}",
     "methodologyNote": "Die Konfidenz wird mit einem gewichteten statistischen Modell aus aktueller Form, erwarteten Toren und Spielkontext berechnet. Das ist eine Annäherung, keine Gewissheit.",
-    "compareTeams": "{{a}} und {{b}} vergleichen"
+    "compareTeams": "{{a}} und {{b}} vergleichen",
+    "teamInsightsCta": "KI-Insights",
+    "teamInsightsCtaLabel": "KI-Insights für {{team}} ansehen"
   },
   "factors": {
     "recentForm": "Aktuelle Form",
