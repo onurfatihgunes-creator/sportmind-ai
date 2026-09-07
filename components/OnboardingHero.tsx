@@ -1,9 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LayoutChangeEvent, View } from 'react-native';
 import Animated, {
   useAnimatedProps,
   useDerivedValue,
-  useFrameCallback,
   useReducedMotion,
   useSharedValue,
 } from 'react-native-reanimated';
@@ -195,10 +194,27 @@ export default function OnboardingHero() {
   const geo = useSharedValue<Geo>(EMPTY_GEO);
   const t = useSharedValue(reduceMotion ? 3.4 : 0);
 
-  useFrameCallback((frame) => {
+  // A plain `requestAnimationFrame` loop rather than Reanimated's own
+  // `useFrameCallback`: on this project's web target (Expo web / RN Web),
+  // that hook never actually ticked — `t` stayed frozen at its initial
+  // value, so every opacity derived from it (`inPitch`, the heat blobs,
+  // the pass chain) silently evaluated to 0 and the whole hero rendered
+  // blank but for the ambient glow, which is the one piece that doesn't
+  // depend on `t`. `requestAnimationFrame` is a real global on both RN
+  // and web, and writing a shared value's `.value` from a plain JS
+  // callback is always valid, so this drives the same worklets from
+  // either platform without a native-only API in the loop.
+  useEffect(() => {
     if (reduceMotion) return;
-    t.value = (frame.timeSinceFirstFrame ?? 0) / 1000;
-  }, !reduceMotion);
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      t.value = (now - start) / 1000;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduceMotion, t]);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width: W, height: H } = e.nativeEvent.layout;
