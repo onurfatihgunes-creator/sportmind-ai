@@ -241,42 +241,72 @@ export default function TeamIntelligence({
         </View>
       )}
 
-      {hasSquadSection && (
-        <View style={styles.card}>
-          <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
-              <View style={styles.collapsedSummaryRow}>
-                {unavailableCount > 0 && <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />}
-                {ownLineup.length > 0 && <Text style={styles.mutedBody}>{t('insights.keyPlayersTrackedSummary', { count: ownLineup.length })}</Text>}
+      {/* SQUAD STATUS — a compact, always-rendered summary of the selected team's own
+          availability exceptions. Never hidden just because this particular match hasn't
+          been enriched yet (confirmed live: Barcelona's real next fixture, a Champions
+          League match, currently has zero player_availability/match_lineups rows at all —
+          a genuine upstream data gap, same category as the Feyenoord team_form gap found
+          earlier — while Barcelona's own following La Liga fixture already has real
+          availability data). An honest "no data" line replaces the section instead of the
+          section itself disappearing. */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('insights.squadStatusCardTitle')}</Text>
+        {unavailableCount > 0 ? (
+          <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
+        ) : (
+          <Text style={styles.mutedBody}>{t('insights.squadStatusEmptyState')}</Text>
+        )}
+      </View>
+
+      {/* PLAYER STATUS & FORM — secondary to Team Signals/Squad Status, collapsed by
+          default. Real players only (name, real status, humanized real reason, real
+          impact) — never a fabricated form label (Strong/Stable/Weak/etc.), matching the
+          standing audit decision that no data path supports a genuine per-player form
+          rating. Shows an honest empty state rather than disappearing when this match has
+          no real availability/lineup data at all. */}
+      <View style={styles.card}>
+        {hasSquadSection ? (
+          <>
+            <Pressable style={styles.collapsibleHeader} onPress={() => setSquadExpanded((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: squadExpanded }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
+                <View style={styles.collapsedSummaryRow}>
+                  {unavailableCount > 0 && <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />}
+                  {ownLineup.length > 0 && <Text style={styles.mutedBody}>{t('insights.keyPlayersTrackedSummary', { count: ownLineup.length })}</Text>}
+                </View>
               </View>
-            </View>
-            {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
-          </Pressable>
+              {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
+            </Pressable>
 
-          {squadExpanded && nextMatch && (
-            <View style={{ gap: 14, marginTop: 12 }}>
-              {unavailableCount > 0 && (
-                <View style={{ gap: 16 }}>
-                  <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
-                  <View style={styles.squadTeamGroup}>
-                    {ownSquad.map((entry, i) => (
-                      <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} first={i === 0} />
-                    ))}
+            {squadExpanded && nextMatch && (
+              <View style={{ gap: 14, marginTop: 12 }}>
+                {unavailableCount > 0 && (
+                  <View style={{ gap: 16 }}>
+                    <Text style={styles.squadGroupLabel}>{t('insights.unavailableGroupTitle')}</Text>
+                    <View style={styles.squadTeamGroup}>
+                      {ownSquad.map((entry, i) => (
+                        <PlayerImpactRow key={`${entry.playerName}-${i}`} entry={entry} first={i === 0} />
+                      ))}
+                    </View>
                   </View>
-                </View>
-              )}
+                )}
 
-              {ownLineup.length > 0 && (
-                <View style={{ gap: 14 }}>
-                  <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
-                  <Text style={styles.mutedBody}>{ownLineup.map((pl) => pl.name).join(', ')}</Text>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-      )}
+                {ownLineup.length > 0 && (
+                  <View style={{ gap: 14 }}>
+                    <Text style={styles.squadGroupLabel}>{t('insights.keyPlayersGroupTitle')}</Text>
+                    <Text style={styles.mutedBody}>{ownLineup.map((pl) => pl.name).join(', ')}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
+            <Text style={styles.mutedBody}>{t('insights.playerStatusEmptyState')}</Text>
+          </>
+        )}
+      </View>
 
       {nextMatch && (
         <View style={styles.card}>
