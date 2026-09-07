@@ -542,3 +542,76 @@ export async function getLatestSquadSnapshot(teamId: string): Promise<SquadSnaps
   // Priority 4: genuinely nothing anywhere.
   return EMPTY_SQUAD_SNAPSHOT;
 }
+
+/** On-demand, single-team lookup for a team id that isn't in the currently-loaded bulk
+ * `teams` map — which only ever contains teams referenced by fetchLiveData()'s top-30-
+ * per-sport match window, not every team that exists. Without this, a team whose own
+ * matches have all rotated past that window (or a stale/shared deep link) can't be told
+ * apart from a genuinely invalid id — both would just be "not in the map." Queries the
+ * team's own row directly by primary key, the one real yes/no signal for "does this team
+ * exist at all." Deliberately omits form/attackTrend/defenceTrend — the same honest "no
+ * data" state already shown for any team without enough team_form history — rather than
+ * re-running the full trend pipeline for what should be a rare fallback path. Returns
+ * null only when no such team exists in the database; callers must never substitute a
+ * different team when this returns null. */
+export async function resolveTeamById(teamId: string): Promise<Team | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('teams').select('id, name, short_code, sport').eq('id', teamId).maybeSingle();
+  if (error || !data) return null;
+  const palette = colorFor(data.id);
+  return {
+    id: data.id,
+    name: data.name,
+    code: (data.short_code || data.name.slice(0, 3)).toUpperCase().slice(0, 3),
+    bg: palette.bg,
+    fg: palette.fg,
+    form: [],
+    sport: (data.sport as Sport) ?? 'football',
+  };
+}
+
+/** On-demand, single-match lookup mirroring resolveTeamById's rationale, for a match id
+ * that has rotated past fetchLiveData()'s top-30-per-sport window (or a stale/shared deep
+ * link) — never a substitute for picking a different match to display. Assembles a real
+ * Match from the match row + its own predictions row + its two teams (via
+ * resolveTeamById, so "team not in window" resolves transparently on either side).
+ * Mirrors fetchLiveData()'s own honest-omission rule exactly: a match with no real
+ * predictions row is never shown, so this returns null in that case too, same as a match
+ * that doesn't exist at all — both are the caller's "not found" signal. h2h/squadImpact/
+ * lineups/changeEvents enrichment is intentionally left out, same reasoning as the omitted
+ * trend data above: those are already optional everywhere they're read, and this is meant
+ * to stay a small, rare fallback path, not a duplicate of fetchLiveData()'s full
+ * enrichment pass. */
+export async function resolveMatchById(matchId: string): Promise<Match | null> {
+  if (!supabase) return null;
+  const { data: m, error } = await supabase
+    .from('matches')
+    .select('id, competition, sport, home_team_id, away_team_id, kickoff_at')
+    .eq('id', matchId)
+    .maybeSingle();
+  if (error || !m) return null;
+
+  const [{ data: predRows }, home, away] = await Promise.all([
+    supabase.from('predictions').select('*').eq('match_id', matchId).limit(1),
+    resolveTeamById(m.home_team_id),
+    resolveTeamById(m.away_team_id),
+  ]);
+  const pred = predRows?.[0];
+  if (!pred || !home || !away) return null;
+
+  return {
+    id: m.id,
+    home,
+    away,
+    kickoff: formatKickoff(m.kickoff_at),
+    kickoffAt: m.kickoff_at,
+    competition: m.competition,
+    sport: (m.sport as Sport) ?? 'football',
+    outcomes: { home: pred.home_win_pct, draw: pred.draw_pct, away: pred.away_win_pct },
+    xgHome: Number(pred.xg_home),
+    xgAway: Number(pred.xg_away),
+    recentAvgGoalsHome: Number(pred.recent_avg_goals_home),
+    recentAvgGoalsAway: Number(pred.recent_avg_goals_away),
+    factors: (pred.factors as MatchFactor[]) ?? [],
+  };
+}

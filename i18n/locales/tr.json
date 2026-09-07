@@ -9,7 +9,8 @@
     "restorePurchases": "Satın alımları geri yükle",
     "terms": "Kullanım Koşulları",
     "privacy": "Gizlilik",
-    "vs": "vs"
+    "vs": "vs",
+    "goBack": "Geri dön"
   },
   "tabs": {
     "home": "Ana Sayfa",
@@ -286,5 +287,15 @@
     "de": "Almanca",
     "ar": "Arapça",
     "rtlNotice": "Arapça sağdan sola bir düzen kullanır. Uygulanması için uygulama yeniden başlatılacak."
+  },
+  "notFound": {
+    "matchTitle": "Maç bulunamadı",
+    "matchBody": "Bu maç bulunamadı. Kaldırılmış olabilir veya bağlantı güncel olmayabilir.",
+    "teamTitle": "Takım bulunamadı",
+    "teamBody": "Bu takım bulunamadı. Kaldırılmış olabilir veya bağlantı güncel olmayabilir."
+  },
+  "configError": {
+    "title": "SportMind doğru yapılandırılmamış",
+    "body": "Bir yapılandırma sorunu nedeniyle şu anda bağlanamıyoruz. Lütfen daha sonra tekrar deneyin."
   }
 }

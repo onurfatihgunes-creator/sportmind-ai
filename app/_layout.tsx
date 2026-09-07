@@ -10,9 +10,12 @@ import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
-import { colors } from '@/constants/theme';
+import { colors, fonts, spacing } from '@/constants/theme';
 import { initI18n } from '@/i18n';
+import { isMissingProductionConfig } from '@/lib/supabase';
 import { DataProvider } from '@/contexts/DataContext';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
@@ -72,6 +75,19 @@ export default function RootLayout() {
     return null;
   }
 
+  // A real production/preview build missing its Supabase configuration must never
+  // silently render the app on mock data as if it were live — see
+  // lib/supabase.ts's isMissingProductionConfig for why this can only ever be true
+  // outside `expo start`. Renders instead of the whole app (not just a banner) so no
+  // screen ever gets a chance to quietly stand mock data in for a real backend.
+  if (isMissingProductionConfig) {
+    return (
+      <ThemeProvider value={navTheme}>
+        <ConfigurationErrorScreen />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider value={navTheme}>
       <DataProvider>
@@ -103,3 +119,26 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+function ConfigurationErrorScreen() {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.configErrorWrap}>
+      <Text style={styles.configErrorTitle}>{t('configError.title')}</Text>
+      <Text style={styles.configErrorBody}>{t('configError.body')}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  configErrorWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
+    gap: 8,
+  },
+  configErrorTitle: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, textAlign: 'center' },
+  configErrorBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textFaint, textAlign: 'center', maxWidth: 300 },
+});

@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon, SoccerBallIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome } from '@/data/mockData';
+import { favouredOutcome, type Match } from '@/data/mockData';
+import { resolveMatchById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -14,27 +15,64 @@ import StackedDistributionBar from '@/components/StackedDistributionBar';
 import FactorBar from '@/components/FactorBar';
 import ChangeTimeline from '@/components/ChangeTimeline';
 import Disclaimer from '@/components/Disclaimer';
+import NotFoundState from '@/components/NotFoundState';
 
 type Tab = 'summary' | 'reasons' | 'change';
 
 export default function MatchAnalysisScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ id: string; tab?: string }>();
-  const { matches, changeEvents } = useAppData();
+  const { matches, changeEvents, isLive } = useAppData();
   const { isWatched, toggle } = useWatchlist();
-  const match = matches.find((m) => m.id === params.id) ?? matches[0];
+  const localMatch = matches.find((m) => m.id === params.id) ?? null;
+
+  // A match id absent from the currently-loaded top-30-per-sport window (a stale/shared
+  // deep link, or a match that has since rotated out of it) is NOT the same as an
+  // invalid id — resolveMatchById asks Supabase directly, the one real yes/no source for
+  // "does this match exist." Never falls back to a different match; only ever narrows to
+  // "this exact id, or genuinely not found." Skipped entirely on mock data (isLive
+  // false) — there's nothing else to ask.
+  const [fallbackMatch, setFallbackMatch] = useState<Match | null>(null);
+  const [resolving, setResolving] = useState(false);
+  useEffect(() => {
+    if (localMatch || !params.id) {
+      setFallbackMatch(null);
+      setResolving(false);
+      return;
+    }
+    if (!isLive) {
+      setResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    resolveMatchById(params.id).then((m) => {
+      if (!cancelled) {
+        setFallbackMatch(m);
+        setResolving(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [localMatch, params.id, isLive]);
+
+  const match = localMatch ?? fallbackMatch;
   const [tab, setTab] = useState<Tab>(params.tab === 'change' ? 'change' : params.tab === 'reasons' ? 'reasons' : 'summary');
 
-  const favourite = favouredOutcome(match);
-  const isBasketball = match.sport === 'basketball';
+  const favourite = match ? favouredOutcome(match) : null;
+  const isBasketball = match?.sport === 'basketball';
   const formatStat = (value: number) => (isBasketball ? Math.round(value).toString() : value.toFixed(1));
-  const watched = isWatched(match.id);
+  const watched = match ? isWatched(match.id) : false;
 
-  const matchChangeEvents = useMemo(() => changeEvents.filter((e) => e.matchId === match.id), [changeEvents, match.id]);
+  const matchChangeEvents = useMemo(
+    () => (match ? changeEvents.filter((e) => e.matchId === match.id) : []),
+    [changeEvents, match],
+  );
 
   const factorsByStrength = useMemo(
-    () => [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50)),
-    [match.factors],
+    () => (match ? [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50)) : []),
+    [match],
   );
   const mostDecisiveKey = factorsByStrength[0]?.key;
 
@@ -45,11 +83,26 @@ export default function MatchAnalysisScreen() {
           <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('matchAnalysis.title')}</Text>
-        <Pressable style={styles.iconButton} onPress={() => toggle(match.id)} hitSlop={12}>
-          <BookmarkSimpleIcon size={19} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFaint} />
-        </Pressable>
+        {match ? (
+          <Pressable style={styles.iconButton} onPress={() => toggle(match.id)} hitSlop={12}>
+            <BookmarkSimpleIcon size={19} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFaint} />
+          </Pressable>
+        ) : (
+          <View style={styles.iconButton} />
+        )}
       </View>
 
+      {!match ? (
+        !resolving && (
+          <NotFoundState
+            icon={SoccerBallIcon}
+            title={t('notFound.matchTitle')}
+            body={t('notFound.matchBody')}
+            ctaLabel={t('common.goBack')}
+            onPressCta={() => router.back()}
+          />
+        )
+      ) : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.matchupCard}>
           <View style={styles.teamCol}>
@@ -94,11 +147,11 @@ export default function MatchAnalysisScreen() {
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
-            <ConfidenceRing value={favourite.probability} size={112} strokeWidth={9} caption={t('matchAnalysis.winProbabilityCaption')} />
+            <ConfidenceRing value={favourite!.probability} size={112} strokeWidth={9} caption={t('matchAnalysis.winProbabilityCaption')} />
             <View style={styles.heroInfo}>
               <Text style={styles.heroLine}>
-                {favourite.team
-                  ? t('matchAnalysis.teamWinProbability', { team: favourite.team.name })
+                {favourite!.team
+                  ? t('matchAnalysis.teamWinProbability', { team: favourite!.team.name })
                   : t('matchAnalysis.drawProbabilityLine')}
               </Text>
               <Text style={styles.heroCaption}>{t('matchAnalysis.predictionStability')}</Text>
@@ -232,6 +285,7 @@ export default function MatchAnalysisScreen() {
 
         <Disclaimer />
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

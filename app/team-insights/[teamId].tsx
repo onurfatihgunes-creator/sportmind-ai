@@ -1,13 +1,16 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, spacing } from '@/constants/theme';
+import type { Team } from '@/data/mockData';
+import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
 import TeamIntelligence from '@/components/TeamIntelligence';
 import Disclaimer from '@/components/Disclaimer';
+import NotFoundState from '@/components/NotFoundState';
 
 /** Contextual Team Insights — reached only from Match Analysis's per-team "AI Insights"
  * CTA. Answers "show me the SportMind view of this specific team from the match I'm
@@ -24,17 +27,73 @@ import Disclaimer from '@/components/Disclaimer';
 export default function TeamInsightsScreen() {
   const { t } = useTranslation();
   const { teamId } = useLocalSearchParams<{ teamId: string }>();
-  const { teams, matches, analysisChanges } = useAppData();
-  const team = (teamId && teams[teamId]) || Object.values(teams)[0];
+  const { teams, matches, analysisChanges, isLive } = useAppData();
+  const localTeam = (teamId && teams[teamId]) || null;
+
+  // Same rationale as team/[id].tsx and match/[id].tsx: a team absent from the bulk-
+  // loaded `teams` map is not the same as an invalid id. resolveTeamById asks Supabase
+  // directly. This must NEVER fall back to FollowedTeamsContext or any other team —
+  // this route's whole point is showing exactly the team the CTA linked to, or an honest
+  // not-found, never a silent switch to whichever team the normal Insights tab happens
+  // to have selected.
+  const [fallbackTeam, setFallbackTeam] = useState<Team | null>(null);
+  const [resolving, setResolving] = useState(false);
+  useEffect(() => {
+    if (localTeam || !teamId) {
+      setFallbackTeam(null);
+      setResolving(false);
+      return;
+    }
+    if (!isLive) {
+      setResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    resolveTeamById(teamId).then((resolved) => {
+      if (!cancelled) {
+        setFallbackTeam(resolved);
+        setResolving(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [localTeam, teamId, isLive]);
+
+  const team = localTeam ?? fallbackTeam;
 
   const nextMatch = useMemo(
-    () => matches.find((m) => m.home.id === team.id || m.away.id === team.id) ?? null,
+    () => (team ? matches.find((m) => m.home.id === team.id || m.away.id === team.id) ?? null : null),
     [matches, team],
   );
   const teamAnalysisChanges = useMemo(
     () => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []),
     [analysisChanges, nextMatch],
   );
+
+  if (!team) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('insights.title')}</Text>
+          <View style={styles.iconButton} />
+        </View>
+        {!resolving && (
+          <NotFoundState
+            icon={ShieldIcon}
+            title={t('notFound.teamTitle')}
+            body={t('notFound.teamBody')}
+            ctaLabel={t('common.goBack')}
+            onPressCta={() => router.back()}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

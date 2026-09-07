@@ -1,13 +1,15 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import type { Match, Team } from '@/data/mockData';
+import { resolveTeamById } from '@/data/liveData';
 import RadarChart, { type RadarAxis } from '@/components/RadarChart';
+import NotFoundState from '@/components/NotFoundState';
 
 /** Real per-team stats derived client-side from whatever matches involving this team are
  * currently loaded (no new backend endpoint needed). Thin samples are a known limitation
@@ -42,21 +44,83 @@ function teamAggregate(team: Team, matches: Match[]) {
 export default function TeamComparisonScreen() {
   const { t } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
-  const { teams, matches } = useAppData();
-  const teamList = Object.values(teams);
-  const teamA = teams[a ?? ''] ?? teamList[0];
-  const teamB = teams[b ?? ''] ?? teamList[1] ?? teamList[0];
+  const { teams, matches, isLive } = useAppData();
+  const localTeamA = (a && teams[a]) || null;
+  const localTeamB = (b && teams[b]) || null;
 
-  const statsA = useMemo(() => teamAggregate(teamA, matches), [teamA, matches]);
-  const statsB = useMemo(() => teamAggregate(teamB, matches), [teamB, matches]);
+  // Same rationale as match/[id].tsx and team/[id].tsx: a team absent from the bulk-
+  // loaded `teams` map is not the same as an invalid id. The only real caller of this
+  // screen (Match Analysis's "Compare" button) always passes two real, currently-loaded
+  // team ids — the only way either can fail to resolve here is a stale/shared deep link,
+  // never a legitimate "no team selected" case, so neither side ever falls back to an
+  // arbitrary team from the loaded map.
+  const [fallbackA, setFallbackA] = useState<Team | null>(null);
+  const [fallbackB, setFallbackB] = useState<Team | null>(null);
+  const [resolving, setResolving] = useState(false);
+  useEffect(() => {
+    const needsA = !localTeamA && !!a;
+    const needsB = !localTeamB && !!b;
+    if (!needsA && !needsB) {
+      setFallbackA(null);
+      setFallbackB(null);
+      setResolving(false);
+      return;
+    }
+    if (!isLive) {
+      setResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    Promise.all([needsA ? resolveTeamById(a!) : Promise.resolve(null), needsB ? resolveTeamById(b!) : Promise.resolve(null)]).then(
+      ([resolvedA, resolvedB]) => {
+        if (!cancelled) {
+          setFallbackA(resolvedA);
+          setFallbackB(resolvedB);
+          setResolving(false);
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [localTeamA, localTeamB, a, b, isLive]);
+
+  const teamA = localTeamA ?? fallbackA;
+  const teamB = localTeamB ?? fallbackB;
+
+  const statsA = useMemo(() => (teamA ? teamAggregate(teamA, matches) : null), [teamA, matches]);
+  const statsB = useMemo(() => (teamB ? teamAggregate(teamB, matches) : null), [teamB, matches]);
+
+  if (!teamA || !teamB) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('teamComparison.title')}</Text>
+        </View>
+        {!resolving && (
+          <NotFoundState
+            icon={ShieldIcon}
+            title={t('notFound.teamTitle')}
+            body={t('notFound.teamBody')}
+            ctaLabel={t('common.goBack')}
+            onPressCta={() => router.back()}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   const axes: RadarAxis[] = [
-    { key: 'axisForm', label: t('teamComparison.axisForm'), a: statsA.formScore, b: statsB.formScore },
-    { key: 'axisXg', label: t('teamComparison.axisXg'), a: statsA.xgScore, b: statsB.xgScore },
+    { key: 'axisForm', label: t('teamComparison.axisForm'), a: statsA!.formScore, b: statsB!.formScore },
+    { key: 'axisXg', label: t('teamComparison.axisXg'), a: statsA!.xgScore, b: statsB!.xgScore },
     { key: 'axisPressing', label: t('teamComparison.axisPressing'), a: null, b: null },
     { key: 'axisPossession', label: t('teamComparison.axisPossession'), a: null, b: null },
-    { key: 'axisDefence', label: t('teamComparison.axisDefence'), a: statsA.defenceScore, b: statsB.defenceScore },
-    { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA.homeFormScore, b: statsB.homeFormScore },
+    { key: 'axisDefence', label: t('teamComparison.axisDefence'), a: statsA!.defenceScore, b: statsB!.defenceScore },
+    { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA!.homeFormScore, b: statsB!.homeFormScore },
   ];
 
   const gaps = axes

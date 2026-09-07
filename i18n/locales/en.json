@@ -9,7 +9,8 @@
     "restorePurchases": "Restore purchases",
     "terms": "Terms",
     "privacy": "Privacy",
-    "vs": "vs"
+    "vs": "vs",
+    "goBack": "Go back"
   },
   "tabs": {
     "home": "Home",
@@ -286,5 +287,15 @@
     "de": "German",
     "ar": "Arabic",
     "rtlNotice": "Arabic uses a right-to-left layout. The app will reload to apply it."
+  },
+  "notFound": {
+    "matchTitle": "Match not available",
+    "matchBody": "This match couldn't be found. It may have been removed or the link may be out of date.",
+    "teamTitle": "Team not available",
+    "teamBody": "This team couldn't be found. It may have been removed or the link may be out of date."
+  },
+  "configError": {
+    "title": "SportMind isn't configured correctly",
+    "body": "We can't connect right now due to a configuration issue. Please try again later."
   }
 }

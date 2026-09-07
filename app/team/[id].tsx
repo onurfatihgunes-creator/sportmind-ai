@@ -1,13 +1,16 @@
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
-import { favouredOutcome } from '@/data/mockData';
+import { favouredOutcome, type Team } from '@/data/mockData';
+import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import Disclaimer from '@/components/Disclaimer';
+import NotFoundState from '@/components/NotFoundState';
 
 const formTone = {
   W: { bg: colors.successMuted, fg: colors.successText },
@@ -18,9 +21,62 @@ const formTone = {
 export default function TeamProfileScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { teams, matches } = useAppData();
-  const team = (id && teams[id]) || Object.values(teams)[0];
-  const upcoming = matches.filter((m) => m.home.id === team.id || m.away.id === team.id);
+  const { teams, matches, isLive } = useAppData();
+  const localTeam = (id && teams[id]) || null;
+
+  // Same rationale as match/[id].tsx: a team absent from the bulk-loaded `teams` map (it
+  // only ever contains teams referenced by the currently-loaded match window) is not the
+  // same as an invalid id. resolveTeamById asks Supabase directly instead of falling back
+  // to a different team.
+  const [fallbackTeam, setFallbackTeam] = useState<Team | null>(null);
+  const [resolving, setResolving] = useState(false);
+  useEffect(() => {
+    if (localTeam || !id) {
+      setFallbackTeam(null);
+      setResolving(false);
+      return;
+    }
+    if (!isLive) {
+      setResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    resolveTeamById(id).then((resolved) => {
+      if (!cancelled) {
+        setFallbackTeam(resolved);
+        setResolving(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [localTeam, id, isLive]);
+
+  const team = localTeam ?? fallbackTeam;
+  const upcoming = team ? matches.filter((m) => m.home.id === team.id || m.away.id === team.id) : [];
+
+  if (!team) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
+            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('teamProfile.title')}</Text>
+        </View>
+        {!resolving && (
+          <NotFoundState
+            icon={ShieldIcon}
+            title={t('notFound.teamTitle')}
+            body={t('notFound.teamBody')}
+            ctaLabel={t('common.goBack')}
+            onPressCta={() => router.back()}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

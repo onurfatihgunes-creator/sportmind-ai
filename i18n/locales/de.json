@@ -9,7 +9,8 @@
     "restorePurchases": "Käufe wiederherstellen",
     "terms": "AGB",
     "privacy": "Datenschutz",
-    "vs": "gegen"
+    "vs": "gegen",
+    "goBack": "Zurück"
   },
   "tabs": {
     "home": "Start",
@@ -286,5 +287,15 @@
     "de": "Deutsch",
     "ar": "Arabisch",
     "rtlNotice": "Arabisch verwendet ein Layout von rechts nach links. Die App wird neu geladen, um dies anzuwenden."
+  },
+  "notFound": {
+    "matchTitle": "Spiel nicht verfügbar",
+    "matchBody": "Dieses Spiel konnte nicht gefunden werden. Es wurde möglicherweise entfernt oder der Link ist nicht mehr aktuell.",
+    "teamTitle": "Team nicht verfügbar",
+    "teamBody": "Dieses Team konnte nicht gefunden werden. Es wurde möglicherweise entfernt oder der Link ist nicht mehr aktuell."
+  },
+  "configError": {
+    "title": "SportMind ist nicht korrekt konfiguriert",
+    "body": "Aufgrund eines Konfigurationsproblems können wir derzeit keine Verbindung herstellen. Bitte versuchen Sie es später erneut."
   }
 }
