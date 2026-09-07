@@ -227,7 +227,8 @@
     "axisDefence": "Defans",
     "axisHomeForm": "İç saha",
     "strength": "{{team}}'in üstünlüğü",
-    "strengthSentence": "İki takım arasındaki en büyük fark {{axis}} ekseninde."
+    "strengthSentence": "İki takım arasındaki en büyük fark {{axis}} ekseninde.",
+    "noDataSuffix": " · veri yok"
   },
   "teamProfile": {
     "title": "Takım analizi",

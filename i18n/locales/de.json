@@ -227,7 +227,8 @@
     "axisDefence": "Abwehr",
     "axisHomeForm": "Heimform",
     "strength": "Stärke von {{team}}",
-    "strengthSentence": "Der größte Unterschied zwischen den Teams liegt bei {{axis}}."
+    "strengthSentence": "Der größte Unterschied zwischen den Teams liegt bei {{axis}}.",
+    "noDataSuffix": " · Keine Daten"
   },
   "teamProfile": {
     "title": "Team-Analyse",

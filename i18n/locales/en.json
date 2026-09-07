@@ -227,7 +227,8 @@
     "axisDefence": "Defence",
     "axisHomeForm": "Home form",
     "strength": "{{team}} strength",
-    "strengthSentence": "The biggest gap between the two teams is in {{axis}}."
+    "strengthSentence": "The biggest gap between the two teams is in {{axis}}.",
+    "noDataSuffix": " · No data"
   },
   "teamProfile": {
     "title": "Team analysis",

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Svg, { Line, Polygon, Text as SvgText } from 'react-native-svg';
 import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/theme';
 
 const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
@@ -58,8 +59,10 @@ function Series({ axes, pick, color, dashed, delay }: { axes: RadarAxis[]; pick:
 
 /** 6-axis radar comparing two teams. Axes with no computable data (see plan: pressing and
  * possession aren't available on the free data tier) pass `a: null, b: null` and render at
- * a flat neutral value with a muted "veri yok" label suffix instead of fabricated numbers. */
+ * a flat neutral value with a muted localized "no data" label suffix instead of
+ * fabricated numbers. */
 export default function RadarChart({ axes, colorA = colors.primary, colorB = colors.neutralSeries }: { axes: RadarAxis[]; colorA?: string; colorB?: string }) {
+  const { t } = useTranslation();
   return (
     <View style={{ alignItems: 'center' }}>
       <Svg width={SIZE} height={280} viewBox={`0 0 ${SIZE} 250`}>
@@ -86,7 +89,7 @@ export default function RadarChart({ axes, colorA = colors.primary, colorB = col
               fill={noData ? colors.textFainter : colors.textTertiaryAlt}
             >
               {axis.label}
-              {noData ? ' · veri yok' : ''}
+              {noData ? t('teamComparison.noDataSuffix') : ''}
             </SvgText>
           );
         })}

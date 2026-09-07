@@ -235,7 +235,8 @@
     "axisDefence": "الدفاع",
     "axisHomeForm": "مستوى أرض الملعب",
     "strength": "نقاط قوة {{team}}",
-    "strengthSentence": "أكبر فارق بين الفريقين في محور {{axis}}."
+    "strengthSentence": "أكبر فارق بين الفريقين في محور {{axis}}.",
+    "noDataSuffix": " · لا توجد بيانات"
   },
   "teamProfile": {
     "title": "تحليل الفريق",
