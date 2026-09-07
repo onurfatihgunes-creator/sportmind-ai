@@ -9,6 +9,19 @@ import type { AnalysisChangeEvent, ChangeEvent, H2HRecord, LineupPlayer, Match, 
 const CERTAIN_ABSENCE_STATUSES = new Set(['injured', 'suspended']);
 const HIGH_IMPACT_MARKET_VALUE_EUR = 20_000_000;
 
+/** Shared by fetchLiveData's match-scoped squad-impact build and getLatestSquadSnapshot's
+ * team-scoped resolver below — one real classification rule, not two. */
+function classifyAvailabilityImpact(
+  status: string,
+  bsdPlayerId: number | null,
+  marketValueByBsdPlayerId: Record<number, number | null>,
+): 'low' | 'medium' | 'high' {
+  const certain = CERTAIN_ABSENCE_STATUSES.has(status);
+  const marketValue = bsdPlayerId != null ? marketValueByBsdPlayerId[bsdPlayerId] : null;
+  const isKeyByMarketValue = certain && (marketValue ?? 0) >= HIGH_IMPACT_MARKET_VALUE_EUR;
+  return isKeyByMarketValue ? 'high' : certain ? 'medium' : 'low';
+}
+
 const PALETTE = [
   { bg: '#f2e2e2', fg: '#7d3535' },
   { bg: '#dbe6f2', fg: '#2f4f72' },
@@ -355,15 +368,12 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
       const team: 'home' | 'away' | null = row.team_id === match.home_team_id ? 'home' : row.team_id === match.away_team_id ? 'away' : null;
       if (!team) continue;
       registerPlayer(row.match_id, row.player_name, team);
-      const certain = CERTAIN_ABSENCE_STATUSES.has(row.status);
-      const marketValue = row.bsd_player_id != null ? marketValueByBsdPlayerId[row.bsd_player_id] : null;
-      const isKeyByMarketValue = certain && (marketValue ?? 0) >= HIGH_IMPACT_MARKET_VALUE_EUR;
       const entry: PlayerImpactEntry = {
         team,
         playerName: row.player_name,
         status: row.status,
         reason: row.reason,
-        impact: isKeyByMarketValue ? 'high' : certain ? 'medium' : 'low',
+        impact: classifyAvailabilityImpact(row.status, row.bsd_player_id, marketValueByBsdPlayerId),
       };
       (squadImpactByMatch[row.match_id] ??= []).push(entry);
     }
@@ -405,4 +415,117 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
   } catch {
     return null;
   }
+}
+
+export type SquadSnapshot = {
+  unavailable: PlayerImpactEntry[];
+  lineup: LineupPlayer[] | null;
+  /** Which real match this snapshot came from — never the screen's "Next Match", which
+   * is purely contextual now. Not currently displayed, kept for debugging/traceability. */
+  sourceMatchId: string | null;
+};
+
+const EMPTY_SQUAD_SNAPSHOT: SquadSnapshot = { unavailable: [], lineup: null, sourceMatchId: null };
+
+/** AI Insights is team-first: Squad Status and Player Status & Form must reflect the
+ * selected team's own latest real availability/lineup data, never whichever fixture
+ * happens to be shown as "Next Match" — confirmed live that FC Barcelona's
+ * chronologically-nearest upcoming match has zero player_availability rows while a later
+ * Barcelona fixture already has real data, which made the whole section vanish for a team
+ * that genuinely does have real data. Searches the team's own real matches (via existing
+ * tables only, no new APIs) in this exact priority, never fabricating a result:
+ *   1. nearest upcoming fixture with real availability data
+ *   2. most recent past fixture with real availability data
+ *   3. a lineup-only snapshot (real tracked players, no availability claim either way)
+ *      from whichever of the above windows has one
+ *   4. the empty snapshot, only when truly nothing exists anywhere
+ * Called on-demand per selected team (normal AI Insights and contextual Team Insights
+ * both use it) rather than precomputed for every team in fetchLiveData — this data is
+ * only ever needed for the one team currently being viewed. */
+export async function getLatestSquadSnapshot(teamId: string): Promise<SquadSnapshot> {
+  if (!supabase) return EMPTY_SQUAD_SNAPSHOT;
+  const client = supabase;
+  const nowIso = new Date().toISOString();
+  const teamFilter = `home_team_id.eq.${teamId},away_team_id.eq.${teamId}`;
+
+  const [{ data: upcoming }, { data: past }] = await Promise.all([
+    client
+      .from('matches')
+      .select('id, home_team_id, away_team_id')
+      .or(teamFilter)
+      .gte('kickoff_at', nowIso)
+      .order('kickoff_at', { ascending: true })
+      .limit(10),
+    client
+      .from('matches')
+      .select('id, home_team_id, away_team_id')
+      .or(teamFilter)
+      .lt('kickoff_at', nowIso)
+      .order('kickoff_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  // Nearest-upcoming-first, then most-recent-past — this exact order is also the search
+  // priority for both availability and (if no availability is found anywhere) lineups.
+  const candidates = [...(upcoming ?? []), ...(past ?? [])];
+  if (candidates.length === 0) return EMPTY_SQUAD_SNAPSHOT;
+  const matchIds = candidates.map((m) => m.id);
+
+  const [{ data: availRows }, { data: lineupRows }] = await Promise.all([
+    client
+      .from('player_availability')
+      .select('match_id, player_name, status, reason, bsd_player_id')
+      .in('match_id', matchIds)
+      .eq('team_id', teamId),
+    client.from('match_lineups').select('match_id, home_players, away_players').in('match_id', matchIds),
+  ]);
+
+  const bsdPlayerIds = Array.from(new Set((availRows ?? []).map((r) => r.bsd_player_id).filter((id): id is number => id != null)));
+  const marketValueByBsdPlayerId: Record<number, number | null> = {};
+  if (bsdPlayerIds.length > 0) {
+    const { data: bsdPlayerRows } = await client.from('bsd_players').select('id, market_value_eur').in('id', bsdPlayerIds);
+    for (const row of bsdPlayerRows ?? []) marketValueByBsdPlayerId[row.id] = row.market_value_eur;
+  }
+
+  const lineupFor = (matchId: string, homeTeamId: string): LineupPlayer[] | null => {
+    const row = lineupRows?.find((r) => r.match_id === matchId);
+    if (!row) return null;
+    const raw = homeTeamId === teamId ? row.home_players : row.away_players;
+    return Array.isArray(raw) ? raw.map((p: any) => ({ name: p.name, position: p.position ?? null })) : null;
+  };
+
+  // Priority 1 & 2: real availability data, searched in nearest-upcoming-then-most-
+  // recent-past order.
+  for (const m of candidates) {
+    const rowsForMatch = (availRows ?? []).filter((r) => r.match_id === m.id);
+    if (rowsForMatch.length > 0) {
+      return {
+        unavailable: rowsForMatch.map((row) => ({
+          // `team` is meaningless here — this snapshot is already team-scoped by the
+          // `eq('team_id', teamId)` filter above, unlike the match-scoped entries
+          // fetchLiveData builds for Match Analysis. Fixed to 'home' as an unused
+          // placeholder; PlayerImpactRow never reads it.
+          team: 'home',
+          playerName: row.player_name,
+          status: row.status,
+          reason: row.reason,
+          impact: classifyAvailabilityImpact(row.status, row.bsd_player_id, marketValueByBsdPlayerId),
+        })),
+        lineup: lineupFor(m.id, m.home_team_id),
+        sourceMatchId: m.id,
+      };
+    }
+  }
+
+  // Priority 3: no availability rows anywhere in either window — fall back to a real
+  // lineup-only snapshot if one exists, same search order.
+  for (const m of candidates) {
+    const lineup = lineupFor(m.id, m.home_team_id);
+    if (lineup && lineup.length > 0) {
+      return { unavailable: [], lineup, sourceMatchId: m.id };
+    }
+  }
+
+  // Priority 4: genuinely nothing anywhere.
+  return EMPTY_SQUAD_SNAPSHOT;
 }

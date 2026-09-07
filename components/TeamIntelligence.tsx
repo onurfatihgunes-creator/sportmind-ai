@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +12,11 @@ import {
 } from 'phosphor-react-native';
 import { colors, fonts, radius, toneMutedColor, toneTextColor, type ChangeTone } from '@/constants/theme';
 import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
+import { getLatestSquadSnapshot, type SquadSnapshot } from '@/data/liveData';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
+
+const EMPTY_SNAPSHOT: SquadSnapshot = { unavailable: [], lineup: null, sourceMatchId: null };
 
 type SignalDir = 'up' | 'down' | 'neutral';
 
@@ -127,6 +130,30 @@ export default function TeamIntelligence({
 }) {
   const { t } = useTranslation();
   const [squadExpanded, setSquadExpanded] = useState(false);
+  const [squadSnapshot, setSquadSnapshot] = useState<SquadSnapshot>(EMPTY_SNAPSHOT);
+  const [squadLoading, setSquadLoading] = useState(true);
+
+  // Team-first, not match-first: Squad Status and Player Status & Form reflect the
+  // selected team's own latest real availability/lineup data, resolved independently of
+  // whichever fixture is shown below as "Next Match" — confirmed live that a team's
+  // chronologically-nearest match can have zero real data while a later one already does
+  // (FC Barcelona's case), which used to make this content vanish for a team that
+  // genuinely has real data. See getLatestSquadSnapshot's own doc comment for the exact
+  // search priority. Re-fetched whenever the selected team changes; a stale in-flight
+  // fetch for a since-abandoned team is discarded rather than applied.
+  useEffect(() => {
+    let cancelled = false;
+    setSquadLoading(true);
+    getLatestSquadSnapshot(team.id).then((snapshot) => {
+      if (!cancelled) {
+        setSquadSnapshot(snapshot);
+        setSquadLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [team.id]);
 
   const isHomeInNextMatch = nextMatch ? nextMatch.home.id === team.id : false;
 
@@ -155,14 +182,13 @@ export default function TeamIntelligence({
             ? 'mixed'
             : 'stable';
 
-  // Team-level, not match-level: every player-facing section on this screen (unavailable
-  // players, key players, squad status) is scoped to the followed team's own side of its
-  // next match only — the opponent's players are Match Analysis's concern, never shown
-  // here. Filtered once, at this view-model boundary, from the match-scoped `squadImpact`/
-  // `lineups` data so no render path can accidentally reintroduce the opponent's side.
-  const ownSquad = (nextMatch?.squadImpact ?? []).filter((e) => e.team === (isHomeInNextMatch ? 'home' : 'away'));
+  // Team-level, not match-level, and now not even next-match-level: these come from the
+  // team-first resolver above, never from `nextMatch` — the opponent's players are Match
+  // Analysis's concern regardless, and were never reachable here (the resolver's own
+  // query is already scoped to this team's id).
+  const ownSquad = squadSnapshot.unavailable;
   const unavailableCount = ownSquad.length;
-  const ownLineup: LineupPlayer[] = (isHomeInNextMatch ? nextMatch?.lineups?.home : nextMatch?.lineups?.away) ?? [];
+  const ownLineup: LineupPlayer[] = squadSnapshot.lineup ?? [];
   const hasSquadSection = unavailableCount > 0 || ownLineup.length > 0;
 
   // Trend headline + synthesis body: a small set of discrete, whole-sentence templates
@@ -253,7 +279,7 @@ export default function TeamIntelligence({
         <Text style={styles.cardTitle}>{t('insights.squadStatusCardTitle')}</Text>
         {unavailableCount > 0 ? (
           <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
-        ) : (
+        ) : squadLoading ? null : (
           <Text style={styles.mutedBody}>{t('insights.squadStatusEmptyState')}</Text>
         )}
       </View>
@@ -278,7 +304,7 @@ export default function TeamIntelligence({
               {squadExpanded ? <CaretUpIcon size={16} color={colors.textFainter} /> : <CaretDownIcon size={16} color={colors.textFainter} />}
             </Pressable>
 
-            {squadExpanded && nextMatch && (
+            {squadExpanded && (
               <View style={{ gap: 14, marginTop: 12 }}>
                 {unavailableCount > 0 && (
                   <View style={{ gap: 16 }}>
@@ -303,7 +329,7 @@ export default function TeamIntelligence({
         ) : (
           <>
             <Text style={styles.cardTitle}>{t('insights.squadStatusTitle')}</Text>
-            <Text style={styles.mutedBody}>{t('insights.playerStatusEmptyState')}</Text>
+            {!squadLoading && <Text style={styles.mutedBody}>{t('insights.playerStatusEmptyState')}</Text>}
           </>
         )}
       </View>
