@@ -91,9 +91,11 @@ export type MatchAnalysisRecord = {
   evidenceManifest: EvidenceManifest;
 };
 
+export type Sport = 'football' | 'basketball';
+
 export type AnalysisLookup =
   | { covered: false }
-  | { covered: true; record: null }
+  | { covered: true; record: null; ambiguousSports?: Sport[] }
   | { covered: true; record: MatchAnalysisRecord };
 
 function favoured(homePct: number, drawPct: number, awayPct: number, homeName: string, awayName: string) {
@@ -290,21 +292,93 @@ async function getAnalysisChanges(matchId: string): Promise<ChangeEvent[]> {
 }
 
 /**
+ * §b (Intelligence 8.0/cross-sport identity fix): resolves the same fuzzy `ilike`
+ * lookup the top-level function always used, but scoped to ONE sport — teams/matches
+ * were already correctly sport-tagged at ingestion (confirmed live: 0 team.sport !=
+ * match.sport mismatches across the full dataset), so filtering by sport HERE, before
+ * any team id ever reaches findNearestMatch, is sufficient to keep the two sports from
+ * ever mixing — findNearestMatch itself needs no sport awareness of its own.
+ */
+async function candidateTeamIdsForSport(teamName: string, sport: Sport): Promise<string[]> {
+  const { data, error } = await supabase.from('teams').select('id').eq('sport', sport).ilike('name', `%${teamName}%`);
+  if (error) throw error;
+  return (data ?? []).map((t) => t.id);
+}
+
+export type SportResolution =
+  | { status: 'not-found' }
+  | { status: 'ambiguous'; sports: Sport[] }
+  | { status: 'resolved'; sport: Sport; teamIds: string[] };
+
+/**
+ * Pure decision logic for §4/§5/§6, split out from getMatchAnalysisForTeam so it's
+ * unit-testable without Supabase (same principle as evaluation.ts/analysisEngine.ts —
+ * every DB-free decision in this codebase lives in a plain function; only I/O wraps it).
+ *
+ * `explicitSport` always wins outright (§5) — a caller who knows the sport is never
+ * second-guessed, even if the OTHER sport also has a same-named team. Without one, a
+ * name matching teams in exactly one sport resolves exactly as it always did (preserving
+ * today's existing fuzzy within-sport behavior, e.g. "Real" matching several Spanish
+ * clubs is unaffected — that was never the bug); matching in BOTH sports is reported as
+ * `ambiguous` rather than silently picked (§6) — the caller (or a future Vera update)
+ * decides what to do with that, this function never guesses.
+ */
+export function resolveSportCandidates(
+  footballIds: string[],
+  basketballIds: string[],
+  explicitSport?: Sport,
+): SportResolution {
+  if (explicitSport) {
+    const ids = explicitSport === 'football' ? footballIds : basketballIds;
+    return ids.length === 0 ? { status: 'not-found' } : { status: 'resolved', sport: explicitSport, teamIds: ids };
+  }
+
+  const sportsWithCandidates: Sport[] = [];
+  if (footballIds.length > 0) sportsWithCandidates.push('football');
+  if (basketballIds.length > 0) sportsWithCandidates.push('basketball');
+
+  if (sportsWithCandidates.length === 0) return { status: 'not-found' };
+  if (sportsWithCandidates.length > 1) return { status: 'ambiguous', sports: sportsWithCandidates };
+
+  const sport = sportsWithCandidates[0];
+  return { status: 'resolved', sport, teamIds: sport === 'football' ? footballIds : basketballIds };
+}
+
+/**
  * Looks up match analysis for a team by (fuzzy) name. Mirrors the
  * three-valued lookup contract SportMind's Vera-side capability expects:
  * not recognised at all vs. recognised with no match on file vs. a real
  * record — see onurai_sportmind.sources.SourceResult for the consumer.
+ *
+ * `sport` is OPTIONAL and additive — no existing caller (Vera doesn't send it today;
+ * confirmed the only caller in this repo is service/server.ts's `/analysis` route,
+ * which had no sport param at all) breaks by omitting it.
+ *
+ * Confirmed live in production (2026-09-08): a real cross-sport name collision now
+ * exists — "Flamengo" resolves to a real football club (28 matches) AND a real NBA-data
+ * basketball entry ("Flamengo Flamengo", from an international/exhibition game
+ * balldontlie.io carries). Before this fix, an unscoped `ilike` lookup put BOTH team ids
+ * into one `findNearestMatch` OR-clause, so a future basketball fixture for that entry
+ * could silently outrank the football one (or vice versa) depending on which kicks off
+ * soonest — a correct-looking but entirely wrong-sport answer, not a crash, which makes
+ * it the more dangerous kind of bug. Never silently pick a sport when a name is
+ * genuinely ambiguous (§6) — report `ambiguousSports` instead of guessing.
  */
-export async function getMatchAnalysisForTeam(teamName: string): Promise<AnalysisLookup> {
-  const { data: teams, error: teamsError } = await supabase
-    .from('teams')
-    .select('id, name')
-    .ilike('name', `%${teamName}%`);
-  if (teamsError) throw teamsError;
-  if (!teams || teams.length === 0) return { covered: false };
+export async function getMatchAnalysisForTeam(teamName: string, sport?: Sport): Promise<AnalysisLookup> {
+  // An explicit sport only ever needs its own candidates fetched — no reason to also
+  // query the other sport's teams just to discard the result (resolveSportCandidates
+  // ignores basketballIds/footballIds entirely once explicitSport is set). Both queries
+  // run in parallel when both are actually needed (the no-explicit-sport case).
+  const [footballIds, basketballIds] = await Promise.all([
+    sport === 'basketball' ? Promise.resolve<string[]>([]) : candidateTeamIdsForSport(teamName, 'football'),
+    sport === 'football' ? Promise.resolve<string[]>([]) : candidateTeamIdsForSport(teamName, 'basketball'),
+  ]);
 
-  const teamIds = teams.map((t) => t.id);
-  const match = await findNearestMatch(teamIds);
+  const resolution = resolveSportCandidates(footballIds, basketballIds, sport);
+  if (resolution.status === 'not-found') return { covered: false };
+  if (resolution.status === 'ambiguous') return { covered: true, record: null, ambiguousSports: resolution.sports };
+
+  const match = await findNearestMatch(resolution.teamIds);
   if (!match) return { covered: true, record: null };
 
   const [{ data: teamRows, error: teamRowsError }, { data: predRows, error: predError }] = await Promise.all([

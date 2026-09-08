@@ -107,8 +107,18 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // Optional, additive (§5/§9): no existing caller sends this today. When present, it
+  // disambiguates a cross-sport name collision (e.g. "Flamengo") authoritatively instead
+  // of relying on getMatchAnalysisForTeam's own no-sport fallback (which reports
+  // ambiguousSports rather than guessing — see that function's doc).
+  const sportParam = url.searchParams.get('sport');
+  if (sportParam !== null && sportParam !== 'football' && sportParam !== 'basketball') {
+    send(res, 400, { error: 'invalid_sport_param' });
+    return;
+  }
+
   try {
-    const result = await getMatchAnalysisForTeam(team);
+    const result = await getMatchAnalysisForTeam(team, sportParam ?? undefined);
     send(res, 200, result);
   } catch (error) {
     console.error('GET /analysis failed:', error instanceof Error ? error.message : error);

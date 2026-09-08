@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --test src/**/*.test.ts",
+    "test": "find src -name '*.test.ts' | xargs tsx --test",
     "run": "tsx src/index.ts",
     "serve": "tsx src/service/server.ts",
     "evaluate": "tsx src/evaluatePredictions.ts",
