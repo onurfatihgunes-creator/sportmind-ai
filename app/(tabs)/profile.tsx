@@ -53,6 +53,7 @@ export default function ProfileScreen() {
             'sportmind_watchlist_match_ids',
             'sportmind_followed_team_ids',
             'sportmind-ai-language',
+            'sportmind_notification_prefs',
           ]);
           if (Platform.OS === 'web') {
             window.location.reload();

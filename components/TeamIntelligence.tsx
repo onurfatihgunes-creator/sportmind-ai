@@ -13,6 +13,7 @@ import {
 import { colors, fonts, radius, toneMutedColor, toneTextColor, type ChangeTone } from '@/constants/theme';
 import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
 import { getLatestSquadSnapshot, type SquadSnapshot } from '@/data/liveData';
+import { hasTrustedFormSample } from '@/data/dataConfidence';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
 import SkeletonBlock from '@/components/SkeletonBlock';
@@ -23,9 +24,15 @@ type SignalDir = 'up' | 'down' | 'neutral';
 
 /** Real, deterministic team-level FORM read from the team's own last-5 W/D/L —
  * mirrors the same kind of simple, documented threshold already used for player-impact
- * classification. undefined only when there's no form history at all yet. */
+ * classification. undefined when there isn't a trustworthy sample yet — the same >=3-match
+ * bar liveData.ts's attack/defence trend already requires (see data/dataConfidence.ts):
+ * with only 1-2 matches this used to always fall through to 'neutral' (wins/losses could
+ * never reach 3), which technically never overclaimed a direction but still rendered a
+ * "Form" signal chip as if it were a real reading, alongside genuine 3+ match trends.
+ * Requiring the same sample size here means Match Analysis's data-richness caveat and AI
+ * Insights' form signal now agree on what "enough data" means for the same team. */
 function formDirection(team: Team): SignalDir | undefined {
-  if (team.form.length === 0) return undefined;
+  if (!hasTrustedFormSample(team.form)) return undefined;
   const wins = team.form.filter((r) => r === 'W').length;
   const losses = team.form.filter((r) => r === 'L').length;
   if (wins >= 3) return 'up';

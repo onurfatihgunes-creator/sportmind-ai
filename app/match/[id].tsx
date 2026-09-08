@@ -3,10 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon, SoccerBallIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon, SoccerBallIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import { resolveMatchById } from '@/data/liveData';
+import { matchFormDataLevel } from '@/data/dataConfidence';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -75,6 +76,10 @@ export default function MatchAnalysisScreen() {
     [match],
   );
   const mostDecisiveKey = factorsByStrength[0]?.key;
+  // Same >=3-real-matches bar as everywhere else that judges form sample size (see
+  // data/dataConfidence.ts) — was previously just ">0 vs 0" here, which missed a team
+  // with only 1-2 recorded matches (a real, thin-but-nonzero case, not hypothetical).
+  const formDataLevel = match ? matchFormDataLevel(match.home.form, match.away.form) : 'full';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -155,11 +160,24 @@ export default function MatchAnalysisScreen() {
                   : t('matchAnalysis.drawProbabilityLine')}
               </Text>
               <Text style={styles.heroCaption}>{t('matchAnalysis.predictionStability')}</Text>
-              {matchChangeEvents.length === 0 && (
-                <View style={styles.stabilityBadge}>
-                  <ShieldCheckIcon size={12} weight="bold" color={colors.successText} />
-                  <Text style={styles.stabilityBadgeText}>{t('matchAnalysis.highStability')}</Text>
+              {formDataLevel !== 'full' ? (
+                // The win-probability ring above looks equally confident regardless of
+                // how much real history backs it — but a team with little or no recorded
+                // recent form (confirmed live: newly-tracked teams like Feyenoord/FC
+                // Porto) is a materially thinner basis than one with a full sample. This
+                // doesn't change the number itself (that stays the deterministic engine's
+                // own output), it only makes the data behind it as honest as the number.
+                <View style={styles.limitedDataBadge}>
+                  <WarningCircleIcon size={12} weight="bold" color={colors.warningText} />
+                  <Text style={styles.limitedDataBadgeText}>{t('matchAnalysis.limitedDataNote')}</Text>
                 </View>
+              ) : (
+                matchChangeEvents.length === 0 && (
+                  <View style={styles.stabilityBadge}>
+                    <ShieldCheckIcon size={12} weight="bold" color={colors.successText} />
+                    <Text style={styles.stabilityBadgeText}>{t('matchAnalysis.highStability')}</Text>
+                  </View>
+                )
               )}
             </View>
           </View>
@@ -187,35 +205,53 @@ export default function MatchAnalysisScreen() {
 
         {tab === 'summary' && (
           <View style={{ gap: 10 }}>
-            <View style={styles.card}>
-              <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.expectedPoints' : 'matchAnalysis.expectedGoals')}</Text>
-              <View style={styles.xgSplit}>
-                <View style={styles.xgSide}>
-                  <View style={styles.xgValueRow}>
-                    <Text style={styles.xgValue}>{formatStat(match.xgHome)}</Text>
-                    <Text style={styles.xgTeam}>{match.home.name}</Text>
-                  </View>
-                  <View style={styles.xgTrack}>
-                    <View style={[styles.xgFill, { width: `${(match.xgHome / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.primary }]} />
+            {formDataLevel !== 'none' ? (
+              <>
+                <View style={styles.card}>
+                  <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.expectedPoints' : 'matchAnalysis.expectedGoals')}</Text>
+                  <View style={styles.xgSplit}>
+                    <View style={styles.xgSide}>
+                      <View style={styles.xgValueRow}>
+                        <Text style={styles.xgValue}>{formatStat(match.xgHome)}</Text>
+                        <Text style={styles.xgTeam}>{match.home.name}</Text>
+                      </View>
+                      <View style={styles.xgTrack}>
+                        <View style={[styles.xgFill, { width: `${(match.xgHome / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.primary }]} />
+                      </View>
+                    </View>
+                    <View style={styles.xgDivider} />
+                    <View style={styles.xgSide}>
+                      <View style={styles.xgValueRow}>
+                        <Text style={styles.xgValue}>{formatStat(match.xgAway)}</Text>
+                        <Text style={styles.xgTeam}>{match.away.name}</Text>
+                      </View>
+                      <View style={styles.xgTrack}>
+                        <View style={[styles.xgFill, { width: `${(match.xgAway / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.neutralSeries }]} />
+                      </View>
+                    </View>
                   </View>
                 </View>
-                <View style={styles.xgDivider} />
-                <View style={styles.xgSide}>
-                  <View style={styles.xgValueRow}>
-                    <Text style={styles.xgValue}>{formatStat(match.xgAway)}</Text>
-                    <Text style={styles.xgTeam}>{match.away.name}</Text>
-                  </View>
-                  <View style={styles.xgTrack}>
-                    <View style={[styles.xgFill, { width: `${(match.xgAway / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.neutralSeries }]} />
-                  </View>
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.card}>
-              <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.combinedExpectedPoints' : 'matchAnalysis.combinedExpectedGoals')}</Text>
-              <Text style={styles.statPairValue}>{formatStat(match.xgHome + match.xgAway)}</Text>
-            </View>
+                <View style={styles.card}>
+                  <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.combinedExpectedPoints' : 'matchAnalysis.combinedExpectedGoals')}</Text>
+                  <Text style={styles.statPairValue}>{formatStat(match.xgHome + match.xgAway)}</Text>
+                </View>
+              </>
+            ) : (
+              // Intelligence 6.1: match.xgHome/xgAway are derived from the same team_form
+              // stats as the "Recent form" row below — when one team has zero real matches
+              // (formDataLevel 'none'), those numbers are the neutral-baseline placeholder
+              // blended with the other team's real average, not real evidence for either
+              // team specifically (confirmed live: Feyenoord Rotterdam showing a specific
+              // "1.1" expected-goals figure with zero recorded matches behind it). The
+              // prediction itself still needs this number internally to stay a valid,
+              // always-computable probability (see computePredictions.ts's buildPrediction)
+              // — this only stops it from being presented to the user as real evidence.
+              <View style={styles.card}>
+                <Text style={styles.cardLabel}>{t(isBasketball ? 'matchAnalysis.expectedPoints' : 'matchAnalysis.expectedGoals')}</Text>
+                <Text style={styles.formEmptyText}>{t('matchAnalysis.noXgData')}</Text>
+              </View>
+            )}
 
             <View style={styles.card}>
               <Text style={styles.cardLabel}>{t('matchAnalysis.recentFormOldToNew')}</Text>
@@ -374,6 +410,8 @@ const styles = StyleSheet.create({
   heroCaption: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textTertiary, marginBottom: 10 },
   stabilityBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 5, backgroundColor: colors.successMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
   stabilityBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.successText },
+  limitedDataBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 5, backgroundColor: colors.warningMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
+  limitedDataBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.warningText },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
   outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
   outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },

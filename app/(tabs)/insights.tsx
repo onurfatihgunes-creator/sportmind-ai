@@ -56,18 +56,17 @@ export default function InsightsScreen() {
 
   const matchAnalysisChanges = useMemo(() => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []), [analysisChanges, nextMatch]);
 
-  // Followed-team changes surface first — a change on a match the user has no connection
-  // to is still real Change Intelligence, but far less relevant than the state above it.
+  // FOLLOWED TEAMS ONLY — this used to sort every loaded match's changes with followed
+  // ones first, but still fell through to the global feed underneath, which made this
+  // section a near-duplicate of Home's own "Recent changes" (same data, same cards) and
+  // contradicted this screen's own stated purpose ("SportMind's current view of YOUR
+  // team"). A change on a match the user has no connection to belongs on Home/Explore,
+  // not here; an empty result now means honestly "nothing for your teams yet," including
+  // when no team is followed at all, rather than quietly backfilling with unrelated matches.
   const followedMatchIds = useMemo(() => new Set(matches.filter((m) => teamIds.includes(m.home.id) || teamIds.includes(m.away.id)).map((m) => m.id)), [matches, teamIds]);
-  // Filtered to events whose match is actually in the currently-loaded set BEFORE
-  // slicing — a change event can reference a match outside today's loaded window, and
-  // rendering would then have nothing to show for it. Filtering first means an empty
-  // result here is a real "nothing to show" rather than 5 slots that all silently render
-  // nothing with no empty-state fallback.
   const recentChanges = useMemo(() => {
-    const withMatch = changeEvents.filter((e) => matches.some((m) => m.id === e.matchId));
-    return [...withMatch].sort((a, b) => (followedMatchIds.has(b.matchId) ? 1 : 0) - (followedMatchIds.has(a.matchId) ? 1 : 0)).slice(0, 5);
-  }, [changeEvents, matches, followedMatchIds]);
+    return changeEvents.filter((e) => followedMatchIds.has(e.matchId)).slice(0, 5);
+  }, [changeEvents, followedMatchIds]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

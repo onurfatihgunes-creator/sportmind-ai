@@ -10,14 +10,20 @@ import type { Match, Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import RadarChart, { type RadarAxis } from '@/components/RadarChart';
 import NotFoundState from '@/components/NotFoundState';
+import { hasTrustedFormSample } from '@/data/dataConfidence';
 
 /** Real per-team stats derived client-side from whatever matches involving this team are
  * currently loaded (no new backend endpoint needed). Thin samples are a known limitation
- * of the $0 data tier — same caveat already documented for team_form on the backend. */
+ * of the $0 data tier — same caveat already documented for team_form on the backend.
+ * formScore/homeFormScore fall back to `null` (an honest "no data" spoke on the radar,
+ * same mechanism already used for xgScore/defenceScore below) rather than the old default
+ * of a flat 0.5 for a team with too little real form history — that 0.5 plotted exactly
+ * like a genuine "even record" reading, which is indistinguishable from a guessed
+ * statistic. Same >=3-match bar as everywhere else (data/dataConfidence.ts). */
 function teamAggregate(team: Team, matches: Match[]) {
   const involved = matches.filter((m) => m.home.id === team.id || m.away.id === team.id);
   const formPts = team.form.reduce((s, r) => s + (r === 'W' ? 3 : r === 'D' ? 1 : 0), 0);
-  const formScore = team.form.length > 0 ? formPts / (team.form.length * 3) : 0.5;
+  const formScore = hasTrustedFormSample(team.form) ? formPts / (team.form.length * 3) : null;
   if (involved.length === 0) return { formScore, xgScore: null, defenceScore: null, homeFormScore: formScore };
 
   const scale = team.sport === 'basketball' ? 130 : 3;
@@ -114,11 +120,15 @@ export default function TeamComparisonScreen() {
     );
   }
 
+  // Pressing/possession used to sit here permanently as `a: null, b: null` — always
+  // rendered, never once computable on the current data tier (no provider gives per-team
+  // pressing/possession stats). Every real comparison a user ever opens showed the exact
+  // same two "no data" spokes, which taught nothing and just diluted the 4 axes that are
+  // real. Dropped rather than kept as permanent filler; RadarChart itself stays generic
+  // (still accepts a null axis) for a metric that's occasionally missing, not always.
   const axes: RadarAxis[] = [
     { key: 'axisForm', label: t('teamComparison.axisForm'), a: statsA!.formScore, b: statsB!.formScore },
     { key: 'axisXg', label: t('teamComparison.axisXg'), a: statsA!.xgScore, b: statsB!.xgScore },
-    { key: 'axisPressing', label: t('teamComparison.axisPressing'), a: null, b: null },
-    { key: 'axisPossession', label: t('teamComparison.axisPossession'), a: null, b: null },
     { key: 'axisDefence', label: t('teamComparison.axisDefence'), a: statsA!.defenceScore, b: statsB!.defenceScore },
     { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA!.homeFormScore, b: statsB!.homeFormScore },
   ];

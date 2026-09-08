@@ -1,15 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeftIcon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import Toggle from '@/components/Toggle';
 
+const STORAGE_KEY = 'sportmind_notification_prefs';
+const DEFAULT_TOGGLES = { confidence: true, lineups: true };
+
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const [toggles, setToggles] = useState({ confidence: true, lineups: true });
+  const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
+
+  // Previously in-memory only — reset to the default on every visit, which read
+  // exactly like a working preferences screen while silently discarding whatever
+  // the user just chose. Persisted the same way Watchlist/FollowedTeams already
+  // are; this doesn't make the toggles drive real push delivery (no notification
+  // infrastructure exists yet — see profile audit), it only makes the preference
+  // itself real and remembered, which is what the UI already claims to do.
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+      if (raw) setToggles({ ...DEFAULT_TOGGLES, ...JSON.parse(raw) });
+    });
+  }, []);
+
+  const update = (next: typeof toggles) => {
+    setToggles(next);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -27,14 +48,14 @@ export default function NotificationsScreen() {
             title={t('notifications.confidenceChanges')}
             subtitle={t('notifications.confidenceChangesSubtitle')}
             value={toggles.confidence}
-            onChange={(v) => setToggles((s) => ({ ...s, confidence: v }))}
+            onChange={(v) => update({ ...toggles, confidence: v })}
           />
           <View style={styles.toggleDivider} />
           <ToggleRow
             title={t('notifications.lineupsPublished')}
             subtitle={t('notifications.lineupsPublishedSubtitle')}
             value={toggles.lineups}
-            onChange={(v) => setToggles((s) => ({ ...s, lineups: v }))}
+            onChange={(v) => update({ ...toggles, lineups: v })}
           />
         </View>
       </ScrollView>
