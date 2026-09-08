@@ -10,7 +10,9 @@
     "terms": "Kullanım Koşulları",
     "privacy": "Gizlilik",
     "vs": "vs",
-    "goBack": "Geri dön"
+    "goBack": "Geri dön",
+    "savedToastAdded": "Kaydedilen maçlara eklendi",
+    "savedToastRemoved": "Kaydedilen maçlardan çıkarıldı"
   },
   "tabs": {
     "home": "Ana Sayfa",
@@ -144,7 +146,8 @@
     "confidenceChanges": "Kazanma olasılığı değişimleri",
     "confidenceChangesSubtitle": "±3 puan ve üzeri",
     "lineupsPublished": "Kadro açıklandığında",
-    "lineupsPublishedSubtitle": "Maçtan ~1 saat önce"
+    "lineupsPublishedSubtitle": "Maçtan ~1 saat önce",
+    "deliveryNote": "Bu tercihler bu cihazda kaydediliyor. Anlık bildirim gönderimi henüz aktif değil — bu ayar sadece neyi bildirmek istediğini hatırlar."
   },
   "premium": {
     "goDeeper": "Analizin tamamını gör",
@@ -230,7 +233,8 @@
     "axisHomeForm": "İç saha",
     "strength": "{{team}}'in üstünlüğü",
     "strengthSentence": "İki takım arasındaki en büyük fark {{axis}} ekseninde.",
-    "noDataSuffix": " · veri yok"
+    "noDataSuffix": " · veri yok",
+    "tooCloseToCall": "Şu anda aralarında belirgin bir fark yok."
   },
   "teamProfile": {
     "title": "Takım analizi",

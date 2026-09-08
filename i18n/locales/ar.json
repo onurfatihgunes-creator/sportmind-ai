@@ -10,7 +10,9 @@
     "terms": "الشروط",
     "privacy": "الخصوصية",
     "vs": "ضد",
-    "goBack": "العودة"
+    "goBack": "العودة",
+    "savedToastAdded": "أُضيفت إلى المباريات المحفوظة",
+    "savedToastRemoved": "أُزيلت من المباريات المحفوظة"
   },
   "tabs": {
     "home": "الرئيسية",
@@ -152,7 +154,8 @@
     "confidenceChanges": "تغيّرات احتمالية الفوز",
     "confidenceChangesSubtitle": "±3 نقاط أو أكثر",
     "lineupsPublished": "نشر التشكيلات",
-    "lineupsPublishedSubtitle": "قبل الانطلاق بنحو ساعة"
+    "lineupsPublishedSubtitle": "قبل الانطلاق بنحو ساعة",
+    "deliveryNote": "يتم حفظ هذه التفضيلات على هذا الجهاز فقط. إرسال الإشعارات الفعلي غير متاح بعد — هذا يحفظ فقط ما تريد أن تُخطر به."
   },
   "premium": {
     "goDeeper": "شاهد التحليل كاملًا",
@@ -238,7 +241,8 @@
     "axisHomeForm": "مستوى أرض الملعب",
     "strength": "نقاط قوة {{team}}",
     "strengthSentence": "أكبر فارق بين الفريقين في محور {{axis}}.",
-    "noDataSuffix": " · لا توجد بيانات"
+    "noDataSuffix": " · لا توجد بيانات",
+    "tooCloseToCall": "الفارق بينهما ضئيل حاليًا."
   },
   "teamProfile": {
     "title": "تحليل الفريق",

@@ -12,6 +12,7 @@ import SegmentedControl from '@/components/SegmentedControl';
 import SearchBar from '@/components/SearchBar';
 import CompetitionPicker from '@/components/CompetitionPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
+import Toast, { useToast } from '@/components/Toast';
 
 type DayGroup = { key: string; label: string; matches: Match[] };
 
@@ -49,6 +50,7 @@ export default function ExploreScreen() {
   const params = useLocalSearchParams<{ league?: string }>();
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
+  const { toastState, showToast } = useToast();
   const [search, setSearch] = useState('');
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
@@ -193,7 +195,10 @@ export default function ExploreScreen() {
                         onPress={(e) => {
                           e.stopPropagation();
                           toggleWatch(m.id);
+                          showToast(watched ? t('common.savedToastRemoved') : t('common.savedToastAdded'));
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={watched ? t('common.savedToastRemoved') : t('common.savedToastAdded')}
                       >
                         <BookmarkSimpleIcon size={17} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFainter} />
                       </Pressable>
@@ -205,6 +210,7 @@ export default function ExploreScreen() {
           );
         })}
       </ScrollView>
+      <Toast state={toastState} />
     </SafeAreaView>
   );
 }

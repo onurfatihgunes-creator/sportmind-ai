@@ -17,6 +17,7 @@ import FactorBar from '@/components/FactorBar';
 import ChangeTimeline from '@/components/ChangeTimeline';
 import Disclaimer from '@/components/Disclaimer';
 import NotFoundState from '@/components/NotFoundState';
+import Toast, { useToast } from '@/components/Toast';
 
 type Tab = 'summary' | 'reasons' | 'change';
 
@@ -25,6 +26,7 @@ export default function MatchAnalysisScreen() {
   const params = useLocalSearchParams<{ id: string; tab?: string }>();
   const { matches, changeEvents, isLive } = useAppData();
   const { isWatched, toggle } = useWatchlist();
+  const { toastState, showToast } = useToast();
   const localMatch = matches.find((m) => m.id === params.id) ?? null;
 
   // A match id absent from the currently-loaded top-30-per-sport window (a stale/shared
@@ -89,13 +91,23 @@ export default function MatchAnalysisScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>{t('matchAnalysis.title')}</Text>
         {match ? (
-          <Pressable style={styles.iconButton} onPress={() => toggle(match.id)} hitSlop={12}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => {
+              toggle(match.id);
+              showToast(watched ? t('common.savedToastRemoved') : t('common.savedToastAdded'));
+            }}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={watched ? t('common.savedToastRemoved') : t('common.savedToastAdded')}
+          >
             <BookmarkSimpleIcon size={19} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFaint} />
           </Pressable>
         ) : (
           <View style={styles.iconButton} />
         )}
       </View>
+      <Toast state={toastState} />
 
       {!match ? (
         !resolving && (

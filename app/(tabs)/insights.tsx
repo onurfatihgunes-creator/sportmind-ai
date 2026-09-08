@@ -8,6 +8,7 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
 import type { Team } from '@/data/mockData';
+import { fetchAllTeams } from '@/data/liveData';
 import TeamPicker from '@/components/TeamPicker';
 import TeamIntelligence from '@/components/TeamIntelligence';
 import Disclaimer from '@/components/Disclaimer';
@@ -22,11 +23,31 @@ import Disclaimer from '@/components/Disclaimer';
  * content, not one page trying to serve both purposes. */
 export default function InsightsScreen() {
   const { t } = useTranslation();
-  const { teams, matches, changeEvents, analysisChanges } = useAppData();
+  const { teams, matches, changeEvents, analysisChanges, isLive } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+
+  // Add Team must offer the FULL team directory, not just teams.ts's match-derived record
+  // (which only ever contains teams whose matches fell inside the top-30-per-sport,
+  // next-3-hours-onward window — real root cause of "Turkish teams don't show up": any
+  // team with no imminent fixture in that narrow window was invisible here, not just
+  // Süper Lig specifically). Fetched once, lazily, only when the picker actually opens —
+  // never blocks the rest of this screen, and falls back to the smaller `teams` record
+  // (still real data, just narrower) if the fetch hasn't resolved yet or isn't live.
+  const [allTeams, setAllTeams] = useState<Record<string, Team> | null>(null);
+  useEffect(() => {
+    if (!showPicker || allTeams || !isLive) return;
+    let cancelled = false;
+    fetchAllTeams().then((result) => {
+      if (!cancelled && Object.keys(result).length > 0) setAllTeams(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showPicker, allTeams, isLive]);
+  const pickerTeams = allTeams ?? teams;
 
   const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
 
@@ -127,7 +148,7 @@ export default function InsightsScreen() {
         <TeamPicker
           visible={showPicker}
           onClose={() => setShowPicker(false)}
-          teams={teams}
+          teams={pickerTeams}
           matches={matches}
           excludeIds={teamIds}
           search={pickerSearch}

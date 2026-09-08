@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Polygon, Text as SvgText } from 'react-native-svg';
 import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -86,26 +86,51 @@ function Series({ axes, pick, color, dashed, delay }: { axes: RadarAxis[]; pick:
 // those positions were diagonal and had a little more natural room, but the margin
 // helps there too rather than hurting it.
 //
-// KNOWN REMAINING ISSUE (found live, Intelligence 8.0's mobile-worktree audit,
-// 2026-09-08): a "no data" axis appends `teamComparison.noDataSuffix` to the label (e.g.
-// "Home form · No data"), long enough to still clip on a real zero-form case (Feyenoord
-// Rotterdam, team-comparison?a=81&b=675) even with this margin. Simply growing
-// LABEL_MARGIN does NOT fix it — this SVG's rendered `width` (SIZE + LABEL_MARGIN * 2)
-// already exceeds the ~343px available width inside radarCard's padding on a real
-// mobile viewport, so a bigger margin only pushes MORE of the SVG off the visible
-// viewport on both sides equally; the clipping is a container-width overflow, not a
-// viewBox-coordinate shortage. A real fix needs the SVG's rendered width capped to the
-// card's actual available width (with the viewBox providing the extra virtual space at
-// a proportionally smaller render scale, or the "no data" suffix moved to a second,
-// stacked line) — deliberately NOT attempted here without proper on-device measurement.
+// Fixed logical coordinate space for the chart's own math (angleFor/point/polygonAt all
+// work in these units) — LABEL_MARGIN is virtual canvas for axis labels that land at (or
+// near) a pure left/right position with text-anchor 'start'/'end' (at 4 axes "Home form"/
+// "Home advantage"-length labels sit exactly horizontal; at 6 axes those positions were
+// diagonal and had more natural room, but the margin helps there too rather than hurting it).
 const LABEL_MARGIN = 46;
+const VIEWBOX_WIDTH = SIZE + LABEL_MARGIN * 2;
+const VIEWBOX_HEIGHT = 250;
 
+/**
+ * FIXED (Intelligence UI polish pass): this used to render the SVG at a fixed
+ * VIEWBOX_WIDTH (392) regardless of its actual container — on a real mobile viewport
+ * (radarCard's available inner width, confirmed live: ~326px inside team-comparison's
+ * 22px screen padding + 16px card padding on both sides) that's WIDER than the space
+ * available, so the chart overflowed and got clipped asymmetrically by the screen edge
+ * rather than the card's own border — read as "shifted left" (and separately, a "no
+ * data" axis's longer label — e.g. "Home form · No data" — clipped outright, since
+ * growing LABEL_MARGIN only pushed more of an already-too-wide SVG off both edges
+ * equally, never fixing the overflow itself).
+ *
+ * Real fix: measure the actual available width via onLayout and render the SVG at THAT
+ * width/proportional height, while keeping the viewBox at the full logical coordinate
+ * space — the SVG's default `preserveAspectRatio="xMidYMid meet"` then scales the whole
+ * drawing down uniformly AND re-centers it, so the chart is always fully visible and
+ * geometrically centered in its real container, on any screen size, with no separate
+ * centering logic needed.
+ */
 export default function RadarChart({ axes, colorA = colors.primary, colorB = colors.neutralSeries }: { axes: RadarAxis[]; colorA?: string; colorB?: string }) {
   const { t } = useTranslation();
   const count = axes.length;
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const width = e.nativeEvent.layout.width;
+    if (width > 0 && width !== measuredWidth) setMeasuredWidth(width);
+  };
+
+  // Never render wider than the logical space calls for (a bigger container shouldn't
+  // blow the chart up past its designed size) — only ever shrink to fit, never grow.
+  const renderWidth = measuredWidth !== null ? Math.min(VIEWBOX_WIDTH, measuredWidth) : VIEWBOX_WIDTH;
+  const renderHeight = (renderWidth / VIEWBOX_WIDTH) * 280;
+
   return (
-    <View style={{ alignItems: 'center' }}>
-      <Svg width={SIZE + LABEL_MARGIN * 2} height={280} viewBox={`${-LABEL_MARGIN} 0 ${SIZE + LABEL_MARGIN * 2} 250`}>
+    <View style={{ width: '100%', alignItems: 'center' }} onLayout={onLayout}>
+      <Svg width={renderWidth} height={renderHeight} viewBox={`${-LABEL_MARGIN} 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}>
         <Polygon points={polygonAt(MAX_R, count)} fill="none" stroke={colors.divider} strokeWidth={1} />
         <Polygon points={polygonAt((MAX_R * 2) / 3, count)} fill="none" stroke={colors.divider} strokeWidth={1} />
         <Polygon points={polygonAt(MAX_R / 3, count)} fill="none" stroke={colors.divider} strokeWidth={1} />

@@ -58,6 +58,14 @@ export default function NotificationsScreen() {
             onChange={(v) => update({ ...toggles, lineups: v })}
           />
         </View>
+        {/* Honest, not a workaround: these preferences are real and persisted (see
+            AsyncStorage above), but there is no push-notification delivery infrastructure
+            behind them yet (no Expo Notifications integration, no backend trigger) — the
+            subtitles above describe what WOULD trigger a notification, which reads as if
+            delivery already exists. Building real push infra is a genuine architecture
+            decision (APNs/FCM setup, permissions flow, a backend trigger system) — out of
+            scope to build unprompted; this note keeps the screen honest in the meantime. */}
+        <Text style={styles.deliveryNote}>{t('notifications.deliveryNote')}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -86,4 +94,5 @@ const styles = StyleSheet.create({
   toggleDivider: { height: 1, backgroundColor: colors.divider },
   toggleTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
   toggleSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
+  deliveryNote: { fontFamily: fonts.body, fontSize: 11, lineHeight: 16, color: colors.textFainter, marginTop: 14, paddingHorizontal: 2 },
 });

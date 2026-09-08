@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import type { Match, Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
@@ -48,7 +48,7 @@ function teamAggregate(team: Team, matches: Match[]) {
 }
 
 export default function TeamComparisonScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
   const { teams, matches, isLive } = useAppData();
   const localTeamA = (a && teams[a]) || null;
@@ -133,19 +133,14 @@ export default function TeamComparisonScreen() {
     { key: 'axisHomeForm', label: t('teamComparison.axisHomeForm'), a: statsA!.homeFormScore, b: statsB!.homeFormScore },
   ];
 
-  // Lowercasing each axis label for mid-sentence embedding ("...the biggest gap is in
-  // form.") is correct for every axis except xG, whose "xG" casing is intentional in
-  // every locale and must never be lowered to "xg". Uses toLocaleLowerCase(currentLocale)
-  // rather than plain toLowerCase() so Turkish's "İç saha" lowercases to the correct
-  // dotless "iç saha" instead of JS's locale-unaware "i̇ç saha".
-  const gaps = axes
-    .filter((ax) => ax.a !== null && ax.b !== null)
-    .map((ax) => ({
-      label: ax.key === 'axisXg' ? ax.label : ax.label.toLocaleLowerCase(i18n.language),
-      diff: (ax.a as number) - (ax.b as number),
-    }));
-  const biggestForA = [...gaps].sort((x, y) => y.diff - x.diff)[0];
-  const biggestForB = [...gaps].sort((x, y) => x.diff - y.diff)[0];
+  // Real per-axis gaps, computed straight from the same axes[] the radar itself plots —
+  // never a separate/invented dataset. A gap below MIN_MEANINGFUL_GAP is treated as
+  // "roughly even" and excluded from both teams' chip lists rather than crediting either
+  // side with a "strength" that's really a rounding-level difference.
+  const MIN_MEANINGFUL_GAP = 0.08;
+  const gaps = axes.filter((ax) => ax.a !== null && ax.b !== null).map((ax) => ({ key: ax.key, label: ax.label, diff: (ax.a as number) - (ax.b as number) }));
+  const strengthsForA = gaps.filter((g) => g.diff > MIN_MEANINGFUL_GAP).sort((x, y) => y.diff - x.diff);
+  const strengthsForB = gaps.filter((g) => g.diff < -MIN_MEANINGFUL_GAP).sort((x, y) => x.diff - y.diff);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -162,12 +157,16 @@ export default function TeamComparisonScreen() {
             <View style={[styles.crest, { backgroundColor: teamA.bg }]}>
               <Text style={[styles.crestText, { color: teamA.fg }]}>{teamA.code}</Text>
             </View>
-            <Text style={styles.teamName}>{teamA.name}</Text>
+            <Text style={styles.teamName} numberOfLines={1}>
+              {teamA.name}
+            </Text>
           </View>
           <Text style={styles.vs}>{t('common.vs')}</Text>
-          <View style={styles.teamCol}>
-            <Text style={styles.teamName}>{teamB.name}</Text>
-            <View style={[styles.crest, { backgroundColor: teamB.bg }]}>
+          <View style={[styles.teamCol, styles.teamColEnd]}>
+            <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={1}>
+              {teamB.name}
+            </Text>
+            <View style={[styles.crest, styles.crestFixed, { backgroundColor: teamB.bg }]}>
               <Text style={[styles.crestText, { color: teamB.fg }]}>{teamB.code}</Text>
             </View>
           </View>
@@ -187,16 +186,33 @@ export default function TeamComparisonScreen() {
           </View>
         </View>
 
-        {biggestForA && (
+        {strengthsForA.length > 0 && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
-            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForA.label })}</Text>
+            <View style={styles.strengthChipRow}>
+              {strengthsForA.map((g) => (
+                <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('success') }]}>
+                  <Text style={[styles.strengthChipText, { color: toneTextColor('success') }]}>{g.label}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
-        {biggestForB && (
+        {strengthsForB.length > 0 && (
           <View style={[styles.summaryCard, { marginBottom: 0 }]}>
             <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
-            <Text style={styles.summaryText}>{t('teamComparison.strengthSentence', { axis: biggestForB.label })}</Text>
+            <View style={styles.strengthChipRow}>
+              {strengthsForB.map((g) => (
+                <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('info') }]}>
+                  <Text style={[styles.strengthChipText, { color: toneTextColor('info') }]}>{g.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+        {strengthsForA.length === 0 && strengthsForB.length === 0 && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryText}>{t('teamComparison.tooCloseToCall')}</Text>
           </View>
         )}
       </ScrollView>
@@ -211,10 +227,26 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSecondaryAlt },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 60 },
   teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, marginTop: 6 },
-  teamCol: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  // minWidth: 0 overrides flexbox's default "never shrink below content size" — without
+  // it, a long team name could push its own column (and the crest inside it) wider than
+  // the row actually has room for, overflowing the card. Found live on the away side
+  // specifically (styles.crestFixed's own comment covers the rest of that fix).
+  teamCol: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9, minWidth: 0 },
+  // The away column reverses child order (crest last) — justify to the end so it hugs
+  // the card's right edge exactly as symmetrically as the home crest hugs the left,
+  // regardless of how much (or little) space the team name text actually needs.
+  teamColEnd: { justifyContent: 'flex-end' },
   crest: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  // flexShrink: 0 — a real bug found live: without it, a long away-team name could shrink
+  // this flex row's LAST child (the crest) instead of the text, squashing the crest into
+  // an oval and/or pushing it partially outside the card's own border.
+  crestFixed: { flexShrink: 0 },
   crestText: { fontFamily: fonts.bodyBold, fontSize: 10 },
-  teamName: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  // flexShrink: 1 lets a too-long name truncate (numberOfLines={1} + ellipsis) instead of
+  // forcing the row wider than its container — the actual root cause of the reported
+  // avatar-overflow bug (the crest wasn't broken, the name text next to it was unbounded).
+  teamName: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, flexShrink: 1 },
+  teamNameEnd: { textAlign: 'right' },
   vs: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
   radarCard: { marginTop: 14, padding: 16, paddingTop: 18, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center' },
   legendRow: { flexDirection: 'row', gap: 18, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
@@ -222,6 +254,9 @@ const styles = StyleSheet.create({
   legendDot: { width: 10, height: 10, borderRadius: 3 },
   legendText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
   summaryCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, marginTop: 12 },
-  summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 5 },
+  summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 8 },
   summaryText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textTertiary },
+  strengthChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  strengthChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  strengthChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5 },
 });

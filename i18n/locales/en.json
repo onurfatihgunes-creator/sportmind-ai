@@ -10,7 +10,9 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "vs": "vs",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "savedToastAdded": "Added to saved matches",
+    "savedToastRemoved": "Removed from saved matches"
   },
   "tabs": {
     "home": "Home",
@@ -144,7 +146,8 @@
     "confidenceChanges": "Win probability changes",
     "confidenceChangesSubtitle": "±3 points or more",
     "lineupsPublished": "Lineups published",
-    "lineupsPublishedSubtitle": "~1 hour before kickoff"
+    "lineupsPublishedSubtitle": "~1 hour before kickoff",
+    "deliveryNote": "These preferences are saved on this device. Push delivery isn't available yet — this only remembers what you'd want to be notified about."
   },
   "premium": {
     "goDeeper": "See the full analysis",
@@ -230,7 +233,8 @@
     "axisHomeForm": "Home form",
     "strength": "{{team}} strength",
     "strengthSentence": "The biggest gap between the two teams is in {{axis}}.",
-    "noDataSuffix": " · No data"
+    "noDataSuffix": " · No data",
+    "tooCloseToCall": "Too close to call right now."
   },
   "teamProfile": {
     "title": "Team analysis",

@@ -299,11 +299,23 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     }
     if (matches.length === 0) return null;
 
+    // ROOT CAUSE of "What changed" reading empty even when real change data exists: this
+    // query had no `.in('match_id', matchIds)` filter — it fetched the 5 most recent
+    // prediction_changes rows GLOBALLY, across every match in the database, not just the
+    // ones actually loaded into `matches` here. Every screen that filters changeEvents by
+    // a loaded match's id (Match Analysis's Change tab, AI Insights' "Recent changes",
+    // Home's own change card) would then find zero matches whenever those 5 global-most-
+    // recent rows happened to belong to matches outside this fetch's window — which is the
+    // common case, not an edge case, since `prediction_changes` accumulates across every
+    // match SportMind has ever tracked while this fetch only loads a ~60-match window.
+    // Scoped to matchIds first (matching every other per-match query in this same
+    // function), then given a higher cap since it's now correctly scoped rather than global.
     const { data: changeRows } = await supabase
       .from('prediction_changes')
       .select('*')
+      .in('match_id', matchIds)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(20);
 
     const changeEvents: ChangeEvent[] = (changeRows ?? []).map((c) => ({
       id: String(c.id),
@@ -541,6 +553,46 @@ export async function getLatestSquadSnapshot(teamId: string): Promise<SquadSnaps
  * re-running the full trend pipeline for what should be a rare fallback path. Returns
  * null only when no such team exists in the database; callers must never substitute a
  * different team when this returns null. */
+/**
+ * Full team directory for Add Team — deliberately INDEPENDENT of fetchLiveData()'s
+ * `teams` record, which only ever contains teams whose matches fell inside the
+ * top-30-per-sport, next-3-hours-onward kickoff window. That's correct for Home/Explore
+ * (only currently-relevant matches should show there) but was silently starving the Add
+ * Team picker: a real, root-cause bug (not a UI issue) — a team with no imminent fixture
+ * in that narrow window (confirmed live: Süper Lig teams, whenever no Süper Lig match
+ * happened to be among the nearest 30 football kickoffs) never appeared as a candidate to
+ * follow at all, even though the team genuinely exists in the database. This queries the
+ * full `teams` table directly, paginated the same way fetchAllTeamForm above already
+ * handles a table larger than PostgREST's 1000-row cap. No form/trend data (not used by
+ * the picker), matching resolveTeamById's own lightweight shape.
+ */
+export async function fetchAllTeams(): Promise<Record<string, Team>> {
+  if (!supabase) return {};
+  const PAGE_SIZE = 1000;
+  const rows: { id: string; name: string; short_code: string | null; sport: string }[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase.from('teams').select('id, name, short_code, sport').range(from, from + PAGE_SIZE - 1);
+    if (error || !data) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  const teams: Record<string, Team> = {};
+  for (const row of rows) {
+    const palette = colorFor(row.id);
+    teams[row.id] = {
+      id: row.id,
+      name: row.name,
+      code: (row.short_code || row.name.slice(0, 3)).toUpperCase().slice(0, 3),
+      bg: palette.bg,
+      fg: palette.fg,
+      form: [],
+      sport: (row.sport as Sport) ?? 'football',
+    };
+  }
+  return teams;
+}
+
 export async function resolveTeamById(teamId: string): Promise<Team | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from('teams').select('id, name, short_code, sport').eq('id', teamId).maybeSingle();

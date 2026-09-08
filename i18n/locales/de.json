@@ -10,7 +10,9 @@
     "terms": "AGB",
     "privacy": "Datenschutz",
     "vs": "gegen",
-    "goBack": "Zurück"
+    "goBack": "Zurück",
+    "savedToastAdded": "Zu gespeicherten Spielen hinzugefügt",
+    "savedToastRemoved": "Aus gespeicherten Spielen entfernt"
   },
   "tabs": {
     "home": "Start",
@@ -144,7 +146,8 @@
     "confidenceChanges": "Änderungen der Gewinnwahrscheinlichkeit",
     "confidenceChangesSubtitle": "±3 Punkte oder mehr",
     "lineupsPublished": "Veröffentlichte Aufstellungen",
-    "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff"
+    "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff",
+    "deliveryNote": "Diese Einstellungen werden auf diesem Gerät gespeichert. Push-Benachrichtigungen sind noch nicht verfügbar — hier wird nur gemerkt, worüber du informiert werden möchtest."
   },
   "premium": {
     "goDeeper": "Die vollständige Analyse sehen",
@@ -230,7 +233,8 @@
     "axisHomeForm": "Heimform",
     "strength": "Stärke von {{team}}",
     "strengthSentence": "Der größte Unterschied zwischen den Teams liegt bei {{axis}}.",
-    "noDataSuffix": " · Keine Daten"
+    "noDataSuffix": " · Keine Daten",
+    "tooCloseToCall": "Aktuell zu ausgeglichen für eine klare Aussage."
   },
   "teamProfile": {
     "title": "Team-Analyse",

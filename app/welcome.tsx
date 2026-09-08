@@ -167,8 +167,17 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: hero.page },
-  heroBlock: { flex: 1, minHeight: 400, position: 'relative' },
-  content: { paddingHorizontal: 26, paddingBottom: 30, gap: 16 },
+  // Root cause of "Get Started sits too low": heroBlock's old `flex: 1` claimed ALL
+  // leftover vertical space after content's own natural height, so content (badge/title/
+  // body/button) got pushed to hug the physical bottom edge on any screen taller than the
+  // hero's 400pt minimum — the taller the screen, the lower the button sat, with a big gap
+  // of empty hero space above it. Splitting the column into fixed flex RATIOS (not pixels,
+  // so it stays responsive across iPhone sizes) and centering content within its own share
+  // pulls the button up with real, symmetric breathing room instead of pinning it to the
+  // safe-area edge, while the hero keeps its 400pt floor so it never gets crushed on short
+  // screens (content's own children still size naturally, so nothing clips).
+  heroBlock: { flex: 0.58, minHeight: 400, position: 'relative' },
+  content: { flex: 0.42, justifyContent: 'center', paddingHorizontal: 26, paddingBottom: 12, gap: 16 },
 
   statusPillWrap: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center' },
   statusPill: {
