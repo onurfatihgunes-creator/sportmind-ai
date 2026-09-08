@@ -14,6 +14,7 @@ import {
   deriveKeyFactors,
   detectLineupStatusChange,
   detectAvailabilityDelta,
+  buildEvidenceManifest,
   type FormRow,
   type BsdTeamMatchSample,
   type AvailabilityRow,
@@ -53,6 +54,31 @@ test('FORM: identical form on both sides is reported as even, not a fabricated e
   const agg = aggregateForm(strongForm);
   const signal = computeFormSignal(agg, agg, null);
   assert.equal(signal.advantage, 'even');
+});
+
+// Intelligence 6.1: an ASYMMETRIC zero (one real team, one with none) must be unavailable
+// too, not just the both-zero case already covered elsewhere in this file. Before this
+// fix, this fell through to a real gap computed against aggregateForm([])'s own zero
+// values (a literal 0.00 PPG — "this team has never earned a point" — not even a neutral
+// placeholder), which `deriveKeyFactors` happened to weight out via confidence:'none' but
+// a consumer reading the raw `signals` array directly would not have known to discount.
+test('FORM: one real team vs one with zero matches is unavailable, not a fabricated gap', () => {
+  const home = aggregateForm(strongForm);
+  const away = aggregateForm([]);
+  assert.equal(away.matchesCount, 0);
+  const signal = computeFormSignal(home, away, null);
+  assert.equal(signal.available, false);
+  assert.equal(signal.homeValue, null);
+  assert.equal(signal.awayValue, null);
+});
+
+test('ATTACK/DEFENCE: one real team vs one with zero matches is unavailable for the form-derived sub-signal', () => {
+  const home = aggregateForm(strongForm);
+  const away = aggregateForm([]);
+  const [goalsSignal] = computeAttackSignals(home, away, [], [], null);
+  assert.equal(goalsSignal.available, false);
+  const [concededSignal] = computeDefenceSignals(home, away, [], [], null);
+  assert.equal(concededSignal.available, false);
 });
 
 // B. ATTACK TEST --------------------------------------------------------------
@@ -325,4 +351,76 @@ test('EDGE CASE: key factors never exceed 5, never include an even/unavailable s
   );
   assert.ok(manySignals.length <= 5);
   assert.ok(manySignals.every((f) => f.impact === 'home' || f.impact === 'away'));
+});
+
+// --- Intelligence 8.0: Evidence Manifest (§29) — read-only, derived, no schema change ---
+
+const BASE_MANIFEST_INPUT = {
+  matchId: 'm1',
+  sport: 'football',
+  competition: 'Premier League',
+  predictionTime: '2026-01-01T09:00:00Z',
+  kickoffTime: '2026-01-01T12:00:00Z',
+  engineVersion: 'v1',
+  homeFormCount: 5,
+  awayFormCount: 5,
+  xgAvailable: true,
+  availabilityHasData: true,
+  lineupStatus: 'confirmed' as const,
+  h2hAvailable: true,
+};
+
+test('evidence manifest: full real data reports AVAILABLE across the board', () => {
+  const manifest = buildEvidenceManifest(BASE_MANIFEST_INPUT);
+  assert.equal(manifest.form.status, 'AVAILABLE');
+  assert.equal(manifest.xg.status, 'AVAILABLE');
+  assert.equal(manifest.availability.status, 'AVAILABLE');
+  assert.equal(manifest.lineup.status, 'AVAILABLE');
+  assert.equal(manifest.lineup.type, 'confirmed');
+  assert.equal(manifest.h2h.status, 'AVAILABLE');
+});
+
+test('evidence manifest: xG is always documented as form-derived, never presented as independent', () => {
+  const manifest = buildEvidenceManifest(BASE_MANIFEST_INPUT);
+  assert.match(manifest.xg.source, /form-derived/);
+  assert.match(manifest.xg.source, /not an independent signal/i);
+});
+
+test('evidence manifest: zero form on either side reports MISSING form (matches Intelligence 6.1\'s zero-form gate)', () => {
+  const manifest = buildEvidenceManifest({ ...BASE_MANIFEST_INPUT, homeFormCount: 0, xgAvailable: false });
+  assert.equal(manifest.form.status, 'MISSING');
+  assert.equal(manifest.form.sampleSize, 0);
+  assert.equal(manifest.xg.status, 'MISSING');
+});
+
+test('evidence manifest: 1-2 real matches reports PARTIAL, not MISSING and not AVAILABLE', () => {
+  const manifest = buildEvidenceManifest({ ...BASE_MANIFEST_INPUT, homeFormCount: 2, awayFormCount: 5 });
+  assert.equal(manifest.form.status, 'PARTIAL');
+  assert.equal(manifest.form.sampleSize, 2);
+});
+
+test('evidence manifest: no lineup data at all reports MISSING/no_data, never a fabricated status', () => {
+  const manifest = buildEvidenceManifest({ ...BASE_MANIFEST_INPUT, lineupStatus: null, availabilityHasData: false });
+  assert.equal(manifest.lineup.status, 'MISSING');
+  assert.equal(manifest.lineup.type, 'no_data');
+  assert.equal(manifest.availability.status, 'MISSING');
+});
+
+test('evidence manifest: a predicted (not yet confirmed) lineup is PARTIAL, distinct from confirmed', () => {
+  const manifest = buildEvidenceManifest({ ...BASE_MANIFEST_INPUT, lineupStatus: 'predicted' });
+  assert.equal(manifest.lineup.status, 'PARTIAL');
+  assert.equal(manifest.lineup.type, 'predicted');
+});
+
+test('evidence manifest: no H2H history reports MISSING, never a fabricated 0-0 record', () => {
+  const manifest = buildEvidenceManifest({ ...BASE_MANIFEST_INPUT, h2hAvailable: false });
+  assert.equal(manifest.h2h.status, 'MISSING');
+});
+
+test('evidence manifest: carries real match/prediction/kickoff identity through untouched', () => {
+  const manifest = buildEvidenceManifest(BASE_MANIFEST_INPUT);
+  assert.deepEqual(manifest.match, { id: 'm1', sport: 'football', competition: 'Premier League' });
+  assert.equal(manifest.predictionTime, '2026-01-01T09:00:00Z');
+  assert.equal(manifest.kickoffTime, '2026-01-01T12:00:00Z');
+  assert.equal(manifest.engineVersion, 'v1');
 });

@@ -2,11 +2,17 @@ import { env } from './config.js';
 
 const BASE_URL = 'https://sports.bzzoiro.com/api/v2';
 
-/** Enrichment-only client for BSD (Bzzoiro Sports Data). Endpoints and field names below
- * are taken directly from BSD's published OpenAPI schema (sports.bzzoiro.com/api/schema/),
- * not guessed. BSD is never used as a fixture source in this app — football-data.org and
- * the RapidAPI Süper Lig integration already own fixture ingestion, so BSD only supplies
- * lineups/stats/incidents/player-stats/h2h for matches those sources already created. */
+/** Client for BSD (Bzzoiro Sports Data). Endpoints and field names below are taken
+ * directly from BSD's published OpenAPI schema (sports.bzzoiro.com/api/schema/), not
+ * guessed. Two distinct roles, both config-driven (see config.ts):
+ *   - Enrichment-only for BSD_TIER1_LEAGUES — football-data.org/RapidAPI already own
+ *     fixture ingestion there, so BSD only supplies lineups/stats/incidents/player-
+ *     stats/h2h for matches those sources already created (see bsdEnrichment.ts).
+ *   - Primary fixture source for BSD_FIXTURE_LEAGUES — competitions with no other
+ *     configured provider, where BSD's own events ARE the match/team/form data (see
+ *     fetchBsdFixtures.ts). This mirrors the narrow BSD fallback fetchTurkishFixtures.ts
+ *     already used for Süper Lig, generalized to any league via config rather than
+ *     hardcoded to one. */
 
 async function bsdGet<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

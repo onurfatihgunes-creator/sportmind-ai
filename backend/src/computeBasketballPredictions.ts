@@ -1,7 +1,16 @@
 import { MATERIALITY_THRESHOLD_PCT } from './config.js';
 import { supabase } from './supabaseClient.js';
+import { staleCutoffIso } from './evaluation.js';
 
-type FormStats = { winRate: number; avgPointsFor: number; avgPointsAgainst: number };
+// `matchesCount` distinguishes real, team-specific evidence from the neutral-baseline
+// placeholder below — same fix and same reasoning as computePredictions.ts's football
+// equivalent (Intelligence 6.1).
+type FormStats = { winRate: number; avgPointsFor: number; avgPointsAgainst: number; matchesCount: number };
+
+// Intelligence 7.0 §t: same code-version proxy as computePredictions.ts's football
+// equivalent — see that constant's comment for why this is a plain string, not a schema
+// column or a `factors` payload field.
+export const ENGINE_VERSION = 'v1';
 
 const RECENT_GAMES = 5;
 // NBA home teams have historically won ~57-60% of games — used as a fixed prior, not
@@ -19,8 +28,13 @@ async function getFormStats(teamId: string): Promise<FormStats> {
   if (error) throw error;
 
   if (!data || data.length === 0) {
-    // No recent data yet — neutral baseline around a typical NBA scoring average.
-    return { winRate: 0.5, avgPointsFor: 112, avgPointsAgainst: 112 };
+    // No recent data yet — neutral baseline around a typical NBA scoring average, so the
+    // match still gets a valid, stable win/away probability. `matchesCount: 0` is what
+    // stops this placeholder from being shown to the user as real evidence about this
+    // team — see buildPrediction below (currently dormant in production: every NBA team
+    // has >=3 real team_form rows as of the 6.0 audit, but a brand-new franchise/relocated
+    // team would hit this path).
+    return { winRate: 0.5, avgPointsFor: 112, avgPointsAgainst: 112, matchesCount: 0 };
   }
 
   const wins = data.filter((g) => g.result === 'W').length;
@@ -31,6 +45,7 @@ async function getFormStats(teamId: string): Promise<FormStats> {
     winRate: wins / data.length,
     avgPointsFor: pointsFor / data.length,
     avgPointsAgainst: pointsAgainst / data.length,
+    matchesCount: data.length,
   };
 }
 
@@ -43,10 +58,13 @@ function clampSplit(homeShare: number): { home: number; away: number } {
  * v1 prediction model for basketball: recent win rate + scoring rate, blended with a
  * fixed home-court-advantage prior. No draw outcome — basketball games always resolve
  * to a winner. Not yet a trained ML model, same caveat as the football model.
+ *
+ * Pure (no I/O), same split as computePredictions.ts's `buildPrediction` and for the same
+ * reason (Intelligence 6.1) — directly unit-testable, and the win/away probability math
+ * is unchanged; only which factors get shown changed. See that function's comments for
+ * the full reasoning, identical here.
  */
-async function computeForMatch(homeTeamId: string, awayTeamId: string) {
-  const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
-
+export function buildPrediction(home: FormStats, away: FormStats) {
   const pointsHome = Number(((home.avgPointsFor + away.avgPointsAgainst) / 2).toFixed(1));
   const pointsAway = Number(((away.avgPointsFor + home.avgPointsAgainst) / 2).toFixed(1));
 
@@ -62,27 +80,44 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
   // already fetched above, not a new signal.
   const defensivePerformance = clampSplit(50 + (away.avgPointsAgainst - home.avgPointsAgainst) * 2);
 
+  const bothTeamsHaveForm = home.matchesCount > 0 && away.matchesCount > 0;
+  const factors = bothTeamsHaveForm
+    ? [
+        { key: 'recentForm', home: recentForm.home, away: recentForm.away },
+        { key: 'pointsScored', home: pointsScored.home, away: pointsScored.away },
+        { key: 'defensivePerformance', home: defensivePerformance.home, away: defensivePerformance.away },
+        { key: 'homeCourtAdvantage', home: BASE_HOME, away: BASE_AWAY },
+      ]
+    : [{ key: 'homeCourtAdvantage', home: BASE_HOME, away: BASE_AWAY }];
+
   return {
     outcomes: { home: homePct, draw: 0, away: awayPct },
     xgHome: pointsHome,
     xgAway: pointsAway,
     recentAvgGoalsHome: Number(home.avgPointsFor.toFixed(1)),
     recentAvgGoalsAway: Number(away.avgPointsFor.toFixed(1)),
-    factors: [
-      { key: 'recentForm', home: recentForm.home, away: recentForm.away },
-      { key: 'pointsScored', home: pointsScored.home, away: pointsScored.away },
-      { key: 'defensivePerformance', home: defensivePerformance.home, away: defensivePerformance.away },
-      { key: 'homeCourtAdvantage', home: BASE_HOME, away: BASE_AWAY },
-    ],
+    factors,
   };
 }
 
+async function computeForMatch(homeTeamId: string, awayTeamId: string) {
+  const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
+  return buildPrediction(home, away);
+}
+
+// Same real, measured gap as computePredictions.ts's football equivalent — a small tail
+// of matches stays `status: 'scheduled'` well past their real kickoff, and without this
+// this function would keep recomputing a "fresh" prediction for them forever.
+const STALE_SCHEDULED_GRACE_DAYS = 3;
+
 export async function computeBasketballPredictions() {
+  const staleCutoff = staleCutoffIso(STALE_SCHEDULED_GRACE_DAYS);
   const { data: matches, error } = await supabase
     .from('matches')
     .select('id, home_team_id, away_team_id')
     .eq('status', 'scheduled')
-    .eq('sport', 'basketball');
+    .eq('sport', 'basketball')
+    .gte('kickoff_at', staleCutoff);
   if (error) throw error;
 
   for (const match of matches ?? []) {

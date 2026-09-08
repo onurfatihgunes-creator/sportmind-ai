@@ -1,0 +1,16 @@
+# Deny everything, allow only what the Dockerfile actually copies — the
+# same discipline as the Vera repo's own .dockerignore. `.gitignore` does
+# not apply to a build context, so this is the thing that actually keeps
+# secrets and scratch files out of the image.
+*
+
+!package.json
+!package-lock.json
+!tsconfig.json
+!src
+
+# Never ship any .env* even though the rule above allows the whole tree
+# back in — order matters, last match wins, and a stray file like
+# `.env,` must not get pulled in by accident either.
+.env*
+**/.env*

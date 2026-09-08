@@ -78,18 +78,28 @@ export async function fetchFixtures() {
   for (const competition of COMPETITIONS) {
     console.log(`Fetching ${competition.name}...`);
 
-    const matches = await getCompetitionMatches(competition.code, isoDate(formStart), isoDate(windowEnd));
+    // One competition's failure (rate limit, transient network error, a malformed
+    // response) must not skip every competition after it in the array — this loop used
+    // to have no isolation at all, and fetchFixtures() itself is called unwrapped in
+    // index.ts, so a single bad competition here previously killed the entire pipeline
+    // run: no Süper Lig sync, no predictions, no BSD enrichment, no basketball. Same
+    // per-item isolation principle already used for BSD enrichment's per-match loop.
+    try {
+      const matches = await getCompetitionMatches(competition.code, isoDate(formStart), isoDate(windowEnd));
 
-    for (const match of matches) {
-      const homeId = await resolveTeamId('football', String(match.homeTeam.id), match.homeTeam.name);
-      const awayId = await resolveTeamId('football', String(match.awayTeam.id), match.awayTeam.name);
-      await upsertTeam(homeId, match.homeTeam);
-      await upsertTeam(awayId, match.awayTeam);
-      await upsertMatch(match, competition.name, homeId, awayId);
-      await recordFormIfFinished(match, homeId, awayId);
+      for (const match of matches) {
+        const homeId = await resolveTeamId('football', String(match.homeTeam.id), match.homeTeam.name);
+        const awayId = await resolveTeamId('football', String(match.awayTeam.id), match.awayTeam.name);
+        await upsertTeam(homeId, match.homeTeam);
+        await upsertTeam(awayId, match.awayTeam);
+        await upsertMatch(match, competition.name, homeId, awayId);
+        await recordFormIfFinished(match, homeId, awayId);
+      }
+
+      console.log(`  ${matches.length} matches synced`);
+    } catch (error) {
+      console.error(`  ${competition.name} sync failed, continuing with the next competition:`, error);
     }
-
-    console.log(`  ${matches.length} matches synced`);
     // Free tier is rate-limited to a handful of requests per minute — be polite between competitions.
     await sleep(6000);
   }

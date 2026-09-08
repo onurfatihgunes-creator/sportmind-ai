@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient.js';
 import {
   aggregateForm,
+  buildEvidenceManifest,
   computeAttackSignals,
   computeDefenceSignals,
   computeFormSignal,
@@ -14,12 +15,15 @@ import {
   latestOf,
   type AvailabilityRow,
   type BsdTeamMatchSample,
+  type EvidenceManifest,
   type FormRow,
   type H2HAggregate,
   type KeyFactor,
   type PlayerImpactEntry,
   type Signal,
 } from '../analysisEngine.js';
+import { ENGINE_VERSION as FOOTBALL_ENGINE_VERSION } from '../computePredictions.js';
+import { ENGINE_VERSION as BASKETBALL_ENGINE_VERSION } from '../computeBasketballPredictions.js';
 
 /**
  * SportMind's own service-boundary query — the ONE place outside the mobile
@@ -82,6 +86,9 @@ export type MatchAnalysisRecord = {
   dataConfidenceLevel: 'none' | 'low' | 'medium' | 'high';
   signals: Signal[];
   keyFactors: KeyFactor[];
+  // Intelligence 8.0 §29 — additive, read-only, derived from data already fetched above.
+  // Never a new query, never a new table. See analysisEngine.ts's buildEvidenceManifest.
+  evidenceManifest: EvidenceManifest;
 };
 
 export type AnalysisLookup =
@@ -198,9 +205,9 @@ async function getBsdTeamMatchSamples(teamId: string): Promise<BsdTeamMatchSampl
 async function getAvailabilityRows(
   matchId: string,
   homeTeamId: string,
-): Promise<{ hasData: boolean; rows: AvailabilityRow[]; timestamp: string | null }> {
-  const { data: lineupRow } = await supabase.from('match_lineups').select('match_id, updated_at').eq('match_id', matchId).maybeSingle();
-  if (!lineupRow) return { hasData: false, rows: [], timestamp: null };
+): Promise<{ hasData: boolean; rows: AvailabilityRow[]; timestamp: string | null; lineupStatus: 'unavailable' | 'predicted' | 'confirmed' | null }> {
+  const { data: lineupRow } = await supabase.from('match_lineups').select('match_id, updated_at, lineup_status').eq('match_id', matchId).maybeSingle();
+  if (!lineupRow) return { hasData: false, rows: [], timestamp: null, lineupStatus: null };
 
   // bsd_player_id is a Phase 3 migration (sql/add_player_market_value.sql) that may not
   // be applied yet — try the enriched select first, fall back to the base columns that
@@ -233,7 +240,7 @@ async function getAvailabilityRows(
   }));
   // match_lineups' own updated_at — real freshness for the squad-depth signal, not
   // borrowed from the prediction's computed_at.
-  return { hasData: true, rows, timestamp: lineupRow.updated_at };
+  return { hasData: true, rows, timestamp: lineupRow.updated_at, lineupStatus: lineupRow.lineup_status };
 }
 
 async function getH2HAggregate(matchId: string): Promise<{ aggregate: H2HAggregate | null; timestamp: string | null }> {
@@ -397,6 +404,21 @@ export async function getMatchAnalysisForTeam(teamName: string): Promise<Analysi
   const dataConfidence = computeOverallConfidence([...signals, squadDepth]);
   const playerImpact = availability.hasData ? derivePlayerImpact(availability.rows) : null;
 
+  const evidenceManifest = buildEvidenceManifest({
+    matchId: match.id,
+    sport: match.sport,
+    competition: match.competition,
+    predictionTime: pred.computed_at,
+    kickoffTime: match.kickoff_at,
+    engineVersion: match.sport === 'basketball' ? BASKETBALL_ENGINE_VERSION : FOOTBALL_ENGINE_VERSION,
+    homeFormCount: homeFormAgg.matchesCount,
+    awayFormCount: awayFormAgg.matchesCount,
+    xgAvailable: homeFormAgg.matchesCount > 0 && awayFormAgg.matchesCount > 0,
+    availabilityHasData: availability.hasData,
+    lineupStatus: availability.lineupStatus,
+    h2hAvailable: h2hResult.aggregate !== null,
+  });
+
   const changes: ChangeEvent[] = [
     ...(predictionChangeRows ?? []).map((c) => ({
       reason: c.reason,
@@ -428,6 +450,7 @@ export async function getMatchAnalysisForTeam(teamName: string): Promise<Analysi
     dataConfidenceLevel: dataConfidence.level,
     signals,
     keyFactors,
+    evidenceManifest,
   };
 
   return { covered: true, record };

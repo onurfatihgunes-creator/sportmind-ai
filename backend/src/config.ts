@@ -7,7 +7,14 @@ function requireEnv(name: string): string {
 }
 
 export const env = {
-  footballDataApiKey: requireEnv('FOOTBALL_DATA_API_KEY'),
+  // A getter, not an eager field: only the ingestion pipeline
+  // (footballData.ts) ever reads this. Eagerly requiring it here used to
+  // mean importing this module at all — which src/service/server.ts does
+  // transitively, via supabaseClient.ts — failed without it, even though
+  // the service never touches it. Found deploying the service standalone.
+  get footballDataApiKey(): string {
+    return requireEnv('FOOTBALL_DATA_API_KEY');
+  },
   supabaseUrl: requireEnv('SUPABASE_URL'),
   supabaseServiceKey: requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
   // Optional — basketball sync is skipped (not a hard failure) until this is set.
@@ -38,6 +45,27 @@ export const BSD_TIER1_LEAGUES = [
   { bsdName: 'Ligue 1', bsdCountry: 'France', competition: 'Ligue 1' },
   { bsdName: 'Trendyol Super Lig', bsdCountry: 'Turkey', competition: 'Süper Lig' },
   { bsdName: 'Champions League', bsdCountry: 'Europe', competition: 'Champions League' },
+] as const;
+
+/** Competitions where BSD is the PRIMARY fixture source (not just enrichment) — see
+ * fetchBsdFixtures.ts. Distinct from BSD_TIER1_LEAGUES above, which lists leagues
+ * football-data.org/RapidAPI already fixture-source and BSD only enriches. Chosen from a
+ * live scan of BSD's full `/leagues/` catalog (83 leagues, 2026-09-08) filtered to ones
+ * with a confirmed `is_current` season AND real fixtures/results already in that window
+ * (verified live: MLS 45 upcoming + 30 recent-finished in a 14-day sample, Brasileirão 21
+ * upcoming + 21 recent-finished, Championship 37 upcoming + 42 recent-finished) — never
+ * added from the catalog listing alone. `bsdName`/`bsdCountry` again must match BSD's own
+ * listing exactly (see BSD_TIER1_LEAGUES's note on this).
+ *
+ * Deliberately a short, high-confidence list rather than every plausible BSD league —
+ * several leagues visible in the same catalog scan (e.g. most non-European domestic cups,
+ * lower non-English tiers) were excluded for this pass: no product/expansion decision was
+ * made to reject them, they simply weren't verified yet. Adding one is a config-only
+ * change (plus the same live verification step) — no code change needed. */
+export const BSD_FIXTURE_LEAGUES = [
+  { bsdName: 'MLS', bsdCountry: 'USA', competition: 'MLS' },
+  { bsdName: 'Brasileirão Serie A', bsdCountry: 'Brazil', competition: 'Brasileirão Série A' },
+  { bsdName: 'Championship', bsdCountry: 'England', competition: 'Championship' },
 ] as const;
 
 /** football-data.org competition codes for the confirmed MVP scope: top-5 leagues + UCL. */

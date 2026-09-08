@@ -4,10 +4,19 @@ import { computePredictions } from './computePredictions.js';
 import { fetchBasketballFixtures } from './fetchBasketballFixtures.js';
 import { computeBasketballPredictions } from './computeBasketballPredictions.js';
 import { fetchTurkishFixtures } from './fetchTurkishFixtures.js';
+import { fetchBsdFixtureLeagues } from './fetchBsdFixtures.js';
 import { enrichWithBsd } from './bsdEnrichment.js';
 
 async function main() {
-  await fetchFixtures();
+  // Isolated like every other stage below — this used to be the one unguarded call in
+  // the whole pipeline: if football-data.org threw here, Süper Lig sync, predictions,
+  // BSD enrichment and basketball never ran at all that pass, even though none of them
+  // actually depend on it succeeding.
+  try {
+    await fetchFixtures();
+  } catch (error) {
+    console.error('football-data.org sync failed, continuing:', error);
+  }
 
   if (env.rapidApiFootballKey) {
     // Newer, less-proven integration — a hiccup here shouldn't fail the whole run when
@@ -19,6 +28,19 @@ async function main() {
     }
   } else {
     console.log('Skipping Süper Lig sync — RAPIDAPI_FOOTBALL_KEY not set.');
+  }
+
+  if (env.bsdApiToken) {
+    // BSD as a primary fixture source for BSD_FIXTURE_LEAGUES (config.ts) — separate
+    // from the enrichment pass further down, and isolated the same way: a failure here
+    // must never block predictions/enrichment/basketball.
+    try {
+      await fetchBsdFixtureLeagues();
+    } catch (error) {
+      console.error('BSD fixture leagues sync failed, continuing:', error);
+    }
+  } else {
+    console.log('Skipping BSD fixture leagues — BSD_API_TOKEN not set.');
   }
 
   await computePredictions();

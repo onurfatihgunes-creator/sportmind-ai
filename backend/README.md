@@ -72,6 +72,30 @@ npm install
 npm run run
 ```
 
+## Running the service in production (Docker)
+
+`src/service/server.ts` (the `/analysis` endpoint an app like Vera calls —
+not the ingestion pipeline above, which stays on its own GitHub Actions
+schedule) has a `Dockerfile` in this directory:
+
+```
+docker build -t sportmind-service:latest .
+docker run --rm -p 8787:8787 --env-file .env sportmind-service:latest
+```
+
+Same source, same `npm run serve` under the hood, no separate build step —
+just packaged with its own dependencies and a non-root user so it can run
+as a long-lived container instead of a terminal you keep open. It exposes
+`/healthz` for a container-level health check and shuts down cleanly on
+`docker stop` (`SIGTERM`).
+
+It has no rate limiting *infrastructure* dependency, but does cap requests
+per caller in-memory (`SPORTMIND_RATE_LIMIT_MAX_REQUESTS`, default 120/min)
+— reasonable since the only intended caller is one other service, not the
+public internet. See the consuming app's own deployment docs (e.g. Vera's
+`deploy/README.md` § The SportMind service) for how this container is
+reached from outside this repo — it is never meant to have a public port.
+
 ## What it does
 
 - `src/fetchFixtures.ts` — pulls football fixtures/results for the 6 confirmed competitions

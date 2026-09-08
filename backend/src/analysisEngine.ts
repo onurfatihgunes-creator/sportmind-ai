@@ -106,8 +106,17 @@ export function aggregateForm(rows: FormRow[]): FormAggregate {
 }
 
 export function computeFormSignal(home: FormAggregate, away: FormAggregate, timestamp: string | null): Signal {
-  if (home.matchesCount === 0 && away.matchesCount === 0) {
-    return unavailableSignal('FORM', 'points_per_game', 'team_form', 'No recent results for either team yet.');
+  // Intelligence 6.1: was `&&` — only unavailable when BOTH sides had zero matches. That
+  // let an asymmetric case (one real team vs. one with none) through as `available: true`
+  // with a home/away gap computed against aggregateForm's own zero-row values (a literal
+  // 0.00 PPG/goals — not even a neutral baseline, an outright "this team has never scored"
+  // number). `deriveKeyFactors` already weighted this out of Vera's key factors via
+  // `confidenceFromSampleSize(Math.min(...))` returning 'none', but a consumer reading the
+  // raw `signals` array directly (not just keyFactors) would still see `available: true`.
+  // Marking it unavailable here is the honest, explicit limitation itself, not a filter a
+  // caller has to know to apply.
+  if (home.matchesCount === 0 || away.matchesCount === 0) {
+    return unavailableSignal('FORM', 'points_per_game', 'team_form', 'No recent results for one or both teams yet.');
   }
   const gap = home.pointsPerGame - away.pointsPerGame;
   return {
@@ -165,8 +174,11 @@ export function computeAttackSignals(
 ): Signal[] {
   const signals: Signal[] = [];
 
-  if (homeForm.matchesCount === 0 && awayForm.matchesCount === 0) {
-    signals.push(unavailableSignal('ATTACK', 'goals_scored_per_game', 'team_form', 'No recent results for either team yet.'));
+  // Intelligence 6.1: was `&&` — see computeFormSignal's comment for why an asymmetric
+  // zero (one real team, one with none) must also count as unavailable, not just a
+  // both-zero case.
+  if (homeForm.matchesCount === 0 || awayForm.matchesCount === 0) {
+    signals.push(unavailableSignal('ATTACK', 'goals_scored_per_game', 'team_form', 'No recent results for one or both teams yet.'));
   } else {
     const gap = homeForm.avgGoalsFor - awayForm.avgGoalsFor;
     signals.push({
@@ -216,8 +228,11 @@ export function computeDefenceSignals(
 ): Signal[] {
   const signals: Signal[] = [];
 
-  if (homeForm.matchesCount === 0 && awayForm.matchesCount === 0) {
-    signals.push(unavailableSignal('DEFENCE', 'goals_conceded_per_game', 'team_form', 'No recent results for either team yet.'));
+  // Intelligence 6.1: was `&&` — same reasoning as computeFormSignal/computeAttackSignals.
+  // This gate covers BOTH form-derived DEFENCE sub-signals below (goals-conceded and
+  // clean-sheet-rate) since they share the same `else` branch.
+  if (homeForm.matchesCount === 0 || awayForm.matchesCount === 0) {
+    signals.push(unavailableSignal('DEFENCE', 'goals_conceded_per_game', 'team_form', 'No recent results for one or both teams yet.'));
   } else {
     // Lower goals-against is the stronger defence, so the gap is inverted relative to ATTACK.
     const gap = awayForm.avgGoalsAgainst - homeForm.avgGoalsAgainst;
@@ -566,6 +581,68 @@ export type DetectedChange = {
   previousValue: string | null;
   newValue: string;
 };
+
+// ---------------------------------------------------------------------------
+// 9. EVIDENCE MANIFEST — Intelligence 8.0 §29. A read-only, DERIVED summary of what a
+// prediction/analysis actually rests on, composed entirely from data service/analysis.ts
+// has already fetched for the rest of MatchAnalysisRecord — no new query, no new table, no
+// schema migration. Additive-only field on MatchAnalysisRecord (§39: backward compatible).
+// ---------------------------------------------------------------------------
+
+export type EvidenceStatus = 'AVAILABLE' | 'PARTIAL' | 'MISSING' | 'UNKNOWN';
+
+export type EvidenceManifest = {
+  match: { id: string; sport: string; competition: string };
+  predictionTime: string;
+  kickoffTime: string;
+  engineVersion: string;
+  form: { status: EvidenceStatus; sampleSize: number };
+  xg: { status: EvidenceStatus; source: string };
+  availability: { status: EvidenceStatus };
+  lineup: { status: EvidenceStatus; type: 'confirmed' | 'predicted' | 'unavailable' | 'no_data' };
+  h2h: { status: EvidenceStatus };
+};
+
+export function buildEvidenceManifest(input: {
+  matchId: string;
+  sport: string;
+  competition: string;
+  predictionTime: string;
+  kickoffTime: string;
+  engineVersion: string;
+  homeFormCount: number;
+  awayFormCount: number;
+  xgAvailable: boolean;
+  availabilityHasData: boolean;
+  lineupStatus: 'unavailable' | 'predicted' | 'confirmed' | null;
+  h2hAvailable: boolean;
+}): EvidenceManifest {
+  const minForm = Math.min(input.homeFormCount, input.awayFormCount);
+  return {
+    match: { id: input.matchId, sport: input.sport, competition: input.competition },
+    predictionTime: input.predictionTime,
+    kickoffTime: input.kickoffTime,
+    engineVersion: input.engineVersion,
+    form: { status: minForm === 0 ? 'MISSING' : minForm < MIN_TRUSTED_FORM_SAMPLE_FOR_MANIFEST ? 'PARTIAL' : 'AVAILABLE', sampleSize: minForm },
+    // xG is never an independently-sourced signal in this codebase — it is derived from
+    // the same team_form rows as `form` above (see computePredictions.ts's buildPrediction:
+    // xgHome = (home.avgGoalsFor + away.avgGoalsAgainst) / 2). Documented here, not just in
+    // a code comment, so any consumer of this manifest sees the same caveat Intelligence
+    // 7.0's evaluation report gives it.
+    xg: { status: input.xgAvailable ? 'AVAILABLE' : 'MISSING', source: 'form-derived (team_form) — not an independent signal' },
+    availability: { status: input.availabilityHasData ? 'AVAILABLE' : 'MISSING' },
+    lineup: {
+      status: input.lineupStatus === null ? 'MISSING' : input.lineupStatus === 'confirmed' ? 'AVAILABLE' : 'PARTIAL',
+      type: input.lineupStatus ?? 'no_data',
+    },
+    h2h: { status: input.h2hAvailable ? 'AVAILABLE' : 'MISSING' },
+  };
+}
+
+// Mirrors evaluation.ts's MIN_TRUSTED_FORM_SAMPLE (backend/ and this module don't share an
+// import here to keep analysisEngine.ts's existing zero-dependency style — see that
+// module's own comment on why this threshold is kept in sync manually, not imported.
+const MIN_TRUSTED_FORM_SAMPLE_FOR_MANIFEST = 3;
 
 /** Returns null when there is nothing to report: no prior state (`hasPriorState` is
  * false — the very first time this match was ever enriched, §8 "İlk ingestion'da

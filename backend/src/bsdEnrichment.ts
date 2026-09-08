@@ -156,7 +156,7 @@ async function persistRawStats(matchId: string, event: BsdEvent) {
 // it every run for every match would be a real, avoidable BSD API call per §4/§12's
 // explicit "gereksiz API çağrısı oluşturma" — so a row already written within this
 // window is left alone rather than refetched.
-const H2H_REFRESH_INTERVAL_DAYS = 7;
+export const H2H_REFRESH_INTERVAL_DAYS = 7;
 
 async function persistH2H(matchId: string, event: BsdEvent) {
   const { data: existing } = await supabase.from('match_h2h').select('updated_at').eq('match_id', matchId).maybeSingle();
@@ -196,7 +196,7 @@ async function persistH2H(matchId: string, event: BsdEvent) {
 
 // A player's market value changes slowly (transfer windows, not day to day) — same
 // staleness reasoning as H2H, just a longer window since it moves even less.
-const PLAYER_CACHE_REFRESH_INTERVAL_DAYS = 30;
+export const PLAYER_CACHE_REFRESH_INTERVAL_DAYS = 30;
 
 /**
  * Cache-first resolution of a player's name/market value (§5: "caching kullan... N+1
