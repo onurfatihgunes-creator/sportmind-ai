@@ -225,6 +225,7 @@ export function computeDefenceSignals(
   homeBsd: BsdTeamMatchSample[],
   awayBsd: BsdTeamMatchSample[],
   formTimestamp: string | null,
+  sport: 'football' | 'basketball',
 ): Signal[] {
   const signals: Signal[] = [];
 
@@ -249,18 +250,28 @@ export function computeDefenceSignals(
       timestamp: formTimestamp,
     });
 
-    signals.push({
-      category: 'DEFENCE',
-      metric: 'clean_sheet_rate',
-      available: true,
-      homeValue: Number(homeForm.cleanSheetRate.toFixed(2)),
-      awayValue: Number(awayForm.cleanSheetRate.toFixed(2)),
-      advantage: advantageFromGap(homeForm.cleanSheetRate - awayForm.cleanSheetRate, 0.1),
-      magnitude: magnitudeFromGap(homeForm.cleanSheetRate - awayForm.cleanSheetRate, 0.6),
-      confidence: confidenceFromSampleSize(Math.min(homeForm.matchesCount, awayForm.matchesCount)),
-      source: 'team_form',
-      timestamp: formTimestamp,
-    });
+    // Intelligence 9.0 §19: "clean sheet" is a football-only concept (zero goals
+    // conceded) — team_form's goals_against field holds real basketball SCORES for a
+    // basketball match (never 0), so this was previously computed unconditionally for
+    // both sports and always reported an always-0.00-vs-0.00 "available: true" signal
+    // for basketball — not fabricated (the number is truthfully 0), but a meaningless
+    // metric dressed up as real evidence, present in every basketball MatchAnalysisRecord
+    // Vera ever received. Omitted entirely for basketball (not even "unavailable" — the
+    // concept itself doesn't apply, it isn't just missing data).
+    if (sport === 'football') {
+      signals.push({
+        category: 'DEFENCE',
+        metric: 'clean_sheet_rate',
+        available: true,
+        homeValue: Number(homeForm.cleanSheetRate.toFixed(2)),
+        awayValue: Number(awayForm.cleanSheetRate.toFixed(2)),
+        advantage: advantageFromGap(homeForm.cleanSheetRate - awayForm.cleanSheetRate, 0.1),
+        magnitude: magnitudeFromGap(homeForm.cleanSheetRate - awayForm.cleanSheetRate, 0.6),
+        confidence: confidenceFromSampleSize(Math.min(homeForm.matchesCount, awayForm.matchesCount)),
+        source: 'team_form',
+        timestamp: formTimestamp,
+      });
+    }
   }
 
   const homeXga = average(homeBsd.map((s) => s.xgAgainst).filter((v): v is number => v !== null));

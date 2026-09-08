@@ -84,14 +84,14 @@ test('F. NEGATIVE TEST — FAIL: wrong sport injected on one side (basketball te
   assert.equal(result.verdict, 'FAIL');
 });
 
-test('F. cross-sport name collision risk: WARN when the code has no filter but no real collision exists yet', () => {
+test('F. cross-sport name collision risk: PASS when no colliding names exist', () => {
   const result = checkCrossSportNameCollisionRisk(['Liverpool', 'Chelsea'], ['Boston Celtics', 'LA Lakers']);
-  assert.equal(result.verdict, 'WARN');
+  assert.equal(result.verdict, 'PASS');
 });
 
-test('F. NEGATIVE TEST — FAIL: cross-sport name collision injected (a real ambiguous pair)', () => {
+test('F. cross-sport name collision risk: WARN (not FAIL) when a real collision exists — Intelligence 9.0 downgraded this once resolveSportCandidates started handling it safely (commit 7c45e76)', () => {
   const result = checkCrossSportNameCollisionRisk(['Hawks'], ['Atlanta Hawks']);
-  assert.equal(result.verdict, 'FAIL');
+  assert.equal(result.verdict, 'WARN');
 });
 
 // --- I: fixture identity / duplicate logical fixture ---

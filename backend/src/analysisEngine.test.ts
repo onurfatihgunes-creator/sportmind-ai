@@ -77,7 +77,7 @@ test('ATTACK/DEFENCE: one real team vs one with zero matches is unavailable for 
   const away = aggregateForm([]);
   const [goalsSignal] = computeAttackSignals(home, away, [], [], null);
   assert.equal(goalsSignal.available, false);
-  const [concededSignal] = computeDefenceSignals(home, away, [], [], null);
+  const [concededSignal] = computeDefenceSignals(home, away, [], [], null, 'football');
   assert.equal(concededSignal.available, false);
 });
 
@@ -114,7 +114,7 @@ test('ATTACK: BSD xG enrichment signal only appears with real samples and averag
 test('DEFENCE: lower goals-against and higher clean-sheet rate correctly favour the stronger side', () => {
   const home = aggregateForm(strongForm);
   const away = aggregateForm(weakForm);
-  const [concededSignal, cleanSheetSignal] = computeDefenceSignals(home, away, [], [], null);
+  const [concededSignal, cleanSheetSignal] = computeDefenceSignals(home, away, [], [], null, 'football');
   assert.equal(concededSignal.advantage, 'home'); // home concedes less
   assert.equal(cleanSheetSignal.advantage, 'home');
   assert.equal(cleanSheetSignal.homeValue, 0.4); // 2 clean sheets (0 conceded) in 5
@@ -124,8 +124,27 @@ test('DEFENCE: lower goals-against and higher clean-sheet rate correctly favour 
 test('DEFENCE: xGA enrichment respects missing data the same way ATTACK does', () => {
   const home = aggregateForm(strongForm);
   const away = aggregateForm(weakForm);
-  const [, , xgaSignal] = computeDefenceSignals(home, away, [], [], null);
+  const [, , xgaSignal] = computeDefenceSignals(home, away, [], [], null, 'football');
   assert.equal(xgaSignal.available, false);
+});
+
+// Intelligence 9.0 §19 — football/basketball semantic leak found live: "clean sheet"
+// (zero goals conceded) is a football-only concept, but was previously computed
+// unconditionally for both sports from the same shared team_form.goals_against field —
+// for basketball that field holds real point totals (never 0), so every basketball
+// MatchAnalysisRecord Vera ever received carried an always-0.00-vs-0.00
+// "available: true" clean_sheet_rate signal: not fabricated, but a meaningless metric
+// dressed up as real evidence for a sport it doesn't apply to.
+test('DEFENCE: clean_sheet_rate is football-only — basketball omits it entirely, not just marks it unavailable', () => {
+  const home = aggregateForm(strongForm);
+  const away = aggregateForm(weakForm);
+  const footballSignals = computeDefenceSignals(home, away, [], [], null, 'football');
+  const basketballSignals = computeDefenceSignals(home, away, [], [], null, 'basketball');
+
+  assert.ok(footballSignals.some((s) => s.metric === 'clean_sheet_rate'));
+  assert.ok(!basketballSignals.some((s) => s.metric === 'clean_sheet_rate'));
+  // goals_conceded_per_game (a genuinely sport-agnostic scoring-rate metric) still applies to both.
+  assert.ok(basketballSignals.some((s) => s.metric === 'goals_conceded_per_game'));
 });
 
 // D. (POSSESSION, covered under the same "missing data" umbrella as B/C above)
@@ -340,7 +359,7 @@ test('EDGE CASE: key factors never exceed 5, never include an even/unavailable s
   const manySignals = deriveKeyFactors(
     [
       ...computeAttackSignals(home, away, [], [], null),
-      ...computeDefenceSignals(home, away, [], [], null),
+      ...computeDefenceSignals(home, away, [], [], null, 'football'),
       computeFormSignal(home, away, null),
       computeHomeAdvantageSignal(62, 38),
       computePossessionSignal([], []),

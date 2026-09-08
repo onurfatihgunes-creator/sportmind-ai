@@ -463,7 +463,7 @@ export async function getMatchAnalysisForTeam(teamName: string, sport?: Sport): 
   const signals: Signal[] = [
     computeFormSignal(homeFormAgg, awayFormAgg, formTimestamp),
     ...computeAttackSignals(homeFormAgg, awayFormAgg, homeBsdSamples, awayBsdSamples, formTimestamp),
-    ...computeDefenceSignals(homeFormAgg, awayFormAgg, homeBsdSamples, awayBsdSamples, formTimestamp),
+    ...computeDefenceSignals(homeFormAgg, awayFormAgg, homeBsdSamples, awayBsdSamples, formTimestamp, match.sport as 'football' | 'basketball'),
     computePossessionSignal(homeBsdSamples, awayBsdSamples),
     // Reuses the exact fixed prior computePredictions.ts already stored for this match
     // (§5: "mevcut proje convention'larına uy") rather than hardcoding a new number.

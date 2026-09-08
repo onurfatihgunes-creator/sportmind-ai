@@ -84,12 +84,19 @@ export function checkSportIsolation(matchSport: string, homeTeamSport: string, a
 }
 
 /**
- * §19/§18 latent-risk check: `service/analysis.ts`'s getMatchAnalysisForTeam does a
- * cross-sport `ilike` name lookup with NO sport filter (confirmed via source read — the
- * `/analysis?team=` HTTP contract in service/server.ts has no sport parameter at all). This
- * cannot FAIL from data alone — it can only be evaluated as a structural WARN (a real gap
- * in the code) unless an actual name collision exists in the current `teams` table, in
- * which case it graduates to FAIL because a real ambiguous lookup is now possible.
+ * §19/§18 name-collision awareness check. Intelligence 8.0 found this FAIL when
+ * `getMatchAnalysisForTeam` had no sport filter at all (an unscoped `ilike` lookup could
+ * return the wrong sport's data). Intelligence 9.0: that lookup is fixed —
+ * `resolveSportCandidates` (service/analysis.ts, commit 7c45e76) now resolves a
+ * single-sport name exactly as before, an explicit `sport` param always wins, and a name
+ * colliding across sports is reported as `ambiguousSports` rather than silently guessed
+ * (verified live against the real Flamengo case: football/basketball never cross-resolve).
+ *
+ * A collision existing in the `teams` table is therefore no longer an unhandled
+ * violation — it's an expected, safely-disambiguated case — so this now reports WARN
+ * (data awareness: "these names collide, keep watching for more as new leagues are
+ * added") rather than FAIL (an actual, currently-unmitigated violation). Only escalate
+ * back to FAIL if a caller path that skips resolveSportCandidates is ever found.
  */
 export function checkCrossSportNameCollisionRisk(
   footballNames: string[],
@@ -104,13 +111,12 @@ export function checkCrossSportNameCollisionRisk(
     }
   }
   if (collisions.length > 0) {
-    return { verdict: 'FAIL', detail: `${collisions.length} real cross-sport name collision(s): ${JSON.stringify(collisions.slice(0, 5))} — getMatchAnalysisForTeam's unfiltered ilike lookup can now return the wrong sport` };
+    return {
+      verdict: 'WARN',
+      detail: `${collisions.length} real cross-sport name collision(s): ${JSON.stringify(collisions.slice(0, 5))} — safely handled by service/analysis.ts's resolveSportCandidates (sport param wins; no sport + multi-sport match reports ambiguousSports rather than guessing). Not a violation; watch for more as new leagues are added.`,
+    };
   }
-  return {
-    verdict: 'WARN',
-    detail:
-      'no current collision, but getMatchAnalysisForTeam (service/analysis.ts) has no sport filter on its team-name lookup or its findNearestMatch query — a structural gap, not (yet) a manifesting violation',
-  };
+  return { verdict: 'PASS', detail: 'no cross-sport name collisions in the current teams table' };
 }
 
 // ============================================================================
