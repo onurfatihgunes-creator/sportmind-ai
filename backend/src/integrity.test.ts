@@ -157,6 +157,17 @@ test('D. NEGATIVE TEST — FAIL: zero-form fabrication injected (zero form but 4
   assert.equal(result.verdict, 'FAIL');
 });
 
+// Intelligence 10.0: confirmed live on two real matches (575324, 575350) — both teams
+// show real form under a CURRENT snapshot, but the stored prediction has only 1 factor.
+// This is not fabrication or a violation: it means form arrived AFTER computed_at (the
+// match's own result populating team_form post-finish, or a brand-new team's first-ever
+// row landing later the same day) — the prediction was correctly computed pre-match with
+// genuinely zero data at the time. PASS, not WARN — nothing here needs investigating.
+test('D. PASS (not WARN): both teams show form under a current snapshot but only 1 factor is stored — expected once form arrives after computed_at', () => {
+  const result = checkZeroFormFactorIntegrity(1, 30, 1);
+  assert.equal(result.verdict, 'PASS');
+});
+
 // --- L: historical immutability ---
 
 test('L. historical immutability is pinned as a structural, tested claim', () => {

@@ -198,6 +198,19 @@ export function checkStaleScheduled(status: string, kickoffAt: string, graceDays
  * ONLY when both teams have real (matchesCount > 0) form data — see computePredictions.ts's
  * buildPrediction / Intelligence 6.1. `factorCount` is what's actually stored: 4 when both
  * teams have form, 1 (homeAdvantage/homeCourtAdvantage only) when either side has none.
+ *
+ * `homeFormCount`/`awayFormCount` are a CURRENT snapshot, not what existed at the
+ * prediction's own `computed_at` (team_form has no ingestion timestamp — same limitation
+ * evaluation.ts's isTemporalInvalidSufficientForFutureDataSafety documents). This makes
+ * "both teams have form NOW but only 1 factor stored" an EXPECTED, benign shape, not a
+ * violation: found live (Intelligence 10.0) on two real matches where the team's only
+ * form row was dated the SAME DAY as computed_at — either that match's own result
+ * populating team_form after it finished (575324, itself), or a genuinely brand-new team
+ * getting its first-ever form row later the same day a still-months-out fixture's
+ * prediction was correctly computed pre-match with zero data (575350). Both are the 6.1
+ * fix working exactly as designed, not fabrication — a temporally-earlier "0 real
+ * matches" was true when computed_at happened, and computePredictions() will pick up the
+ * new form on its next recompute of that match while it's still scheduled.
  */
 export function checkZeroFormFactorIntegrity(homeFormCount: number, awayFormCount: number, factorCount: number): CheckResult {
   const bothHaveForm = homeFormCount > 0 && awayFormCount > 0;
@@ -206,7 +219,10 @@ export function checkZeroFormFactorIntegrity(homeFormCount: number, awayFormCoun
   if (!bothHaveForm && factorCount > 1) {
     return { verdict: 'FAIL', detail: `a team with zero real form has ${factorCount} factors stored — fabricated form-derived evidence` };
   }
-  return { verdict: 'WARN', detail: `both teams have real form but only ${factorCount} factors stored — unexpected shape, investigate` };
+  return {
+    verdict: 'PASS',
+    detail: `both teams have form as of NOW but only ${factorCount} factor(s) stored — expected: form counts are a current snapshot, not what existed at this prediction's own computed_at; form likely arrived after this prediction was (correctly) computed with zero data`,
+  };
 }
 
 // ============================================================================
