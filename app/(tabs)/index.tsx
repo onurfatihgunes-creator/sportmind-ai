@@ -12,11 +12,12 @@ import {
   SparkleIcon,
   TrayIcon,
 } from 'phosphor-react-native';
-import { colors, confidenceColor, fonts, PREMIUM_ENABLED, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { colors, confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useEntitlement } from '@/contexts/EntitlementContext';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import SegmentedControl from '@/components/SegmentedControl';
 import TeamBadgePair from '@/components/TeamBadgePair';
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const { matches, changeEvents, isLive, loading } = useAppData();
   const { teamIds: followedTeamIds } = useFollowedTeams();
   const { name } = useProfile();
+  const { status: entitlementStatus } = useEntitlement();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
 
   const { width: windowWidth } = useWindowDimensions();
@@ -103,7 +105,9 @@ export default function HomeScreen() {
             <Text style={styles.greetingSmall}>{t('home.goodEvening')}</Text>
             <Text style={styles.greetingName}>{name}</Text>
           </View>
-          {PREMIUM_ENABLED && (
+          {/* Hidden once Pro is actually active — offering what somebody already has is
+              noise, the same rule Stylist's own Profile row follows. */}
+          {(entitlementStatus === 'trial' || entitlementStatus === 'expired') && (
             <Pressable style={styles.premiumButton} onPress={() => router.push('/(tabs)/premium')}>
               <SparkleIcon size={14} weight="bold" color={colors.primaryLink} />
               <Text style={styles.premiumButtonText}>{t('tabs.premium')}</Text>

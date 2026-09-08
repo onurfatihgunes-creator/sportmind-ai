@@ -48,8 +48,6 @@
     "recentChangesEmptyTitle": "No important changes yet",
     "recentChangesEmptyBody": "Real match changes will appear here when they happen.",
     "followingNextMatch": "Next · {{opponent}} · {{kickoff}}",
-    "unlockUnlimited": "Unlock unlimited AI analysis",
-    "goPremium": "Go Premium",
     "demoData": "Demo data",
     "football": "Football",
     "basketball": "Basketball",
@@ -149,26 +147,8 @@
     "lineupsPublishedSubtitle": "~1 hour before kickoff",
     "deliveryNote": "These preferences are saved on this device. Push delivery isn't available yet — this only remembers what you'd want to be notified about."
   },
-  "premium": {
-    "goDeeper": "See the full analysis",
-    "dailyLimitReached": "You've reached your daily analysis limit 4 times this week. Premium unlocks more depth and more analyses.",
-    "monthly": "Monthly",
-    "yearly": "Yearly",
-    "free": "Free",
-    "premiumCol": "Premium",
-    "dailyAnalyses": "Daily analyses",
-    "advancedExplanations": "Factor breakdown",
-    "historicalComparisons": "Team comparison",
-    "watchlistLimit": "Watchlist",
-    "unlimited": "Unlimited",
-    "startPremiumMonthly": "Start Premium — £6.99/mo",
-    "startPremiumYearly": "Start Premium — £69.99/yr",
-    "billedYearly": "£69.99 a year — £5.83/mo, 30% off the monthly plan. Cancel any time; auto-renews unless cancelled at least 24h before the period ends.",
-    "billedMonthly": "£6.99 a month. Cancel any time; auto-renews unless cancelled at least 24h before the period ends."
-  },
   "profile": {
     "namePlaceholder": "Your name",
-    "freePlanLimit": "Free plan · 1 analysis a day",
     "savedAnalyses": "Saved matches",
     "notifications": "Notifications",
     "howModelWorks": "How the model works",
@@ -180,7 +160,12 @@
     "clearDataBody": "This removes your name, language, and saved matches from this device. It can't be undone.",
     "clearDataConfirm": "Clear",
     "restartNotice": "Done. Restart the app to see the changes.",
-    "language": "Language"
+    "language": "Language",
+    "planTrial": "Pro trial · full access",
+    "planExpired": "Pro required",
+    "planPro": "SportMind Pro",
+    "proUpsellSubtitle": "Continue full analysis access after your trial",
+    "proExpiredSubtitle": "Your trial has ended — upgrade to keep full access"
   },
   "matchAnalysis": {
     "title": "Match analysis",
@@ -307,5 +292,23 @@
   "configError": {
     "title": "SportMind isn't configured correctly",
     "body": "We can't connect right now due to a configuration issue. Please try again later."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro is active",
+    "heading": "Keep using SportMind",
+    "body": "Your 14-day trial covers the full SportMind analysis experience. Pro keeps those same features going, without interruption.",
+    "bodyExpired": "Your 14-day trial has ended. Pro picks up exactly where it left off.",
+    "upgrade": "Go Pro",
+    "upgradeExpired": "Upgrade to Pro",
+    "restore": "Restore purchases",
+    "confirming": "Confirming…",
+    "confirmed": "SportMind Pro is active",
+    "pending": "Your purchase went through. Access opens in a few seconds.",
+    "failed": "The purchase didn't complete.",
+    "nothingToRestore": "No purchase was found to restore.",
+    "unavailable": "Purchasing is not available yet.",
+    "gateTitle": "Your trial has ended",
+    "gateBody": "Upgrade to SportMind Pro to keep seeing full match analysis."
   }
 }

@@ -20,6 +20,7 @@ import { DataProvider } from '@/contexts/DataContext';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
+import { EntitlementProvider } from '@/contexts/EntitlementContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -94,24 +95,26 @@ export default function RootLayout() {
         <WatchlistProvider>
           <FollowedTeamsProvider>
             <ProfileProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.background },
-                }}
-              >
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
-                <Stack.Screen name="match/[id]" />
-                <Stack.Screen name="team/[id]" />
-                <Stack.Screen name="team-insights/[teamId]" />
-                <Stack.Screen name="my-matches" />
-                <Stack.Screen name="notifications" />
-                <Stack.Screen name="team-comparison" />
-                <Stack.Screen name="legal/index" />
-                <Stack.Screen name="legal/methodology" />
-                <Stack.Screen name="language" />
-              </Stack>
+              <EntitlementProvider>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.background },
+                  }}
+                >
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
+                  <Stack.Screen name="match/[id]" />
+                  <Stack.Screen name="team/[id]" />
+                  <Stack.Screen name="team-insights/[teamId]" />
+                  <Stack.Screen name="my-matches" />
+                  <Stack.Screen name="notifications" />
+                  <Stack.Screen name="team-comparison" />
+                  <Stack.Screen name="legal/index" />
+                  <Stack.Screen name="legal/methodology" />
+                  <Stack.Screen name="language" />
+                </Stack>
+              </EntitlementProvider>
             </ProfileProvider>
           </FollowedTeamsProvider>
         </WatchlistProvider>

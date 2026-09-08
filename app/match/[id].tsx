@@ -3,13 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon, SoccerBallIcon, WarningCircleIcon } from 'phosphor-react-native';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowsLeftRightIcon, BookmarkSimpleIcon, ClockCounterClockwiseIcon, ShieldCheckIcon, SoccerBallIcon, SparkleIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import { resolveMatchById } from '@/data/liveData';
 import { matchFormDataLevel } from '@/data/dataConfidence';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useEntitlement } from '@/contexts/EntitlementContext';
 import SegmentedControl from '@/components/SegmentedControl';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import StackedDistributionBar from '@/components/StackedDistributionBar';
@@ -27,6 +28,7 @@ export default function MatchAnalysisScreen() {
   const { matches, changeEvents, isLive } = useAppData();
   const { isWatched, toggle } = useWatchlist();
   const { toastState, showToast } = useToast();
+  const { status: entitlementStatus } = useEntitlement();
   const localMatch = matches.find((m) => m.id === params.id) ?? null;
 
   // A match id absent from the currently-loaded top-30-per-sport window (a stale/shared
@@ -119,6 +121,19 @@ export default function MatchAnalysisScreen() {
             onPressCta={() => router.back()}
           />
         )
+      ) : entitlementStatus === 'expired' ? (
+        // The gated "Pro deneyimi" boundary: SportMind's own core value is this AI
+        // analysis, the same product boundary Stylist gates its one protected action
+        // at. 'loading' deliberately falls through to the real content below rather
+        // than landing here — see EntitlementContext's own header for why an unknown
+        // state must never be presented as "Pro required."
+        <NotFoundState
+          icon={SparkleIcon}
+          title={t('pro.gateTitle')}
+          body={t('pro.gateBody')}
+          ctaLabel={t('pro.upgradeExpired')}
+          onPressCta={() => router.push('/(tabs)/premium')}
+        />
       ) : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.matchupCard}>

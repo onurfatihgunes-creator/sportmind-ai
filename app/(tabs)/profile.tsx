@@ -10,20 +10,23 @@ import {
   BellIcon,
   BookmarkSimpleIcon,
   CaretRightIcon,
+  CheckCircleIcon,
   CpuIcon,
   GlobeIcon,
   PencilSimpleIcon,
   ShieldCheckIcon,
   SparkleIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, PREMIUM_ENABLED, radius, spacing } from '@/constants/theme';
+import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useEntitlement } from '@/contexts/EntitlementContext';
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { name, setName } = useProfile();
   const { matchIds } = useWatchlist();
+  const { status } = useEntitlement();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
 
@@ -98,24 +101,62 @@ export default function ProfileScreen() {
             ) : (
               <Text style={styles.name}>{name}</Text>
             )}
-            <Text style={styles.plan}>{t('profile.freePlanLimit')}</Text>
+            {/* Replaces the old static "Free plan · 1 analysis a day" line, which was
+                never backed by any real daily-quota enforcement anywhere in this app —
+                just UI copy. This now reflects the real, server-computed entitlement
+                state. Nothing is rendered while it is still loading rather than
+                guessing and possibly showing the wrong plan for a moment. */}
+            {status !== 'loading' && (
+              <Text style={styles.plan}>
+                {t(status === 'pro' ? 'profile.planPro' : status === 'expired' ? 'profile.planExpired' : 'profile.planTrial')}
+              </Text>
+            )}
           </View>
           <Pressable style={styles.editButton} onPress={() => { setDraft(name); setEditing(true); }} hitSlop={8}>
             <PencilSimpleIcon size={16} color={colors.textFaint} />
           </Pressable>
         </View>
 
-        {PREMIUM_ENABLED && (
+        {/*
+          THREE STATES, EACH SHOWN ONLY WHEN IT IS TRUE — mirrors Stylist's own three
+          conditions for its "Pro'ya Geç" row (hidden until entitlement is known, hidden
+          for somebody who already has Pro since offering what they have is noise), with
+          one deliberate SportMind-specific difference: the business requirement here is
+          that a Go Pro CTA stays VISIBLE for the whole trial (not just after an ended
+          trial), so unlike Stylist's current row this is not additionally conditioned on
+          isPurchaseConfigured() — the paywall itself already renders the honest
+          "purchasing isn't available yet" message when nothing is configured, so showing
+          the entry point does not promise a working purchase it cannot deliver.
+        */}
+        {status === 'trial' && (
           <Pressable style={styles.upsellCard} onPress={() => router.push('/(tabs)/premium')}>
             <View style={styles.upsellIcon}>
               <SparkleIcon size={18} weight="bold" color={colors.primaryTint} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.upsellTitle}>{t('home.goPremium')}</Text>
-              <Text style={styles.upsellSubtitle}>{t('home.unlockUnlimited')}</Text>
+              <Text style={styles.upsellTitle}>{t('pro.upgrade')}</Text>
+              <Text style={styles.upsellSubtitle}>{t('profile.proUpsellSubtitle')}</Text>
             </View>
             <ArrowRightIcon size={15} weight="bold" color={colors.primary} />
           </Pressable>
+        )}
+        {status === 'expired' && (
+          <Pressable style={[styles.upsellCard, styles.upsellCardExpired]} onPress={() => router.push('/(tabs)/premium')}>
+            <View style={styles.upsellIcon}>
+              <SparkleIcon size={18} weight="bold" color={colors.primaryTint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.upsellTitle}>{t('pro.upgradeExpired')}</Text>
+              <Text style={styles.upsellSubtitle}>{t('profile.proExpiredSubtitle')}</Text>
+            </View>
+            <ArrowRightIcon size={15} weight="bold" color={colors.primary} />
+          </Pressable>
+        )}
+        {status === 'pro' && (
+          <View style={styles.proActiveRow}>
+            <CheckCircleIcon size={16} weight="fill" color={colors.successText} />
+            <Text style={styles.proActiveText}>{t('pro.active')}</Text>
+          </View>
         )}
 
         <View style={styles.group}>
@@ -177,9 +218,25 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceAccentTo,
   },
+  // A trial that has actually ended is a more urgent state than a voluntary mid-trial
+  // upsell — same card shape, same visual language, just the existing accent border
+  // pushed to full strength instead of a second, unrelated style of card.
+  upsellCardExpired: { borderColor: colors.primary },
   upsellIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   upsellTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 2 },
   upsellSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
+  proActiveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+  },
+  proActiveText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.successText },
   group: { marginTop: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, overflow: 'hidden' },
   groupRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14 },
   groupRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },

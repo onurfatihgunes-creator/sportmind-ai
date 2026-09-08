@@ -48,8 +48,6 @@
     "recentChangesEmptyTitle": "Noch keine wichtigen Änderungen",
     "recentChangesEmptyBody": "Echte Spieländerungen erscheinen hier, sobald sie passieren.",
     "followingNextMatch": "Nächstes · {{opponent}} · {{kickoff}}",
-    "unlockUnlimited": "Unbegrenzte KI-Analyse freischalten",
-    "goPremium": "Zu Premium wechseln",
     "demoData": "Demo-Daten",
     "football": "Fußball",
     "basketball": "Basketball",
@@ -149,26 +147,8 @@
     "lineupsPublishedSubtitle": "~1 Stunde vor Anpfiff",
     "deliveryNote": "Diese Einstellungen werden auf diesem Gerät gespeichert. Push-Benachrichtigungen sind noch nicht verfügbar — hier wird nur gemerkt, worüber du informiert werden möchtest."
   },
-  "premium": {
-    "goDeeper": "Die vollständige Analyse sehen",
-    "dailyLimitReached": "Du hast dein tägliches Analyse-Limit diese Woche 4-mal erreicht. Premium schaltet mehr Tiefe und mehr Analysen frei.",
-    "monthly": "Monatlich",
-    "yearly": "Jährlich",
-    "free": "Kostenlos",
-    "premiumCol": "Premium",
-    "dailyAnalyses": "Tägliche Analysen",
-    "advancedExplanations": "Faktor-Aufschlüsselung",
-    "historicalComparisons": "Teamvergleich",
-    "watchlistLimit": "Beobachtungsliste",
-    "unlimited": "Unbegrenzt",
-    "startPremiumMonthly": "Premium starten — 6,99 £/Monat",
-    "startPremiumYearly": "Premium starten — 69,99 £/Jahr",
-    "billedYearly": "69,99 £ pro Jahr — 5,83 £/Monat, 30 % günstiger als monatlich. Jederzeit kündbar; verlängert sich automatisch, sofern nicht mindestens 24 Std. vor Ablauf gekündigt wird.",
-    "billedMonthly": "6,99 £ pro Monat. Jederzeit kündbar; verlängert sich automatisch, sofern nicht mindestens 24 Std. vor Ablauf gekündigt wird."
-  },
   "profile": {
     "namePlaceholder": "Dein Name",
-    "freePlanLimit": "Kostenloser Plan · 1 Analyse pro Tag",
     "savedAnalyses": "Gespeicherte Spiele",
     "notifications": "Benachrichtigungen",
     "howModelWorks": "Wie das Modell funktioniert",
@@ -180,7 +160,12 @@
     "clearDataBody": "Dadurch werden dein Name, deine Sprache und gespeicherte Spiele von diesem Gerät entfernt. Dies kann nicht rückgängig gemacht werden.",
     "clearDataConfirm": "Löschen",
     "restartNotice": "Erledigt. Starte die App neu, um die Änderungen zu sehen.",
-    "language": "Sprache"
+    "language": "Sprache",
+    "planTrial": "Pro-Testphase · voller Zugriff",
+    "planExpired": "Pro erforderlich",
+    "planPro": "SportMind Pro",
+    "proUpsellSubtitle": "Vollen Analysezugriff nach der Testphase fortsetzen",
+    "proExpiredSubtitle": "Deine Testphase ist beendet — upgrade für vollen Zugriff"
   },
   "matchAnalysis": {
     "title": "Spielanalyse",
@@ -307,5 +292,23 @@
   "configError": {
     "title": "SportMind ist nicht korrekt konfiguriert",
     "body": "Aufgrund eines Konfigurationsproblems können wir derzeit keine Verbindung herstellen. Bitte versuchen Sie es später erneut."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro ist aktiv",
+    "heading": "SportMind weiter nutzen",
+    "body": "Deine 14-tägige Testphase umfasst das vollständige SportMind-Analyseerlebnis. Pro führt dieselben Funktionen ohne Unterbrechung fort.",
+    "bodyExpired": "Deine 14-tägige Testphase ist beendet. Mit Pro machst du genau dort weiter.",
+    "upgrade": "Zu Pro wechseln",
+    "upgradeExpired": "Auf Pro upgraden",
+    "restore": "Käufe wiederherstellen",
+    "confirming": "Wird bestätigt…",
+    "confirmed": "SportMind Pro ist aktiv",
+    "pending": "Dein Kauf wurde verarbeitet. Der Zugriff wird in wenigen Sekunden freigeschaltet.",
+    "failed": "Der Kauf konnte nicht abgeschlossen werden.",
+    "nothingToRestore": "Es wurde kein Kauf zum Wiederherstellen gefunden.",
+    "unavailable": "Der Kauf ist noch nicht verfügbar.",
+    "gateTitle": "Deine Testphase ist beendet",
+    "gateBody": "Wechsle zu SportMind Pro, um weiterhin die vollständige Matchanalyse zu sehen."
   }
 }

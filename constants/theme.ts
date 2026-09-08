@@ -94,10 +94,6 @@ export const fonts = {
   bodyBold: 'Inter_700Bold',
 } as const;
 
-/** Everything is free for now — flip this back on (and remove `href: null` from the
- * premium tab in app/(tabs)/_layout.tsx) to bring back the paywall/pricing surfaces. */
-export const PREMIUM_ENABLED = false;
-
 export const disclaimer =
   'Yapay zekâ üretimi istatistiksel analiz. Sonuçlar öngörülemez.';
 

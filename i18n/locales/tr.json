@@ -48,8 +48,6 @@
     "recentChangesEmptyTitle": "Henüz önemli bir değişiklik yok",
     "recentChangesEmptyBody": "Gerçek maç değişiklikleri olduğunda burada görünecek.",
     "followingNextMatch": "Sıradaki · {{opponent}} · {{kickoff}}",
-    "unlockUnlimited": "Sınırsız AI analizinin kilidini aç",
-    "goPremium": "Premium'a geç",
     "demoData": "Örnek veri",
     "football": "Futbol",
     "basketball": "Basketbol",
@@ -149,26 +147,8 @@
     "lineupsPublishedSubtitle": "Maçtan ~1 saat önce",
     "deliveryNote": "Bu tercihler bu cihazda kaydediliyor. Anlık bildirim gönderimi henüz aktif değil — bu ayar sadece neyi bildirmek istediğini hatırlar."
   },
-  "premium": {
-    "goDeeper": "Analizin tamamını gör",
-    "dailyLimitReached": "Bu hafta günlük limitine 4 kez ulaştın. Premium ile analiz sayısı ve derinliği açılıyor.",
-    "monthly": "Aylık",
-    "yearly": "Yıllık",
-    "free": "Ücretsiz",
-    "premiumCol": "Premium",
-    "dailyAnalyses": "Günlük analiz",
-    "advancedExplanations": "Etken kırılımı",
-    "historicalComparisons": "Takım karşılaştırma",
-    "watchlistLimit": "Takip listesi",
-    "unlimited": "Sınırsız",
-    "startPremiumMonthly": "Premium'a başla — 19,90 ₺/ay",
-    "startPremiumYearly": "Premium'a başla — 167,90 ₺/yıl",
-    "billedYearly": "Yıllık 167,90 ₺ — ayda 13,99 ₺, aylık plana göre %30 tasarruf. İstediğin zaman iptal edebilirsin; dönem bitiminden 24 saat öncesine kadar iptal edilmezse otomatik yenilenir.",
-    "billedMonthly": "Aylık 19,90 ₺. İstediğin zaman iptal edebilirsin; dönem bitiminden 24 saat öncesine kadar iptal edilmezse otomatik yenilenir."
-  },
   "profile": {
     "namePlaceholder": "Adın",
-    "freePlanLimit": "Ücretsiz plan · günde 1 analiz",
     "savedAnalyses": "Kaydedilen maçlar",
     "notifications": "Bildirimler",
     "howModelWorks": "Model nasıl çalışıyor",
@@ -180,7 +160,12 @@
     "clearDataBody": "Bu işlem adını, dil tercihini ve kaydedilen maçlarını bu cihazdan siler. Geri alınamaz.",
     "clearDataConfirm": "Temizle",
     "restartNotice": "Tamamlandı. Değişiklikleri görmek için uygulamayı yeniden başlat.",
-    "language": "Dil"
+    "language": "Dil",
+    "planTrial": "Pro deneme · tam erişim",
+    "planExpired": "Pro gerekli",
+    "planPro": "SportMind Pro",
+    "proUpsellSubtitle": "Deneme sürümün bitince tam analiz erişimine devam et",
+    "proExpiredSubtitle": "Deneme sürün sona erdi — tam erişim için yükselt"
   },
   "matchAnalysis": {
     "title": "Maç analizi",
@@ -307,5 +292,23 @@
   "configError": {
     "title": "SportMind doğru yapılandırılmamış",
     "body": "Bir yapılandırma sorunu nedeniyle şu anda bağlanamıyoruz. Lütfen daha sonra tekrar deneyin."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro etkin",
+    "heading": "SportMind'i kullanmaya devam et",
+    "body": "14 günlük deneme sürümün SportMind'in tüm analiz deneyimini kapsıyor. Pro ile aynı özellikleri kesintisiz kullanmaya devam edersin.",
+    "bodyExpired": "14 günlük deneme sürün sona erdi. Pro ile kaldığın yerden devam edersin.",
+    "upgrade": "Pro'ya Geç",
+    "upgradeExpired": "Pro'ya Yükselt",
+    "restore": "Satın alımı geri yükle",
+    "confirming": "Onaylanıyor…",
+    "confirmed": "SportMind Pro etkin",
+    "pending": "Satın alman alındı. Erişimin birkaç saniye içinde açılacak.",
+    "failed": "Satın alma tamamlanamadı.",
+    "nothingToRestore": "Geri yüklenecek bir satın alma bulunamadı.",
+    "unavailable": "Satın alma henüz kullanılabilir değil.",
+    "gateTitle": "Deneme sürün sona erdi",
+    "gateBody": "Tam maç analizini görmeye devam etmek için SportMind Pro’ya yükselt."
   }
 }
