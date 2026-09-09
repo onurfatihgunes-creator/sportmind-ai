@@ -33,6 +33,46 @@ export const ONURAI_API_BASE_URL = read(
   'http://127.0.0.1:8000',
 );
 
+/**
+ * What makes a base URL unfit for a release build — ported from the Stylist
+ * client's own `apiBaseUrlProblem` (`stylist-app/services/stylist/config.ts`),
+ * same reasoning: the loopback default above is exactly right for a
+ * developer's machine and silently wrong in a shipped app. A production
+ * build whose `EXPO_PUBLIC_ONURAI_API_URL` never reached the EAS bundle looks
+ * identical to a working one until every request fails at `127.0.0.1` — the
+ * PHONE, not the server. Nothing calls this at module scope (a thrown error
+ * here would crash a launch over a misconfiguration a person running the app
+ * cannot fix); see `productionConfig.test.ts` for where it is enforced
+ * instead — against the actual release build's resolved configuration, not
+ * this file's source.
+ */
+export type ApiBaseUrlProblem = 'not_a_url' | 'not_https' | 'unreachable_host';
+
+export function apiBaseUrlProblem(url: string): ApiBaseUrlProblem | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return 'not_a_url';
+  }
+  if (parsed.protocol !== 'https:') {
+    return 'not_https';
+  }
+  const host = parsed.hostname.toLowerCase();
+  const unreachable =
+    host === 'localhost' ||
+    host === '::1' ||
+    host.endsWith('.local') ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  if (unreachable) {
+    return 'unreachable_host';
+  }
+  return null;
+}
+
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export class ApiError extends Error {

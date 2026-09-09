@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiError, __resetInMemoryCacheForTests, onuraiApi } from './onuraiClient';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { ApiError, __resetInMemoryCacheForTests, apiBaseUrlProblem, onuraiApi } from './onuraiClient';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -129,5 +131,85 @@ describe('onuraiApi failure behavior', () => {
     await expect(onuraiApi('/v1/entitlement?application=sportmind')).rejects.toMatchObject({
       status: 0,
     } satisfies Partial<InstanceType<typeof ApiError>>);
+  });
+});
+
+// --- What makes a base URL fit to ship — ported from the Stylist client's own
+// productionConfig.test.ts, same reasoning: EXPO_PUBLIC_* is inlined at BUILD
+// time, so a production build that never received a real URL is
+// indistinguishable from a working one until it is on a phone, asking the
+// phone itself for an entitlement. See onuraiClient.ts's own header on why
+// this is a test rather than a runtime throw.
+
+describe('apiBaseUrlProblem: what a release build may not be configured to do', () => {
+  const WHY: Record<string, string> = {
+    not_a_url: 'is not a URL at all',
+    not_https: 'is not https, and a release build puts a bearer token on every request',
+    unreachable_host: 'points at a development host a release build cannot reach',
+  };
+
+  it('a loopback or private host is refused', () => {
+    for (const url of [
+      'http://127.0.0.1:8000',
+      'https://127.0.0.1:8000',
+      'https://localhost:8000',
+      'https://10.0.0.5:8000',
+      'https://192.168.1.24:8000',
+      'https://172.20.0.9:8000',
+      'https://onur-mac.local:8000',
+    ]) {
+      expect(apiBaseUrlProblem(url)).toBeTruthy();
+    }
+  });
+
+  it('plaintext http is refused even on a public host', () => {
+    expect(apiBaseUrlProblem('http://api.example.com')).toBe('not_https');
+  });
+
+  it('the two faults are told apart, because they are fixed differently', () => {
+    expect(apiBaseUrlProblem('https://127.0.0.1:8000')).toBe('unreachable_host');
+    expect(apiBaseUrlProblem('http://api.example.com')).toBe('not_https');
+    expect(apiBaseUrlProblem('nonsense')).toBe('not_a_url');
+  });
+
+  it('a public https host is accepted', () => {
+    expect(apiBaseUrlProblem('https://api.example.com')).toBeNull();
+    expect(apiBaseUrlProblem('https://api.example.com:8443')).toBeNull();
+  });
+
+  it('something that is not a URL is refused rather than passed through', () => {
+    expect(apiBaseUrlProblem('api.example.com')).toBeTruthy();
+    expect(apiBaseUrlProblem('')).toBeTruthy();
+  });
+
+  // --- The committed build configuration -------------------------------------
+
+  const eas = JSON.parse(readFileSync(path.join(__dirname, '..', 'eas.json'), 'utf8'));
+
+  it('the production profile names no unshippable API url — or defers to EAS env vars, which this repo does not know', () => {
+    // SportMind's eas.json ties the "production" build to an EAS Environment
+    // by NAME ("environment": "production") rather than an inline `env`
+    // object, so the real URL lives on the EAS dashboard, not in this file —
+    // exactly the case Stylist's own equivalent test already treats as
+    // unverifiable rather than absent. If that ever changes to an inline
+    // value, this assertion starts checking it.
+    const url = eas.build?.production?.env?.EXPO_PUBLIC_ONURAI_API_URL;
+    if (url === undefined) return; // REMOTE EAS VALUE NOT VERIFIABLE FROM THIS ENVIRONMENT
+    const problem = apiBaseUrlProblem(url);
+    expect(problem).toBeNull();
+    if (problem) throw new Error(`eas.json's production profile cannot ship: ${url} ${WHY[problem]}`);
+  });
+
+  it('no build profile commits a token or a secret', () => {
+    for (const [name, profile] of Object.entries<any>(eas.build ?? {})) {
+      for (const key of Object.keys(profile?.env ?? {})) {
+        expect(/TOKEN|SECRET|KEY$/.test(key)).toBe(false);
+      }
+    }
+  });
+
+  it('EXPO_PUBLIC_ONURAI_API_URL is documented in .env.example', () => {
+    const example = readFileSync(path.join(__dirname, '..', '.env.example'), 'utf8');
+    expect(example).toContain('EXPO_PUBLIC_ONURAI_API_URL');
   });
 });
