@@ -148,10 +148,7 @@ export const matches: Match[] = [
       { key: 'recentForm', home: 65, away: 35 },
       { key: 'expectedGoals', home: 61, away: 39 },
       { key: 'homeAdvantage', home: 68, away: 32 },
-      { key: 'injuries', home: 54, away: 46 },
       { key: 'defensivePerformance', home: 57, away: 43 },
-      { key: 'possession', home: 52, away: 48 },
-      { key: 'historicalTrends', home: 59, away: 41 },
     ],
   },
   {
@@ -170,10 +167,7 @@ export const matches: Match[] = [
       { key: 'recentForm', home: 52, away: 48 },
       { key: 'expectedGoals', home: 51, away: 49 },
       { key: 'homeAdvantage', home: 60, away: 40 },
-      { key: 'injuries', home: 47, away: 53 },
       { key: 'defensivePerformance', home: 49, away: 51 },
-      { key: 'possession', home: 44, away: 56 },
-      { key: 'historicalTrends', home: 51, away: 49 },
     ],
   },
   {
@@ -192,10 +186,7 @@ export const matches: Match[] = [
       { key: 'recentForm', home: 55, away: 45 },
       { key: 'expectedGoals', home: 54, away: 46 },
       { key: 'homeAdvantage', home: 66, away: 34 },
-      { key: 'injuries', home: 48, away: 52 },
       { key: 'defensivePerformance', home: 51, away: 49 },
-      { key: 'possession', home: 47, away: 53 },
-      { key: 'historicalTrends', home: 53, away: 47 },
     ],
   },
   {
