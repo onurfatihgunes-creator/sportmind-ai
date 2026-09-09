@@ -355,9 +355,14 @@ export default function MatchAnalysisScreen() {
         )}
 
         {sportMindView && (
-          <View style={styles.card}>
-            <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
-            <View style={{ gap: 6, marginTop: 4 }}>
+          <View style={styles.sportMindCard}>
+            <View style={styles.whyTitleRow}>
+              <View style={styles.whyTitleIconCircle}>
+                <SparkleIcon size={15} weight="bold" color={colors.primary} />
+              </View>
+              <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
+            </View>
+            <View style={{ gap: 6, marginTop: 12 }}>
               {sportMindView.lines.map((line, index) => (
                 <Text key={index} style={styles.sportMindViewText}>
                   {t(`sportMindView.${line.key}`, line.team ? { team: line.team } : undefined)}
@@ -490,6 +495,14 @@ const styles = StyleSheet.create({
   formTile: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   formTileText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   whyTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginBottom: 3 },
+  sportMindCard: {
+    marginTop: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryTint,
+  },
   sportMindViewText: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondaryAlt },
   whySubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: 18 },
   whyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
