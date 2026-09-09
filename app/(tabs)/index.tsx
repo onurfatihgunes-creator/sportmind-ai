@@ -168,7 +168,9 @@ export default function HomeScreen() {
                       <Text style={styles.heroTitle}>
                         {match.home.name}
                         {'\n'}
-                        <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
+                        <Text style={styles.heroVs}>{t('common.vs')}</Text>
+                        {'\n'}
+                        {match.away.name}
                       </Text>
                       <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
                     </View>
