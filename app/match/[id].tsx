@@ -356,13 +356,8 @@ export default function MatchAnalysisScreen() {
 
         {sportMindView && (
           <View style={styles.sportMindCard}>
-            <View style={styles.whyTitleRow}>
-              <View style={styles.whyTitleIconCircle}>
-                <SparkleIcon size={15} weight="bold" color={colors.primary} />
-              </View>
-              <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
-            </View>
-            <View style={{ gap: 6, marginTop: 4 }}>
+            <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
+            <View style={{ gap: 6 }}>
               {sportMindView.lines.map((line, index) => (
                 <Text key={index} style={styles.sportMindViewText}>
                   {t(`sportMindView.${line.key}`, line.team ? { team: line.team } : undefined)}
