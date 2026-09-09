@@ -162,6 +162,7 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/match/${match.id}`)}
                 >
                   <Text style={styles.heroCompetition}>{match.competition}</Text>
+                  <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
                   <View style={styles.heroRow}>
                     <View style={styles.heroInfo}>
                       <TeamBadgePair home={match.home} away={match.away} size={30} />
@@ -172,7 +173,6 @@ export default function HomeScreen() {
                         {'\n'}
                         {match.away.name}
                       </Text>
-                      <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
                     </View>
                     <ConfidenceRing value={favourite.probability} caption={t('matchAnalysis.winProbabilityCaption')} />
                   </View>
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   heroInfo: { flex: 1 },
   heroTitle: { fontFamily: fonts.headline, fontSize: 17, lineHeight: 22, letterSpacing: -0.4, color: colors.textPrimary, marginTop: 8, marginBottom: 4 },
   heroVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter },
-  heroSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textTertiaryAlt },
+  heroSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textTertiaryAlt, marginTop: 3, marginBottom: 10 },
   heroReasonRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   heroReasonText: { flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textSecondaryAlt },
   emptySportText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.xxl },
