@@ -199,6 +199,21 @@
     "teamInsightsCta": "AI Analizi",
     "teamInsightsCtaLabel": "{{team}} için AI Analizi"
   },
+  "sportMindView": {
+    "title": "SportMind Görüşü",
+    "outcomeOnly": "{{team}}, tahmin modelinde bu maç için belirgin şekilde önde görünüyor.",
+    "formOnly": "{{team}}, son maçlardaki formuyla bu karşılaşmada hafif bir avantaj taşıyor.",
+    "attackOnly": "{{team}}, hücum sinyalleriyle bu maçta hafif bir avantaj taşıyor.",
+    "outcomeForm": "{{team}}, güçlü formu ve tahmindeki avantajıyla bu maçta öne çıkıyor.",
+    "outcomeAttack": "{{team}}, hücum sinyalleri ve tahmindeki avantajıyla bu maçta öne çıkıyor.",
+    "formAttack": "{{team}}, güçlü formu ve hücum sinyalleriyle maçta daha avantajlı görünüyor.",
+    "full3": "{{team}}, tahmindeki avantajı, güçlü formu ve hücum sinyalleriyle bu maçta net şekilde öne çıkıyor.",
+    "closeMatch": "İki takım arasında öngörüyü belirgin şekilde öne çıkaran bir fark görünmüyor; maç dengeli bir mücadeleye işaret ediyor.",
+    "defenseRisk": "Savunmadaki gerileme ise {{team}} için karşılaşmadaki temel risk olarak öne çıkıyor.",
+    "squadRisk": "Kadrodaki önemli eksikler ise {{team}}'in avantajını sınırlayabilir.",
+    "squadBoost": "{{team}} kadrosundaki önemli eksikler bu avantajı daha da güçlendiriyor.",
+    "limitedData": "Bu maç için yeterli geçmiş form verisi bulunmuyor; SportMind Görüşü şu an için sınırlı."
+  },
   "factors": {
     "recentForm": "Son form",
     "expectedGoals": "Beklenen gol",

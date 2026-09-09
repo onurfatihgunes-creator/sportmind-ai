@@ -199,6 +199,21 @@
     "teamInsightsCta": "AI Insights",
     "teamInsightsCtaLabel": "View AI Insights for {{team}}"
   },
+  "sportMindView": {
+    "title": "SportMind's View",
+    "outcomeOnly": "{{team}} stands out as the clear favourite in the prediction model for this match.",
+    "formOnly": "{{team}} carries a slight edge in this matchup based on recent form.",
+    "attackOnly": "{{team}} holds a slight edge in this match on attacking signals.",
+    "outcomeForm": "{{team}} looks ahead in this match, backed by strong form and a clear edge in the prediction.",
+    "outcomeAttack": "{{team}} looks ahead in this match, backed by attacking signals and a clear edge in the prediction.",
+    "formAttack": "{{team}} looks the stronger side here, with solid form and positive attacking signals.",
+    "full3": "{{team}} clearly stands out in this match, combining a strong prediction edge, solid form, and positive attacking signals.",
+    "closeMatch": "There's no meaningful gap tilting the prediction either way — this one looks like an even contest.",
+    "defenseRisk": "A dip in defensive form stands out as the main risk for {{team}} in this game.",
+    "squadRisk": "Notable absences could limit {{team}}'s advantage here.",
+    "squadBoost": "Key absences on {{team}}'s side further strengthen that advantage.",
+    "limitedData": "There isn't enough recent form history for this match yet, so SportMind's View is limited for now."
+  },
   "factors": {
     "recentForm": "Recent form",
     "expectedGoals": "Expected goals",

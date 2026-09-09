@@ -8,6 +8,7 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import { resolveMatchById } from '@/data/liveData';
 import { matchFormDataLevel } from '@/data/dataConfidence';
+import { deriveSportMindView } from '@/data/sportMindView';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
@@ -84,6 +85,7 @@ export default function MatchAnalysisScreen() {
   // data/dataConfidence.ts) — was previously just ">0 vs 0" here, which missed a team
   // with only 1-2 recorded matches (a real, thin-but-nonzero case, not hypothetical).
   const formDataLevel = match ? matchFormDataLevel(match.home.form, match.away.form) : 'full';
+  const sportMindView = useMemo(() => (match ? deriveSportMindView(match, formDataLevel) : null), [match, formDataLevel]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -352,6 +354,19 @@ export default function MatchAnalysisScreen() {
           </View>
         )}
 
+        {sportMindView && (
+          <View style={styles.card}>
+            <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
+            <View style={{ gap: 6, marginTop: 4 }}>
+              {sportMindView.lines.map((line, index) => (
+                <Text key={index} style={styles.sportMindViewText}>
+                  {t(`sportMindView.${line.key}`, line.team ? { team: line.team } : undefined)}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+
         <Pressable
           style={({ pressed }) => [styles.compareButton, pressed && styles.compareButtonPressed]}
           onPress={() => router.push({ pathname: '/team-comparison', params: { a: match.home.id, b: match.away.id } })}
@@ -475,6 +490,7 @@ const styles = StyleSheet.create({
   formTile: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   formTileText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   whyTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginBottom: 3 },
+  sportMindViewText: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textSecondaryAlt },
   whySubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: 18 },
   whyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   whyTitleIconCircle: {

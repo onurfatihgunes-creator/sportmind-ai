@@ -199,6 +199,21 @@
     "teamInsightsCta": "KI-Insights",
     "teamInsightsCtaLabel": "KI-Insights für {{team}} ansehen"
   },
+  "sportMindView": {
+    "title": "SportMinds Einschätzung",
+    "outcomeOnly": "{{team}} geht im Prognosemodell für dieses Spiel klar als Favorit hervor.",
+    "formOnly": "{{team}} hat dank der jüngsten Form einen leichten Vorteil in diesem Spiel.",
+    "attackOnly": "{{team}} hat bei den Offensivsignalen einen leichten Vorteil in diesem Spiel.",
+    "outcomeForm": "{{team}} liegt in diesem Spiel vorn, gestützt auf starke Form und einen klaren Vorsprung in der Prognose.",
+    "outcomeAttack": "{{team}} liegt in diesem Spiel vorn, gestützt auf Offensivsignale und einen klaren Vorsprung in der Prognose.",
+    "formAttack": "{{team}} wirkt in diesem Spiel stärker, mit guter Form und positiven Offensivsignalen.",
+    "full3": "{{team}} sticht in diesem Spiel klar heraus – mit Prognosevorsprung, guter Form und positiven Offensivsignalen.",
+    "closeMatch": "Es zeigt sich kein bedeutender Unterschied in der Prognose – dieses Spiel wirkt ausgeglichen.",
+    "defenseRisk": "Ein Rückgang in der Abwehr gilt als das größte Risiko für {{team}} in diesem Spiel.",
+    "squadRisk": "Wichtige Ausfälle könnten den Vorteil von {{team}} einschränken.",
+    "squadBoost": "Wichtige Ausfälle bei {{team}} verstärken diesen Vorteil zusätzlich.",
+    "limitedData": "Für dieses Spiel liegt noch nicht genug Formhistorie vor, daher ist SportMinds Einschätzung derzeit eingeschränkt."
+  },
   "factors": {
     "recentForm": "Aktuelle Form",
     "expectedGoals": "Erwartete Tore",
