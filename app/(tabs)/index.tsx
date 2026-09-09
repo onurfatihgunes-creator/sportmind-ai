@@ -166,13 +166,9 @@ export default function HomeScreen() {
                   <View style={styles.heroRow}>
                     <View style={styles.heroInfo}>
                       <TeamBadgePair home={match.home} away={match.away} size={30} />
-                      <Text style={styles.heroTitle}>
-                        {match.home.name}
-                        {'\n'}
-                        <Text style={styles.heroVs}>{t('common.vs')}</Text>
-                        {'\n'}
-                        {match.away.name}
-                      </Text>
+                      <Text style={[styles.heroTitle, { marginTop: 8 }]}>{match.home.name}</Text>
+                      <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
+                      <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
                     </View>
                     <ConfidenceRing value={favourite.probability} caption={t('matchAnalysis.winProbabilityCaption')} />
                   </View>
@@ -385,8 +381,12 @@ const styles = StyleSheet.create({
   heroCompetition: { fontFamily: fonts.bodySemiBold, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: colors.primary },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   heroInfo: { flex: 1 },
-  heroTitle: { fontFamily: fonts.headline, fontSize: 17, lineHeight: 22, letterSpacing: -0.4, color: colors.textPrimary, marginTop: 8, marginBottom: 4 },
+  heroTitle: { fontFamily: fonts.headline, fontSize: 17, lineHeight: 22, letterSpacing: -0.4, color: colors.textPrimary },
   heroVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter },
+  // A "vs" nested inside the same <Text> as the team names can't be centered on its own
+  // line — RN text-align applies to the whole paragraph, not one inline run — so the
+  // centered version is its own sibling <Text>, not a style variant of the inline one.
+  heroVsCentered: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, textAlign: 'center', marginTop: 8, marginBottom: 2 },
   heroSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textTertiaryAlt, marginTop: 3, marginBottom: 10 },
   heroReasonRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   heroReasonText: { flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textSecondaryAlt },

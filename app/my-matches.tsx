@@ -43,13 +43,9 @@ export default function MyMatchesScreen() {
                   </Pressable>
                 </View>
               </View>
-              <Text style={styles.matchTitle}>
-                {m.home.name}
-                {'\n'}
-                <Text style={styles.matchTitleVs}>{t('common.vs')}</Text>
-                {'\n'}
-                {m.away.name}
-              </Text>
+              <Text style={styles.matchTitle}>{m.home.name}</Text>
+              <Text style={styles.matchTitleVs}>{t('common.vs')}</Text>
+              <Text style={styles.matchTitle}>{m.away.name}</Text>
               <Text style={styles.matchSubtitle}>
                 {m.kickoff} · {m.competition} ·{' '}
                 {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
@@ -90,7 +86,7 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
-  matchTitleVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter },
+  matchTitleVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, textAlign: 'center' },
   matchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 3, marginBottom: spacing.sm },
   viewLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   viewLinkText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.primaryLink },
