@@ -72,8 +72,13 @@ export default function ConfidenceRing({
             <Text style={{ fontSize: (labelFontSize ?? size * 0.27) * 0.5, color: colors.textFaint }}>%</Text>
           </Text>
           {caption && (
+            // A long caption (e.g. Turkish "KAZANMA OLASILIĞI") could overflow past the
+            // ring's stroke on the smaller sizes this component is used at (34/86) —
+            // confirmed live: it spilled outside the circle at the default size. Wrapping
+            // to two lines within a width that fits inside the ring, rather than forcing
+            // one line, keeps the caption legible without widening the ring itself.
             <Text
-              numberOfLines={1}
+              numberOfLines={2}
               style={{
                 fontFamily: fonts.bodyMedium,
                 fontSize: resolvedCaptionFontSize,
@@ -81,6 +86,8 @@ export default function ConfidenceRing({
                 textTransform: 'uppercase',
                 color: colors.textFaint,
                 marginTop: 4,
+                textAlign: 'center',
+                maxWidth: size * 0.68,
               }}
             >
               {caption}
