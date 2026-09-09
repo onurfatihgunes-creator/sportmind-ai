@@ -21,13 +21,14 @@ import { readEntitlement, type EntitlementState } from '@/services/entitlement';
  * in the price's place until isPurchaseConfigured() is true and a real,
  * store-supplied, localised price string exists to show.
  *
- * THE AUTHORITY IS THE ENTITLEMENT TABLE, AND THIS FILE IS NOT IT. Exactly
- * like Stylist: a provider confirming a purchase would be evidence that
- * money moved, never a decision that this device is Pro. The only thing
- * that may conclude that is a re-read of readEntitlement() after the
- * provider (once one exists) has told the backend and the backend has
- * flipped pro_active — see backend/sql/pro_entitlement.sql, which
- * deliberately gives the anon client no way to set pro_active itself.
+ * THE AUTHORITY IS THE SHARED, ACCOUNT-WIDE ENTITLEMENT, AND THIS FILE IS
+ * NOT IT. Exactly like Stylist: a provider confirming a purchase would be
+ * evidence that money moved, never a decision that this device is Pro. The
+ * only thing that may conclude that is a re-read of readEntitlement() —
+ * see services/entitlement.ts and apps/api's onurai_api.entitlements — after
+ * the provider (once one exists) has told that one shared backend, which
+ * unlocks Pro for Stylist, Mutfak and SportMind together, not this
+ * Specialist alone.
  */
 
 /**
