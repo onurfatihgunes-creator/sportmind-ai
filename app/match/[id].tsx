@@ -356,7 +356,10 @@ export default function MatchAnalysisScreen() {
 
         {sportMindView && (
           <View style={styles.sportMindCard}>
-            <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
+            <View style={styles.sportMindTitleRow}>
+              <SparkleIcon size={14} weight="bold" color={colors.primary} />
+              <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
+            </View>
             <View style={{ gap: 6 }}>
               {sportMindView.lines.map((line, index) => (
                 <Text key={index} style={styles.sportMindViewText}>
@@ -490,6 +493,7 @@ const styles = StyleSheet.create({
   formTile: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   formTileText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   whyTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginBottom: 3 },
+  sportMindTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sportMindCard: {
     marginTop: 14,
     padding: 14,
