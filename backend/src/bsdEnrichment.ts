@@ -2,6 +2,7 @@ import { BSD_TIER1_LEAGUES } from './config.js';
 import {
   getCurrentSeason,
   getEventH2H,
+  getEventIncidents,
   getEventLineups,
   getEventPlayerStats,
   getEventStats,
@@ -13,6 +14,7 @@ import {
 import { normalizeTeamName } from './teamIdentity.js';
 import { supabase } from './supabaseClient.js';
 import { detectAvailabilityDelta, detectLineupStatusChange, type DetectedChange } from './analysisEngine.js';
+import { parseIncidents, parseTeamMatchStats } from './matchStatsParsing.js';
 
 /**
  * BSD enrichment — attaches lineups/player-availability/player-stats/raw team
@@ -133,20 +135,55 @@ async function persistPlayerStats(match: CandidateMatch, event: BsdEvent) {
   if (error) throw error;
 }
 
-async function persistRawStats(matchId: string, event: BsdEvent) {
+// Returns the raw payload so the caller can also promote it into team_match_stats
+// (see below) without a second /events/{id}/stats/ call — same response, two writes.
+async function persistRawStats(matchId: string, event: BsdEvent): Promise<Record<string, unknown> | null> {
   let raw: Record<string, unknown>;
   try {
     raw = await getEventStats(event.id);
   } catch {
-    return;
+    return null;
   }
-  if (!raw || Object.keys(raw).length === 0) return;
+  if (!raw || Object.keys(raw).length === 0) return null;
 
   const { error } = await supabase.from('match_stats_raw').upsert({
     match_id: matchId,
     bsd_event_id: event.id,
     raw,
     updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+  return raw;
+}
+
+/** Promotes match_stats_raw's already-fetched payload into typed team_match_stats rows
+ * — see sql/add_match_incidents_and_team_stats.sql for the real-field confirmation this
+ * completes. `raw` may be missing a `home`/`away` key on a match BSD hasn't populated
+ * stats for yet (parseTeamMatchStats already handles that — no row for that side). */
+async function persistTypedTeamStats(match: CandidateMatch, event: BsdEvent, raw: Record<string, unknown> | null) {
+  if (!raw) return;
+  const rows = parseTeamMatchStats(match.id, match.home_team_id, match.away_team_id, event.id, raw as { home?: Record<string, unknown>; away?: Record<string, unknown> });
+  if (rows.length === 0) return;
+  const { error } = await supabase.from('team_match_stats').upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));
+  if (error) throw error;
+}
+
+/** Real goal/card/substitution incidents for this match — a match not yet played (or
+ * not yet indexed by BSD) legitimately returns an empty list, never a guessed one. See
+ * matchStatsParsing.ts's incidentsAgreeWithFinalScore for the mandatory cross-check any
+ * consumer must run before deriving a half-time score from these rows. */
+async function persistIncidents(matchId: string, event: BsdEvent) {
+  let incidents;
+  try {
+    incidents = await getEventIncidents(event.id);
+  } catch {
+    return;
+  }
+  if (!incidents || incidents.length === 0) return;
+
+  const rows = parseIncidents(matchId, event.id, incidents);
+  const { error } = await supabase.from('match_incidents').upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })), {
+    onConflict: 'match_id,incident_type,minute,is_home,player_name',
   });
   if (error) throw error;
 }
@@ -353,8 +390,16 @@ async function enrichOneMatch(match: CandidateMatch, event: BsdEvent) {
   }
 
   await persistPlayerStats(match, event);
-  await persistRawStats(match.id, event);
+  const rawStats = await persistRawStats(match.id, event);
   await persistH2H(match.id, event);
+
+  // New (data-expansion audit) writes deliberately come last: everything above this
+  // line is what Squad Impact/SportMind Görüşü/Change Intelligence already depend on
+  // in production, so a failure in either of these (e.g. before the migration in
+  // sql/add_match_incidents_and_team_stats.sql has been run) is caught by this
+  // function's own caller and never blocks the enrichment this match already relies on.
+  await persistTypedTeamStats(match, event, rawStats);
+  await persistIncidents(match.id, event);
 }
 
 /**
