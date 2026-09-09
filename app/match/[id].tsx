@@ -192,7 +192,6 @@ export default function MatchAnalysisScreen() {
                   ? t('matchAnalysis.teamWinProbability', { team: favourite!.team.name })
                   : t('matchAnalysis.drawProbabilityLine')}
               </Text>
-              <Text style={styles.heroCaption}>{t('matchAnalysis.predictionStability')}</Text>
               {formDataLevel !== 'full' ? (
                 // The win-probability ring above looks equally confident regardless of
                 // how much real history backs it — but a team with little or no recorded
@@ -205,11 +204,21 @@ export default function MatchAnalysisScreen() {
                   <Text style={styles.limitedDataBadgeText}>{t('matchAnalysis.limitedDataNote')}</Text>
                 </View>
               ) : (
+                // The caption used to be unconditional ("prediction stability, tracked
+                // since the last change") regardless of whether matchChangeEvents was
+                // actually empty — so it kept claiming to be "tracking since the last
+                // change" even on a match that HAD one, or under limited data, where it
+                // isn't the relevant story at all. Moved inside the one condition it's
+                // actually true for, right where the badge itself already lived — same
+                // condition, so the two can never disagree with each other again.
                 matchChangeEvents.length === 0 && (
-                  <View style={styles.stabilityBadge}>
-                    <ShieldCheckIcon size={12} weight="bold" color={colors.successText} />
-                    <Text style={styles.stabilityBadgeText}>{t('matchAnalysis.highStability')}</Text>
-                  </View>
+                  <>
+                    <Text style={styles.heroCaption}>{t('matchAnalysis.predictionStability')}</Text>
+                    <View style={styles.stabilityBadge}>
+                      <ShieldCheckIcon size={12} weight="bold" color={colors.successText} />
+                      <Text style={styles.stabilityBadgeText}>{t('matchAnalysis.highStability')}</Text>
+                    </View>
+                  </>
                 )
               )}
             </View>
