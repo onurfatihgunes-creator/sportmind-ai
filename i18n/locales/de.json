@@ -135,7 +135,11 @@
     "changeLineupConfirmed": "Startaufstellung bestätigt.",
     "changeLineupPredicted": "Voraussichtliche Aufstellung aktualisiert.",
     "changeLineupUnavailable": "Aufstellungsinformationen nicht mehr verfügbar.",
-    "followingKicker": "Verfolgt"
+    "followingKicker": "Verfolgt",
+    "signalLegendPositive": "Positiv",
+    "signalLegendNegative": "Negativ",
+    "signalLegendNeutral": "Keine klare Richtung",
+    "signalLegendCaption": "Legende, keine Daten"
   },
   "notifications": {
     "title": "Benachrichtigungen",

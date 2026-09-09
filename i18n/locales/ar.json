@@ -143,7 +143,11 @@
     "changeLineupConfirmed": "تم تأكيد التشكيلة الأساسية.",
     "changeLineupPredicted": "تم تحديث التشكيلة المتوقعة.",
     "changeLineupUnavailable": "معلومات التشكيلة لم تعد متاحة.",
-    "followingKicker": "المتابَعون"
+    "followingKicker": "المتابَعون",
+    "signalLegendPositive": "إيجابي",
+    "signalLegendNegative": "سلبي",
+    "signalLegendNeutral": "لا اتجاه واضح",
+    "signalLegendCaption": "مفتاح الألوان، ليست بيانات"
   },
   "notifications": {
     "title": "الإشعارات",

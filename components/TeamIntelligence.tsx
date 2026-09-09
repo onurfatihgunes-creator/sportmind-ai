@@ -81,6 +81,20 @@ function describeChange(event: AnalysisChangeEvent, t: (key: string, opts?: Reco
   return key ? t(key, { name: event.newValue }) : null;
 }
 
+function LegendEntry({ Icon, tone, label }: { Icon: typeof ArrowUpIcon; tone: ChangeTone; label: string }) {
+  const color = toneTextColor(tone);
+  // The border is deliberately the SAME pale tone the chips already use as their own
+  // fill (toneMutedColor) — confirmed live that toneColor still read as strong as a
+  // real chip's border; a legend key competing with the chips it explains defeats the
+  // point. Icon + text stay at full toneTextColor so the meaning is still unambiguous.
+  return (
+    <View style={[styles.legendEntry, { borderColor: toneMutedColor(tone) }]}>
+      <Icon size={11} weight="bold" color={color} />
+      <Text style={[styles.legendEntryText, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
 function SignalChip({ label, direction }: { label: string; direction: SignalDir }) {
   const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
   const tone = direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'neutral';
@@ -268,16 +282,23 @@ export default function TeamIntelligence({
               <SignalChip key={s.key} label={signalLabel(s.key)} direction={s.dir} />
             ))}
           </View>
-          {unavailableCount > 0 ? (
-            <View style={{ marginTop: 10 }}>
-              <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
-            </View>
-          ) : squadLoading ? (
-            <View style={{ marginTop: 10 }}>
-              <SkeletonBlock width={150} />
-            </View>
-          ) : null}
-          <View style={{ marginTop: 10 }}>
+          {/* The "N eksik oyuncu" chip already has its one home in the Player Status &
+              Form card below (its own collapsed-header summary) — repeating it here
+              said the same fact twice on one screen for no reason. */}
+          {/* The colour + arrow alone don't say what "up"/"down" MEANS for a given
+              signal on their own — confirmed by the person actually looking at this
+              screen. A short legend spells out the one thing the chips assume the
+              reader already knows. Right under the chips, ahead of the methodology
+              toggle: it explains what's already on screen, "Bunlar nasıl belirleniyor?"
+              is the deeper, optional explanation and reads as the card's true last word. */}
+          <View style={styles.legendDivider} />
+          <Text style={styles.legendCaption}>{t('insights.signalLegendCaption')}</Text>
+          <View style={styles.signalLegendRow}>
+            <LegendEntry Icon={ArrowUpIcon} tone="success" label={t('insights.signalLegendPositive')} />
+            <LegendEntry Icon={ArrowDownIcon} tone="danger" label={t('insights.signalLegendNegative')} />
+            <LegendEntry Icon={ArrowRightIcon} tone="neutral" label={t('insights.signalLegendNeutral')} />
+          </View>
+          <View style={{ marginTop: 12 }}>
             <InfoToggle label={t('insights.teamSignalsInfoLabel')} explanation={t('insights.teamSignalsInfoBody')} />
           </View>
         </View>
@@ -411,6 +432,26 @@ const styles = StyleSheet.create({
   signalChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   signalChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
   signalChipText: { fontFamily: fonts.bodySemiBold, fontSize: 12 },
+  legendDivider: { height: 1, backgroundColor: colors.divider, marginTop: 12, marginBottom: 10 },
+  legendCaption: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: colors.textFainter,
+    marginBottom: 8,
+  },
+  signalLegendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  legendEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  legendEntryText: { fontFamily: fonts.bodySemiBold, fontSize: 11 },
   smallChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
   smallChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11 },
   collapsedSummaryRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },

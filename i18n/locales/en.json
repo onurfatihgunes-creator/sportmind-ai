@@ -135,7 +135,11 @@
     "changeLineupConfirmed": "Starting lineup confirmed.",
     "changeLineupPredicted": "Lineup prediction updated.",
     "changeLineupUnavailable": "Lineup information no longer available.",
-    "followingKicker": "Following"
+    "followingKicker": "Following",
+    "signalLegendPositive": "Positive",
+    "signalLegendNegative": "Negative",
+    "signalLegendNeutral": "No clear direction",
+    "signalLegendCaption": "Legend, not data"
   },
   "notifications": {
     "title": "Notifications",
