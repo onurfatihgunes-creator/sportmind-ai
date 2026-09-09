@@ -14,13 +14,19 @@ import Toast, { useToast } from '@/components/Toast';
  *
  * TRANSPLANTED FROM STYLIST's app/pro.tsx: same state machine (idle →
  * purchasing → refreshing → confirmed), same rule that only a re-read of
- * the entitlement source may unlock anything, same refusal to fabricate a
- * price/currency/period, same "no countdown, no last-chance, no
- * strikethrough" tone. What differs is SportMind's own branding and visual
- * language (this app's existing card/button idiom, not Stylist's
- * component library) and the fact that no benefit list is invented here
- * either — Pro continues exactly what the trial already gave, so there is
- * nothing to enumerate.
+ * the entitlement source may unlock anything, same "no countdown, no
+ * last-chance, no strikethrough" tone. What differs is SportMind's own
+ * branding and visual language (this app's existing card/button idiom, not
+ * Stylist's component library) and the fact that no benefit LIST is
+ * invented here — Pro continues exactly what the trial already gave (no
+ * time limit, not a bigger feature set), so there is nothing to enumerate.
+ *
+ * THE PRICE SHOWN (pro.price/pro.priceSuffix) IS REAL, HUMAN-CONFIRMED
+ * PRODUCT COPY (₺49.90/month) — informational, not the purchase flow
+ * itself. It is deliberately separate from isPurchaseConfigured(): showing
+ * the real intended price is fine before a store product exists; letting
+ * someone tap a button that can't actually charge them is not, so the CTA
+ * stays gated exactly as before regardless of this text being here.
  *
  * REACHED FROM: Profile's "Go Pro"/"Upgrade to Pro" row, Home's header
  * pill, and the Pro-required state on Match Analysis once a trial has
@@ -104,14 +110,15 @@ export default function PremiumScreen() {
           {status === 'expired' ? t('pro.bodyExpired') : t('pro.body')}
         </Text>
 
-        {/*
-          THE PRICE'S PLACE IS DELIBERATELY EMPTY. It belongs to the store,
-          localised, with its own real currency and billing period — see
-          services/purchase.ts's header for why nothing is drawn here until
-          there is a real one to draw. SportMind Pro's price (49.99) is the
-          number to enter when that product is created in App Store
-          Connect / Google Play Console, not UI copy.
-        */}
+        {status !== 'pro' && (
+          <View style={styles.priceCard}>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceValue}>{t('pro.price')}</Text>
+              <Text style={styles.priceSuffix}>{t('pro.priceSuffix')}</Text>
+            </View>
+            <Text style={styles.priceCaption}>{t('pro.billedMonthly')}</Text>
+          </View>
+        )}
 
         {status === 'pro' ? null : configured ? (
           <View style={styles.actions}>
@@ -167,6 +174,19 @@ const styles = StyleSheet.create({
   activeBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.successText },
   heading: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.textPrimary, marginBottom: 8 },
   body: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: colors.textTertiary, maxWidth: 300, marginBottom: 20 },
+  priceCard: {
+    alignSelf: 'flex-start',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryTint,
+    marginBottom: 20,
+  },
+  priceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  priceValue: { fontFamily: fonts.headline, fontSize: 28, letterSpacing: -0.6, color: colors.textPrimary },
+  priceSuffix: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textTertiary, marginBottom: 3 },
+  priceCaption: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 4 },
   actions: { marginTop: 4, gap: 10 },
   cta: { minHeight: 54, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary },
   ctaPressed: { backgroundColor: colors.primaryLinkHover },

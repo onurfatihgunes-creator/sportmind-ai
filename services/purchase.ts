@@ -13,13 +13,14 @@ import { readEntitlement, type EntitlementState } from '@/services/entitlement';
  * currency or a billing period — see PHASE 17 in the report this ships
  * with for exactly what is missing and where it has to be created.
  *
- * SportMind Pro's price is a real business requirement — 49.99 — but that
- * number is what must be entered when the store product is created, not
- * something this file renders. A number typed into this file would be
- * wrong for most of the world on the day it shipped and wrong for
- * everybody the day the price changed; the paywall screen renders nothing
- * in the price's place until isPurchaseConfigured() is true and a real,
- * store-supplied, localised price string exists to show.
+ * SportMind Pro's confirmed price is ₺49.90/month (see app/(tabs)/premium.tsx's
+ * pro.price/pro.priceSuffix, shown there as real informational copy) — that is the
+ * number to enter when the store product is created in App Store Connect / Google
+ * Play Console. It still has no place in THIS file: once a real purchase flow exists,
+ * the price a specific buyer is actually charged must come from the store's own
+ * localised, currency-correct response (which may legitimately differ by region/store
+ * policy), never be assumed to match the marketing copy exactly. isPurchaseConfigured()
+ * stays false until that real, store-supplied price exists to drive an actual charge.
  *
  * THE AUTHORITY IS THE SHARED, ACCOUNT-WIDE ENTITLEMENT, AND THIS FILE IS
  * NOT IT. Exactly like Stylist: a provider confirming a purchase would be
