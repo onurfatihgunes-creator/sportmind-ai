@@ -7,8 +7,6 @@
     "viewFullAnalysis": "View full analysis",
     "viewAll": "View all",
     "restorePurchases": "Restore purchases",
-    "terms": "Terms",
-    "privacy": "Privacy",
     "vs": "vs",
     "goBack": "Go back",
     "savedToastAdded": "Added to saved matches",
@@ -310,6 +308,8 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro is active",
+    "trialDaysLeft_one": "{{count}} day left in your trial",
+    "trialDaysLeft_other": "{{count}} days left in your trial",
     "heading": "No time limit, same full access",
     "body": "Your trial already covers the full SportMind analysis experience — with no time limit. Going Pro just removes the 14-day cutoff; the access itself doesn't change.",
     "bodyExpired": "Your 14-day trial has ended. Pro gives you back that same full analysis experience, with no time limit.",

@@ -7,8 +7,6 @@
     "viewFullAnalysis": "Vollständige Analyse ansehen",
     "viewAll": "Alle anzeigen",
     "restorePurchases": "Käufe wiederherstellen",
-    "terms": "AGB",
-    "privacy": "Datenschutz",
     "vs": "gegen",
     "goBack": "Zurück",
     "savedToastAdded": "Zu gespeicherten Spielen hinzugefügt",
@@ -310,6 +308,8 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro ist aktiv",
+    "trialDaysLeft_one": "Noch {{count}} Tag in deiner Testphase",
+    "trialDaysLeft_other": "Noch {{count}} Tage in deiner Testphase",
     "heading": "Keine Zeitgrenze, derselbe volle Zugriff",
     "body": "Deine Testphase umfasst schon das vollständige SportMind-Analyseerlebnis — nur zeitlich begrenzt auf 14 Tage. Mit Pro fällt genau diese Grenze weg, der Zugriff selbst bleibt gleich.",
     "bodyExpired": "Deine 14-tägige Testphase ist beendet. Mit Pro bekommst du genau dasselbe volle Analyseerlebnis zurück, ohne Zeitlimit.",

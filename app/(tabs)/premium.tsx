@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CheckCircleIcon, SparkleIcon, XIcon } from 'phosphor-react-native';
+import { CheckCircleIcon, ClockCountdownIcon, SparkleIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/contexts/EntitlementContext';
 import { completePurchase, isPurchaseConfigured, restorePurchases, startPurchase } from '@/services/purchase';
@@ -39,7 +39,7 @@ type Stage = 'idle' | 'purchasing' | 'refreshing' | 'confirmed';
 
 export default function PremiumScreen() {
   const { t } = useTranslation();
-  const { status, refresh } = useEntitlement();
+  const { status, trialEndsAt, refresh } = useEntitlement();
   const { toastState, showToast } = useToast();
   const [stage, setStage] = useState<Stage>('idle');
   const configured = isPurchaseConfigured();
@@ -84,6 +84,18 @@ export default function PremiumScreen() {
 
   const working = stage === 'purchasing' || stage === 'refreshing';
 
+  // Real, backend-sourced end-of-trial timestamp — never a client-side guess. Rounded
+  // up (not down) so the chip reads "1 day left" through the whole final day rather
+  // than dropping to a misleading "0" hours before it actually ends. Only ever shown
+  // for status === 'trial' with a real trialEndsAt — an expired/pro/unknown state, or
+  // a trial whose end date this device hasn't been told, shows nothing rather than a
+  // guessed number.
+  const trialDaysLeft = useMemo(() => {
+    if (status !== 'trial' || trialEndsAt == null) return null;
+    const days = Math.ceil((trialEndsAt - Date.now()) / 86_400_000);
+    return days > 0 ? days : null;
+  }, [status, trialEndsAt]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.closeRow}>
@@ -102,6 +114,11 @@ export default function PremiumScreen() {
           <View style={styles.activeBadge}>
             <CheckCircleIcon size={14} weight="fill" color={colors.successText} />
             <Text style={styles.activeBadgeText}>{t('pro.active')}</Text>
+          </View>
+        ) : trialDaysLeft != null ? (
+          <View style={styles.trialBadge}>
+            <ClockCountdownIcon size={14} weight="bold" color={colors.warningText} />
+            <Text style={styles.trialBadgeText}>{t('pro.trialDaysLeft', { count: trialDaysLeft })}</Text>
           </View>
         ) : null}
 
@@ -138,15 +155,6 @@ export default function PremiumScreen() {
           // dressed up as a temporary glitch, matching Stylist's own wording.
           <Text style={styles.unavailable}>{t('pro.unavailable')}</Text>
         )}
-
-        <View style={styles.linksRow}>
-          <Pressable onPress={() => router.push('/legal')}>
-            <Text style={styles.link}>{t('common.terms')}</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/legal')}>
-            <Text style={styles.link}>{t('common.privacy')}</Text>
-          </Pressable>
-        </View>
       </ScrollView>
       <Toast state={toastState} />
     </SafeAreaView>
@@ -172,6 +180,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   activeBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.successText },
+  trialBadge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.warningMuted,
+    borderRadius: 7,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    marginBottom: 10,
+  },
+  trialBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.warningText },
   heading: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.textPrimary, marginBottom: 8 },
   body: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: colors.textTertiary, maxWidth: 300, marginBottom: 20 },
   priceCard: {
@@ -195,6 +215,4 @@ const styles = StyleSheet.create({
   restoreButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   restoreButtonText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.primaryLink },
   unavailable: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textFaint, marginTop: 4 },
-  linksRow: { flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 28 },
-  link: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primaryLink },
 });

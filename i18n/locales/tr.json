@@ -7,8 +7,6 @@
     "viewFullAnalysis": "Tüm analizi görüntüle",
     "viewAll": "Tümünü gör",
     "restorePurchases": "Satın alımları geri yükle",
-    "terms": "Kullanım Koşulları",
-    "privacy": "Gizlilik",
     "vs": "vs",
     "goBack": "Geri dön",
     "savedToastAdded": "Kaydedilen maçlara eklendi",
@@ -310,6 +308,8 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro etkin",
+    "trialDaysLeft_one": "Deneme sürende {{count}} gün kaldı",
+    "trialDaysLeft_other": "Deneme sürende {{count}} gün kaldı",
     "heading": "Sınırsız süre, aynı tam erişim",
     "body": "Deneme sürümündeki tüm analiz deneyimine — süre sınırı olmadan. Pro'ya geçtiğinde 14 günlük sınır kalkar, aynı erişim kesintisiz sürer.",
     "bodyExpired": "14 günlük deneme sürün sona erdi. Pro ile aynı tam analiz deneyimine sınırsız süre erişmeye devam edersin.",
