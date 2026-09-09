@@ -362,7 +362,7 @@ export default function MatchAnalysisScreen() {
               </View>
               <Text style={styles.whyTitle}>{t('sportMindView.title')}</Text>
             </View>
-            <View style={{ gap: 6, marginTop: 12 }}>
+            <View style={{ gap: 6, marginTop: 4 }}>
               {sportMindView.lines.map((line, index) => (
                 <Text key={index} style={styles.sportMindViewText}>
                   {t(`sportMindView.${line.key}`, line.team ? { team: line.team } : undefined)}
