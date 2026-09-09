@@ -170,7 +170,11 @@ export default function HomeScreen() {
                       <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
                       <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
                     </View>
-                    <ConfidenceRing value={favourite.probability} caption={t('matchAnalysis.winProbabilityCaption')} />
+                    <ConfidenceRing
+                      value={favourite.probability}
+                      caption={t('matchAnalysis.winProbabilityCaption')}
+                      favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
+                    />
                   </View>
                   <StackedDistributionBar
                     home={match.outcomes.home}
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
   // width — that made it look shifted right relative to where the names actually start.
   // marginTop/marginBottom instead give it equal breathing room above and below, which is
   // what "centered" meant here: centered in the gap between the two lines, not the row.
-  heroVsCentered: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, marginTop: 8, marginBottom: 2 },
+  heroVsCentered: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, marginVertical: 5 },
   heroSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textTertiaryAlt, marginTop: 3, marginBottom: 10 },
   heroReasonRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   heroReasonText: { flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textSecondaryAlt },

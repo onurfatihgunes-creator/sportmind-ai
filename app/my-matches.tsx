@@ -37,7 +37,13 @@ export default function MyMatchesScreen() {
               <View style={styles.cardTop}>
                 <TeamBadgePair home={m.home} away={m.away} size={28} />
                 <View style={styles.cardTopRight}>
-                  <ConfidenceRing value={favourite.probability} size={34} strokeWidth={3} showLabel={false} />
+                  <ConfidenceRing
+                    value={favourite.probability}
+                    size={34}
+                    strokeWidth={3}
+                    showLabel={false}
+                    favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
+                  />
                   <Pressable hitSlop={10} onPress={() => toggle(m.id)}>
                     <BookmarkSimpleIcon size={18} weight="fill" color={colors.primary} />
                   </Pressable>
