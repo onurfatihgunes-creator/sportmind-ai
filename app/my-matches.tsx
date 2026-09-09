@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
-  matchTitleVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, textAlign: 'center' },
+  matchTitleVs: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, marginVertical: 1 },
   matchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 3, marginBottom: spacing.sm },
   viewLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   viewLinkText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.primaryLink },

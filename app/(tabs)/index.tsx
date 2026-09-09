@@ -386,7 +386,11 @@ const styles = StyleSheet.create({
   // A "vs" nested inside the same <Text> as the team names can't be centered on its own
   // line — RN text-align applies to the whole paragraph, not one inline run — so the
   // centered version is its own sibling <Text>, not a style variant of the inline one.
-  heroVsCentered: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, textAlign: 'center', marginTop: 8, marginBottom: 2 },
+  // Left-aligned like the team names above/below it, not centered across the row's full
+  // width — that made it look shifted right relative to where the names actually start.
+  // marginTop/marginBottom instead give it equal breathing room above and below, which is
+  // what "centered" meant here: centered in the gap between the two lines, not the row.
+  heroVsCentered: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textFainter, marginTop: 8, marginBottom: 2 },
   heroSubtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.textTertiaryAlt, marginTop: 3, marginBottom: 10 },
   heroReasonRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   heroReasonText: { flex: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textSecondaryAlt },
