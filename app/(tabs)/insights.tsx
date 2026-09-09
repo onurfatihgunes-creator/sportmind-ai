@@ -8,7 +8,7 @@ import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
 import type { Team } from '@/data/mockData';
-import { fetchAllTeams } from '@/data/liveData';
+import { fetchAllTeams, resolveTeamById } from '@/data/liveData';
 import TeamPicker from '@/components/TeamPicker';
 import TeamIntelligence from '@/components/TeamIntelligence';
 import Disclaimer from '@/components/Disclaimer';
@@ -49,7 +49,37 @@ export default function InsightsScreen() {
   }, [showPicker, allTeams, isLive]);
   const pickerTeams = allTeams ?? teams;
 
-  const followedTeams = teamIds.map((id) => teams[id]).filter(Boolean);
+  // A followed team can genuinely have no match in fetchLiveData()'s own narrow,
+  // match-window-scoped `teams` record — that record only ever contains teams referenced
+  // by the currently-loaded top-30-per-sport window, while Add Team (via fetchAllTeams
+  // above) deliberately lets someone follow ANY real team, including one with no
+  // imminent fixture at all (confirmed live: "Istanbul Fenerbahce Ulker", zero matches
+  // ever). Without this, such a team disappeared from the chip row the instant it was
+  // followed — toggleTeam had genuinely added its id to teamIds, but
+  // `teamIds.map(id => teams[id])` silently dropped it, which also meant it kept
+  // occupying one of the 3 follow slots invisibly, and the "+" chip vanished once that
+  // made the real count reach 3 with no visible sign why. Mirrors the same
+  // on-demand-resolve-outside-the-window pattern resolveMatchById already uses for a
+  // match id that has rotated out of the loaded set.
+  const [resolvedTeams, setResolvedTeams] = useState<Record<string, Team>>({});
+  useEffect(() => {
+    const missing = teamIds.filter((id) => !teams[id] && !resolvedTeams[id]);
+    if (missing.length === 0 || !isLive) return;
+    let cancelled = false;
+    Promise.all(missing.map((id) => resolveTeamById(id))).then((results) => {
+      if (cancelled) return;
+      const next: Record<string, Team> = {};
+      results.forEach((team, i) => {
+        if (team) next[missing[i]] = team;
+      });
+      if (Object.keys(next).length > 0) setResolvedTeams((prev) => ({ ...prev, ...next }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [teamIds, teams, isLive, resolvedTeams]);
+
+  const followedTeams = teamIds.map((id) => teams[id] ?? resolvedTeams[id]).filter(Boolean);
 
   // First followed team selected by default; if the selection becomes invalid (removed,
   // or nothing followed yet), fall back to the new first team rather than showing a dead
