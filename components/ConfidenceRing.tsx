@@ -14,6 +14,15 @@ type Props = {
   labelFontSize?: number;
   captionFontSize?: number;
   caption?: string;
+  /** Which side of the match card (home = left, away = right) this ring's percentage
+   * belongs to. The ring always drew its arc sweeping from the top toward the LEFT,
+   * regardless of which team it was actually showing — confirmed live as confusing:
+   * an away team's (right-card) win probability still filled leftward, disconnected
+   * from where that team's own name/crest sit. Mirrored so a home (left) team's arc
+   * sweeps right and an away (right) team's arc sweeps left — toward its own side.
+   * Omit for a draw or when there's no side to anchor to; the sweep then keeps the
+   * original, unmirrored direction. */
+  favoredSide?: 'home' | 'away';
 };
 
 /** The confidence ring in the light redesign is always accent-colored (the old dark theme's
@@ -26,6 +35,7 @@ export default function ConfidenceRing({
   labelFontSize,
   captionFontSize,
   caption,
+  favoredSide,
 }: Props) {
   const resolvedCaptionFontSize = captionFontSize ?? Math.max(7, size * 0.075);
   const radius = (size - strokeWidth) / 2;
@@ -40,9 +50,16 @@ export default function ConfidenceRing({
 
   const animatedProps = useAnimatedProps(() => ({ strokeDashoffset: progress.value }));
 
+  // The arc's own geometry always sweeps the same way (top, toward the left) — see this
+  // module's own measured note below the JSX. Mirroring the whole SVG horizontally is
+  // what flips that to sweep right for a home (left-card) team, since the arc itself has
+  // no "direction" prop to flip. Only the SVG mirrors, never the label sibling below it,
+  // so the percentage/caption text never renders backwards.
+  const mirror = favoredSide === 'home';
+
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+      <Svg width={size} height={size} style={[StyleSheet.absoluteFill, mirror && styles.mirrored]}>
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -98,3 +115,10 @@ export default function ConfidenceRing({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  // RN transforms originate from the element's own center by default, so scaleX: -1
+  // alone mirrors this Svg around its own vertical center line — no separate translate
+  // needed, unlike the raw-SVG transform string this would take inside react-native-svg.
+  mirrored: { transform: [{ scaleX: -1 }] },
+});

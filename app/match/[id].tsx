@@ -179,7 +179,13 @@ export default function MatchAnalysisScreen() {
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
-            <ConfidenceRing value={favourite!.probability} size={112} strokeWidth={9} caption={t('matchAnalysis.winProbabilityCaption')} />
+            <ConfidenceRing
+              value={favourite!.probability}
+              size={112}
+              strokeWidth={9}
+              caption={t('matchAnalysis.winProbabilityCaption')}
+              favoredSide={favourite!.label === 'draw' ? undefined : favourite!.label}
+            />
             <View style={styles.heroInfo}>
               <Text style={styles.heroLine}>
                 {favourite!.team
