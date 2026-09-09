@@ -104,8 +104,6 @@
     "teamSignalsTitle": "Team-Signale",
     "teamSignalsInfoLabel": "Wie werden diese ermittelt?",
     "teamSignalsInfoBody": "Form basiert auf den letzten 5 Ergebnissen des Teams. Angriff und Abwehr vergleichen die echten zuletzt erzielten/kassierten Tore mit dem eigenen vorherigen Lauf des Teams — nur angezeigt, wenn genug Historie für einen fairen Vergleich vorliegt.",
-    "squadStatusCardTitle": "Kaderstatus",
-    "squadStatusEmptyState": "Noch kein Kaderstatus verfügbar.",
     "signalLabelForm": "Form",
     "signalLabelAttack": "Angriff",
     "signalLabelDefence": "Abwehr",

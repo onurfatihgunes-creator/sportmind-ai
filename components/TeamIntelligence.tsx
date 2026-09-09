@@ -283,26 +283,7 @@ export default function TeamIntelligence({
         </View>
       )}
 
-      {/* SQUAD STATUS — a compact, always-rendered summary of the selected team's own
-          availability exceptions. Never hidden just because this particular match hasn't
-          been enriched yet (confirmed live: Barcelona's real next fixture, a Champions
-          League match, currently has zero player_availability/match_lineups rows at all —
-          a genuine upstream data gap, same category as the Feyenoord team_form gap found
-          earlier — while Barcelona's own following La Liga fixture already has real
-          availability data). An honest "no data" line replaces the section instead of the
-          section itself disappearing. */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('insights.squadStatusCardTitle')}</Text>
-        {unavailableCount > 0 ? (
-          <Chip label={t('insights.squadImpactSummary', { count: unavailableCount })} tone="warning" />
-        ) : squadLoading ? (
-          <SkeletonBlock width={150} />
-        ) : (
-          <Text style={styles.mutedBody}>{t('insights.squadStatusEmptyState')}</Text>
-        )}
-      </View>
-
-      {/* PLAYER STATUS & FORM — secondary to Team Signals/Squad Status, collapsed by
+      {/* PLAYER STATUS & FORM — secondary to Team Signals, collapsed by
           default. Real players only (name, real status, humanized real reason, real
           impact) — never a fabricated form label (Strong/Stable/Weak/etc.), matching the
           standing audit decision that no data path supports a genuine per-player form

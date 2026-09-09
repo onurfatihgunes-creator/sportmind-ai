@@ -104,8 +104,6 @@
     "teamSignalsTitle": "Takım Sinyalleri",
     "teamSignalsInfoLabel": "Bunlar nasıl belirleniyor?",
     "teamSignalsInfoBody": "Form, takımın son 5 maçından gelir. Hücum ve savunma, gerçek son gol/yenilen gol verilerini takımın kendi önceki dönemiyle karşılaştırır — yalnızca adil bir karşılaştırma için yeterli geçmiş olduğunda gösterilir.",
-    "squadStatusCardTitle": "Kadro Durumu",
-    "squadStatusEmptyState": "Henüz kadro durumu bilgisi yok.",
     "signalLabelForm": "Form",
     "signalLabelAttack": "Hücum",
     "signalLabelDefence": "Savunma",

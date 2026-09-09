@@ -104,8 +104,6 @@
     "teamSignalsTitle": "Team Signals",
     "teamSignalsInfoLabel": "How are these determined?",
     "teamSignalsInfoBody": "Form comes from the team's last 5 results. Attack and defence compare their real recent goals scored/conceded against their own prior run — shown only once there's enough history for a fair comparison.",
-    "squadStatusCardTitle": "Squad Status",
-    "squadStatusEmptyState": "No squad status available yet.",
     "signalLabelForm": "Form",
     "signalLabelAttack": "Attack",
     "signalLabelDefence": "Defence",
