@@ -155,10 +155,15 @@ export async function getEventStats(eventId: number): Promise<Record<string, unk
 }
 
 export type BsdIncident = {
-  type: string; // e.g. 'goal' | 'yellow_card' | 'red_card' | 'substitution'
-  player: string;
+  type: string; // e.g. 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'period'
+  // `player`/`is_home` are null together on non-team-scoped marker rows — confirmed live
+  // (2026-09-10, Champions League match 575327/BSD event 601071): `type: 'period'` at
+  // minute 90 with both fields null (a half/full-time boundary marker, not a real
+  // player event). Every real goal/card/substitution entry observed has both set — see
+  // matchStatsParsing.ts's parseIncidents, which is the actual filter boundary.
+  player: string | null;
   minute: number;
-  is_home: boolean;
+  is_home: boolean | null;
   assist?: string | null;
 };
 

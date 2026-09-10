@@ -17,8 +17,20 @@ export type MatchIncidentRow = {
   bsd_event_id: number;
 };
 
+/** True for a real, team-scoped incident (goal/card/substitution/etc — every one
+ * observed live carries a real `is_home` and `player`). False for a marker row like
+ * BSD's `type: 'period'` (confirmed live: `is_home`/`player` both null — a half/full-time
+ * boundary, not a player event) — `match_incidents.is_home`/`player_name` are NOT NULL,
+ * so a row like that can never be stored, only skipped. Checked structurally (real
+ * `is_home` + `player`) rather than by an `incident_type !== 'period'` denylist, so any
+ * other non-team-scoped marker type BSD adds later is caught the same way without this
+ * needing to know its name in advance. */
+function isTeamScopedIncident(i: BsdIncident): i is BsdIncident & { is_home: boolean; player: string } {
+  return typeof i.is_home === 'boolean' && typeof i.player === 'string';
+}
+
 export function parseIncidents(matchId: string, eventId: number, incidents: BsdIncident[]): MatchIncidentRow[] {
-  return incidents.map((i) => ({
+  return incidents.filter(isTeamScopedIncident).map((i) => ({
     match_id: matchId,
     incident_type: i.type,
     minute: i.minute,

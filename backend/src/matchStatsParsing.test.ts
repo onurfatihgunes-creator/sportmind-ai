@@ -12,6 +12,53 @@ test('parseIncidents maps BSD incident shape to typed rows', () => {
   assert.equal(rows[1].assist_player_name, null);
 });
 
+test('parseIncidents: a non-team-scoped marker row (BSD\'s "period" type, is_home/player both null) is filtered out, not stored', () => {
+  const rows = parseIncidents('m1', 999, [
+    { type: 'goal', player: 'A. Diao', minute: 30, is_home: false },
+    // Real shape confirmed live (2026-09-10, Champions League match 575327 / BSD event
+    // 601071): a half/full-time boundary marker, not a player event — match_incidents'
+    // is_home/player_name columns are NOT NULL, so this must never reach an insert.
+    { type: 'period', player: null, minute: 90, is_home: null },
+  ]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].incident_type, 'goal');
+});
+
+test('parseIncidents: real goal/card/substitution rows are preserved exactly, even alongside a filtered marker row', () => {
+  const rows = parseIncidents('m1', 999, [
+    { type: 'goal', player: 'A. Diao', minute: 30, is_home: false },
+    { type: 'period', player: null, minute: 45, is_home: null },
+    { type: 'yellow_card', player: 'C. Player', minute: 12, is_home: true },
+    { type: 'substitution', player: 'D. Player', minute: 60, is_home: true },
+  ]);
+  assert.equal(rows.length, 3);
+  assert.deepEqual(
+    rows.map((r) => r.incident_type),
+    ['goal', 'yellow_card', 'substitution'],
+  );
+});
+
+test('parseIncidents: a marker row never breaks the rest of the same match\'s batch (the actual production bug)', () => {
+  // Before the fix, a single `period`-type row in this list made the whole upsert for
+  // match 575327 fail with 23502 (NOT NULL violation), losing every real incident for
+  // that match — not just the bad row. The fix is filtering before the caller ever
+  // builds the insert, so the surviving rows are unconditionally intact and non-empty.
+  const rows = parseIncidents('575327', 601071, [
+    { type: 'goal', player: 'Player A', minute: 23, is_home: true },
+    { type: 'goal', player: 'Player B', minute: 41, is_home: true },
+    { type: 'period', player: null, minute: 45, is_home: null },
+    { type: 'goal', player: 'Player C', minute: 67, is_home: false },
+    { type: 'goal', player: 'Player D', minute: 81, is_home: false },
+    { type: 'period', player: null, minute: 90, is_home: null },
+    { type: 'goal', player: 'Player E', minute: 88, is_home: true },
+  ]);
+  assert.equal(rows.length, 5);
+  assert.ok(rows.every((r) => typeof r.is_home === 'boolean' && typeof r.player_name === 'string'));
+  const home = rows.filter((r) => r.is_home).length;
+  const away = rows.filter((r) => !r.is_home).length;
+  assert.equal(`${home}-${away}`, '3-2'); // matches the real 3-2 final score for this match
+});
+
 test('incidentsAgreeWithFinalScore: true when derived goal tally matches the real score', () => {
   const incidents = [
     { type: 'goal', player: 'X', minute: 19, is_home: true },
