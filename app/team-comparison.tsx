@@ -272,8 +272,11 @@ const styles = StyleSheet.create({
   summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 8 },
   summaryText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textTertiary },
   strengthChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  // Beside the radar rather than under it, so the two start on the same line.
-  summaryColumnInPane: { marginTop: 6 },
+  // Beside the radar rather than under it, so the two columns start on the same line.
+  // The first summary card carries its own 12pt gap-from-the-card-above, which only
+  // means anything in the stacked layout; here there is nothing above it, so the column
+  // pulls that back and leaves the 6pt the teams card opposite it starts at.
+  summaryColumnInPane: { marginTop: -6 },
   strengthChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   strengthChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5 },
 });

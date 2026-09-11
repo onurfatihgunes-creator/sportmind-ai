@@ -165,6 +165,7 @@
     "clearDataConfirm": "Clear",
     "restartNotice": "Done. Restart the app to see the changes.",
     "language": "Language",
+    "appearance": "Appearance",
     "planTrial": "Pro trial · full access",
     "planExpired": "Pro required",
     "planPro": "SportMind Pro",
@@ -295,6 +296,13 @@
     "de": "German",
     "ar": "Arabic",
     "rtlNotice": "Arabic uses a right-to-left layout. The app will reload to apply it."
+  },
+  "appearance": {
+    "title": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "systemNote": "System follows your device's own Light/Dark setting and switches automatically when it changes."
   },
   "notFound": {
     "matchTitle": "Match not available",

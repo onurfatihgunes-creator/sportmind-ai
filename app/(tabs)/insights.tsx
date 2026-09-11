@@ -301,8 +301,9 @@ const styles = StyleSheet.create({
   addButton: { marginTop: 10, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderHover, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   contentWrap: { marginTop: 18, marginBottom: 24 },
-  // Side by side the analysis column starts level with the selection column.
-  contentWrapInPane: { marginTop: 0 },
+  // Side by side the analysis column starts level with the selection column, whose own
+  // first element is the TEAMS kicker — same spacing.xl above it, so the two tops match.
+  contentWrapInPane: { marginTop: spacing.xl },
   changeRow: {
     flexDirection: 'row',
     alignItems: 'center',

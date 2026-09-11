@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -33,16 +33,13 @@ export default function HomeScreen() {
   const { status: entitlementStatus } = useEntitlement();
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
 
-  const { width: windowWidth } = useWindowDimensions();
   const layout = useAdaptiveLayout();
   const dual = layout.panes === 'dual';
-  // The highlights carousel sizes its cards against the column it is actually in — on a
-  // wide window that is the primary pane, not the window. Measured with onLayout rather
-  // than re-derived from the flex ratios, so it stays right whatever the pane turns out
-  // to be (including a Split View slice being dragged).
-  const [primaryPaneWidth, setPrimaryPaneWidth] = useState(0);
-  const carouselWidth = dual && primaryPaneWidth > 0 ? primaryPaneWidth : windowWidth - spacing.screenX;
-  const heroCardWidth = Math.min(360, carouselWidth - (dual ? 24 : 56));
+  // Matches of the day runs the full width of the content in both layouts, so its cards
+  // are sized against the content width rather than the window — identical to the old
+  // window-width arithmetic on a phone (where the rail takes nothing), and correct on a
+  // wide window without having to know anything about the panes below it.
+  const heroCardWidth = Math.min(360, layout.contentWidth - spacing.screenX - 56);
 
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
   const heroMatches = useMemo(
@@ -139,96 +136,97 @@ export default function HomeScreen() {
           onChange={(key) => setSelectedSport(key as Sport)}
         />
 
-        {/* HOME'S TWO RAILS. Not a forced split: these are the two things Home already
-            says — what SportMind finds notable right now (curated highlights plus the one
-            analysis with the clearest single driver), and what is happening to the teams
-            and matches this particular user is attached to. Side by side they stop
-            scrolling each other off screen. Nothing was invented to fill the second
-            column: both sections keep their own real empty states, and on a phone this
-            renders exactly the stack it always did. */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
+          <View style={styles.sectionHeaderRight}>
+            {!loading && !isLive && (
+              <View style={styles.liveRow}>
+                <View style={[styles.liveDot, { backgroundColor: colors.warning }]} />
+                <Text style={styles.liveText}>{t('home.demoData')}</Text>
+              </View>
+            )}
+            <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
+              <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
+              <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
+            </Pressable>
+          </View>
+        </View>
+
+        {heroMatches.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.heroScroll}
+            contentContainerStyle={{ gap: 12, paddingHorizontal: spacing.screenX }}
+            decelerationRate="fast"
+            snapToInterval={heroCardWidth + 12}
+            snapToAlignment="start"
+          >
+            {heroMatches.map((match) => {
+              const favourite = favouredOutcome(match);
+              const isBasketball = match.sport === 'basketball';
+              const topFactor = [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50))[0] ?? null;
+              return (
+                <Pressable
+                  key={match.id}
+                  style={[styles.hero, { width: heroCardWidth }]}
+                  onPress={() => router.push(`/match/${match.id}`)}
+                >
+                  <Text style={styles.heroCompetition}>{match.competition}</Text>
+                  <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
+                  <View style={styles.heroRow}>
+                    <View style={styles.heroInfo}>
+                      <TeamBadgePair home={match.home} away={match.away} size={30} />
+                      <Text style={[styles.heroTitle, { marginTop: 8 }]}>{match.home.name}</Text>
+                      <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
+                      <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
+                    </View>
+                    <ConfidenceRing
+                      value={favourite.probability}
+                      caption={t('matchAnalysis.winProbabilityCaption')}
+                      favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
+                    />
+                  </View>
+                  <StackedDistributionBar
+                    home={match.outcomes.home}
+                    draw={isBasketball ? 0 : match.outcomes.draw}
+                    away={match.outcomes.away}
+                    height={26}
+                  />
+                  {topFactor && (
+                    <View style={styles.heroReasonRow}>
+                      <LightningIcon size={13} weight="bold" color={colors.primary} />
+                      <Text style={styles.heroReasonText}>
+                        {t('home.heroReason', {
+                          team: topFactor.home >= topFactor.away ? match.home.name : match.away.name,
+                          factor: t(`factors.${topFactor.key}`).toLowerCase(),
+                        })}
+                      </Text>
+                      <ArrowRightIcon size={14} weight="bold" color={colors.primary} />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
+        )}
+
+        {/* Matches of the day above owns the full width — it is the one section that is
+            genuinely about the whole day rather than about this user, and a carousel gets
+            better the more of it you can see at once. What is left below it is a real
+            pair: the single analysis with the clearest driver on one side, and what is
+            happening to the teams this particular user follows on the other. Nothing was
+            invented to fill the second column — both sides keep their own real empty
+            states — and the source order is unchanged, so a phone still renders exactly
+            the stack it always did. */}
         <SplitPane
           dual={dual}
           primaryFlex={1.15}
           secondaryFlex={1}
           primary={
-            <View onLayout={(e) => setPrimaryPaneWidth(e.nativeEvent.layout.width)}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
-              <View style={styles.sectionHeaderRight}>
-                {!loading && !isLive && (
-                  <View style={styles.liveRow}>
-                    <View style={[styles.liveDot, { backgroundColor: colors.warning }]} />
-                    <Text style={styles.liveText}>{t('home.demoData')}</Text>
-                  </View>
-                )}
-                <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
-                  <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
-                  <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
-                </Pressable>
-              </View>
-            </View>
-
-            {heroMatches.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={[styles.heroScroll, dual && styles.heroScrollInPane]}
-                contentContainerStyle={{ gap: 12, paddingHorizontal: dual ? 0 : spacing.screenX }}
-                decelerationRate="fast"
-                snapToInterval={heroCardWidth + 12}
-                snapToAlignment="start"
-              >
-                {heroMatches.map((match) => {
-                  const favourite = favouredOutcome(match);
-                  const isBasketball = match.sport === 'basketball';
-                  const topFactor = [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50))[0] ?? null;
-                  return (
-                    <Pressable
-                      key={match.id}
-                      style={[styles.hero, { width: heroCardWidth }]}
-                      onPress={() => router.push(`/match/${match.id}`)}
-                    >
-                      <Text style={styles.heroCompetition}>{match.competition}</Text>
-                      <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
-                      <View style={styles.heroRow}>
-                        <View style={styles.heroInfo}>
-                          <TeamBadgePair home={match.home} away={match.away} size={30} />
-                          <Text style={[styles.heroTitle, { marginTop: 8 }]}>{match.home.name}</Text>
-                          <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
-                          <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
-                        </View>
-                        <ConfidenceRing
-                          value={favourite.probability}
-                          caption={t('matchAnalysis.winProbabilityCaption')}
-                          favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
-                        />
-                      </View>
-                      <StackedDistributionBar
-                        home={match.outcomes.home}
-                        draw={isBasketball ? 0 : match.outcomes.draw}
-                        away={match.outcomes.away}
-                        height={26}
-                      />
-                      {topFactor && (
-                        <View style={styles.heroReasonRow}>
-                          <LightningIcon size={13} weight="bold" color={colors.primary} />
-                          <Text style={styles.heroReasonText}>
-                            {t('home.heroReason', {
-                              team: topFactor.home >= topFactor.away ? match.home.name : match.away.name,
-                              factor: t(`factors.${topFactor.key}`).toLowerCase(),
-                            })}
-                          </Text>
-                          <ArrowRightIcon size={14} weight="bold" color={colors.primary} />
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            ) : (
-              <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
-            )}
-
+            <View>
             {standout && (
               <>
                 <Text style={[styles.kicker, styles.sectionSpacer]}>{t('home.standoutKicker')}</Text>
@@ -267,7 +265,7 @@ export default function HomeScreen() {
           }
           secondary={
             <View>
-            <Text style={[styles.kicker, styles.sectionSpacer, dual && styles.sectionSpacerFirstInPane]}>{t('insights.followingKicker')}</Text>
+            <Text style={[styles.kicker, styles.sectionSpacer]}>{t('insights.followingKicker')}</Text>
             {followingRows.length > 0 ? (
               <View style={styles.matchListGroup}>
                 {followingRows.map(({ match, myTeam, opponent }) => {
@@ -382,7 +380,6 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sectionSpacer: { marginTop: spacing.xl, marginBottom: 9 },
-  sectionSpacerFirstInPane: { marginTop: 0 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
   matchListGroup: { gap: 8, marginBottom: spacing.xxl },
   matchRow: {
@@ -412,8 +409,6 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textTertiary },
   heroScroll: { marginHorizontal: -spacing.screenX, marginBottom: spacing.xxl },
-  // Inside a pane the carousel must stay in the pane, not bleed into the centre gutter.
-  heroScrollInPane: { marginHorizontal: 0 },
   hero: {
     borderWidth: 1,
     borderColor: colors.borderAccent,

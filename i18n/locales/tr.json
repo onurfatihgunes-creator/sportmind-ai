@@ -165,6 +165,7 @@
     "clearDataConfirm": "Temizle",
     "restartNotice": "Tamamlandı. Değişiklikleri görmek için uygulamayı yeniden başlat.",
     "language": "Dil",
+    "appearance": "Görünüm",
     "planTrial": "Pro deneme · tam erişim",
     "planExpired": "Pro gerekli",
     "planPro": "SportMind Pro",
@@ -295,6 +296,13 @@
     "de": "Almanca",
     "ar": "Arapça",
     "rtlNotice": "Arapça sağdan sola bir düzen kullanır. Uygulanması için uygulama yeniden başlatılacak."
+  },
+  "appearance": {
+    "title": "Görünüm",
+    "system": "Sistem",
+    "light": "Açık",
+    "dark": "Koyu",
+    "systemNote": "Sistem, cihazının kendi Açık/Koyu ayarını takip eder ve o değiştiğinde otomatik olarak geçiş yapar."
   },
   "notFound": {
     "matchTitle": "Maç bulunamadı",

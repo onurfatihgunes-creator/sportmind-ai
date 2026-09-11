@@ -165,6 +165,7 @@
     "clearDataConfirm": "Löschen",
     "restartNotice": "Erledigt. Starte die App neu, um die Änderungen zu sehen.",
     "language": "Sprache",
+    "appearance": "Darstellung",
     "planTrial": "Pro-Testphase · voller Zugriff",
     "planExpired": "Pro erforderlich",
     "planPro": "SportMind Pro",
@@ -295,6 +296,13 @@
     "de": "Deutsch",
     "ar": "Arabisch",
     "rtlNotice": "Arabisch verwendet ein Layout von rechts nach links. Die App wird neu geladen, um dies anzuwenden."
+  },
+  "appearance": {
+    "title": "Darstellung",
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "systemNote": "System folgt der eigenen Hell/Dunkel-Einstellung deines Geräts und wechselt automatisch, wenn sie sich ändert."
   },
   "notFound": {
     "matchTitle": "Spiel nicht verfügbar",

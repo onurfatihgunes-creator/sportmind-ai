@@ -100,13 +100,15 @@ export default function PremiumScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.closeRow}>
-        <Pressable style={styles.closeButton} onPress={() => router.back()} hitSlop={12}>
-          <XIcon size={19} color={colors.textFaint} />
-        </Pressable>
-      </View>
-
       <View style={[styles.shell, railInsetStyle(layout)]}>
+        {/* Inside the rail inset and capped to the same column as the page below it: an
+            X pinned to the far edge of a wide window is 70-odd points adrift of the
+            sheet it closes, and reads as belonging to nothing. */}
+        <View style={[styles.closeRow, singleColumnStyle(layout)]}>
+          <Pressable style={styles.closeButton} onPress={() => router.back()} hitSlop={12}>
+            <XIcon size={19} color={colors.textFaint} />
+          </Pressable>
+        </View>
       <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout), layout.wide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <View style={styles.icon}>
           <SparkleIcon size={24} weight="bold" color={colors.primaryTint} />

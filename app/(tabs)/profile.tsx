@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,17 +11,19 @@ import {
   BookmarkSimpleIcon,
   CaretRightIcon,
   CheckCircleIcon,
+  CircleHalfIcon,
   CpuIcon,
   GlobeIcon,
   PencilSimpleIcon,
   ShieldCheckIcon,
   SparkleIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function ProfileScreen() {
   const layout = useAdaptiveLayout();
@@ -29,6 +31,8 @@ export default function ProfileScreen() {
   const { name, setName } = useProfile();
   const { matchIds } = useWatchlist();
   const { status } = useEntitlement();
+  const { colors, mode } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
 
@@ -73,6 +77,7 @@ export default function ProfileScreen() {
   const rows = [
     { Icon: BookmarkSimpleIcon, label: t('profile.savedAnalyses'), value: String(matchIds.length), onPress: () => router.push('/my-matches') },
     { Icon: GlobeIcon, label: t('profile.language'), value: t(`language.${i18n.language}`), onPress: () => router.push('/language') },
+    { Icon: CircleHalfIcon, label: t('profile.appearance'), value: t(`appearance.${mode}`), onPress: () => router.push('/appearance') },
     { Icon: BellIcon, label: t('profile.notifications'), onPress: () => router.push('/notifications') },
     { Icon: CpuIcon, label: t('profile.howModelWorks'), onPress: () => router.push('/legal/methodology') },
     { Icon: ShieldCheckIcon, label: t('profile.legalAndTransparency'), onPress: () => router.push('/legal') },
@@ -191,69 +196,70 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  shell: { flex: 1 },
-  // No bottom tab bar to clear once the navigation has become a side rail.
-  contentWide: { paddingBottom: 40 },
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
-  title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 16 },
-  userCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface },
-  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: fonts.headline, fontSize: 20, color: colors.primaryTint },
-  name: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.textPrimary, marginBottom: 3 },
-  nameInput: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 16,
-    color: colors.textPrimary,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primary,
-    paddingVertical: 2,
-    marginBottom: 3,
-    ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
-  },
-  plan: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
-  editButton: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  upsellCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.borderAccent,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surfaceAccentTo,
-  },
-  // A trial that has actually ended is a more urgent state than a voluntary mid-trial
-  // upsell — same card shape, same visual language, just the existing accent border
-  // pushed to full strength instead of a second, unrelated style of card.
-  upsellCardExpired: { borderColor: colors.primary },
-  upsellIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  upsellTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 2 },
-  upsellSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
-  proActiveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-  },
-  proActiveText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.successText },
-  group: { marginTop: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, overflow: 'hidden' },
-  groupRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14 },
-  groupRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-  groupLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
-  groupValue: { fontFamily: fonts.body, fontSize: 12, color: colors.textFainter },
-  noteCard: { marginTop: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
-  noteText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 19, color: colors.textTertiaryAlt },
-  dataRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  dataButton: { flex: 1, minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  dataButtonText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondaryAlt },
-  dangerButton: { flex: 1, minHeight: 44, borderWidth: 1, borderColor: colors.dangerBorder, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  dangerButtonText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.dangerText },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    shell: { flex: 1 },
+    // No bottom tab bar to clear once the navigation has become a side rail.
+    contentWide: { paddingBottom: 40 },
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
+    title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 16 },
+    userCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface },
+    avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontFamily: fonts.headline, fontSize: 20, color: colors.primaryTint },
+    name: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.textPrimary, marginBottom: 3 },
+    nameInput: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 16,
+      color: colors.textPrimary,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.primary,
+      paddingVertical: 2,
+      marginBottom: 3,
+      ...(Platform.OS === 'web' ? { outlineStyle: 'solid', outlineWidth: 0 } : null),
+    },
+    plan: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
+    editButton: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+    upsellCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginTop: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.borderAccent,
+      borderRadius: radius.lg,
+      backgroundColor: colors.surfaceAccentTo,
+    },
+    // A trial that has actually ended is a more urgent state than a voluntary mid-trial
+    // upsell — same card shape, same visual language, just the existing accent border
+    // pushed to full strength instead of a second, unrelated style of card.
+    upsellCardExpired: { borderColor: colors.primary },
+    upsellIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+    upsellTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 2 },
+    upsellSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
+    proActiveRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+    },
+    proActiveText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.successText },
+    group: { marginTop: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, overflow: 'hidden' },
+    groupRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14 },
+    groupRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },
+    groupLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+    groupValue: { fontFamily: fonts.body, fontSize: 12, color: colors.textFainter },
+    noteCard: { marginTop: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
+    noteText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 19, color: colors.textTertiaryAlt },
+    dataRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+    dataButton: { flex: 1, minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+    dataButtonText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondaryAlt },
+    dangerButton: { flex: 1, minHeight: 44, borderWidth: 1, borderColor: colors.dangerBorder, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+    dangerButtonText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.dangerText },
+  });

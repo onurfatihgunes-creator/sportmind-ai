@@ -1,4 +1,4 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme as NavDarkTheme, DefaultTheme as NavDefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import {
   Inter_400Regular,
@@ -8,12 +8,13 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
-import { colors, fonts, spacing } from '@/constants/theme';
+import { fonts, spacing } from '@/constants/theme';
 import { initI18n } from '@/i18n';
 import { isMissingProductionConfig } from '@/lib/supabase';
 import { DataProvider } from '@/contexts/DataContext';
@@ -21,6 +22,7 @@ import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
 import { EntitlementProvider } from '@/contexts/EntitlementContext';
+import { AppThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -32,19 +34,20 @@ const HAS_SEEN_WELCOME_KEY = 'sportmind_has_seen_welcome';
 
 SplashScreen.preventAutoHideAsync();
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.background,
-    card: colors.surface,
-    border: colors.border,
-    primary: colors.primary,
-    text: colors.textPrimary,
-  },
-};
-
 export default function RootLayout() {
+  // AppThemeProvider has to wrap everything below it (including the
+  // isMissingProductionConfig early-return branch, which still renders real themed UI,
+  // not a bare unstyled screen) — see RootLayoutInner for the part of this tree that
+  // actually reads the theme.
+  return (
+    <AppThemeProvider>
+      <RootLayoutInner />
+    </AppThemeProvider>
+  );
+}
+
+function RootLayoutInner() {
+  const { scheme, colors } = useAppTheme();
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -72,6 +75,27 @@ export default function RootLayout() {
     }
   }, [ready, hasSeenWelcome]);
 
+  // Recomputed whenever the resolved scheme/colors change — this is the ONE place
+  // React Navigation's own chrome (header/tab-bar defaults, focused-route background)
+  // gets its colors from, so it never lags a Light/Dark switch the rest of the app
+  // already applied.
+  const navTheme = useMemo(
+    () => ({
+      ...(scheme === 'dark' ? NavDarkTheme : NavDefaultTheme),
+      colors: {
+        ...(scheme === 'dark' ? NavDarkTheme.colors : NavDefaultTheme.colors),
+        background: colors.background,
+        card: colors.surface,
+        border: colors.border,
+        primary: colors.primary,
+        text: colors.textPrimary,
+      },
+    }),
+    [scheme, colors],
+  );
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (!ready) {
     return null;
   }
@@ -83,14 +107,16 @@ export default function RootLayout() {
   // screen ever gets a chance to quietly stand mock data in for a real backend.
   if (isMissingProductionConfig) {
     return (
-      <ThemeProvider value={navTheme}>
-        <ConfigurationErrorScreen />
-      </ThemeProvider>
+      <NavigationThemeProvider value={navTheme}>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <ConfigurationErrorScreen styles={styles} />
+      </NavigationThemeProvider>
     );
   }
 
   return (
-    <ThemeProvider value={navTheme}>
+    <NavigationThemeProvider value={navTheme}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <DataProvider>
         <WatchlistProvider>
           <FollowedTeamsProvider>
@@ -113,17 +139,18 @@ export default function RootLayout() {
                   <Stack.Screen name="legal/index" />
                   <Stack.Screen name="legal/methodology" />
                   <Stack.Screen name="language" />
+                  <Stack.Screen name="appearance" />
                 </Stack>
               </EntitlementProvider>
             </ProfileProvider>
           </FollowedTeamsProvider>
         </WatchlistProvider>
       </DataProvider>
-    </ThemeProvider>
+    </NavigationThemeProvider>
   );
 }
 
-function ConfigurationErrorScreen() {
+function ConfigurationErrorScreen({ styles }: { styles: ReturnType<typeof createStyles> }) {
   const { t } = useTranslation();
   return (
     <View style={styles.configErrorWrap}>
@@ -133,15 +160,16 @@ function ConfigurationErrorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  configErrorWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background,
-    gap: 8,
-  },
-  configErrorTitle: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, textAlign: 'center' },
-  configErrorBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textFaint, textAlign: 'center', maxWidth: 300 },
-});
+const createStyles = (colors: import('@/constants/theme').ThemeColors) =>
+  StyleSheet.create({
+    configErrorWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      backgroundColor: colors.background,
+      gap: 8,
+    },
+    configErrorTitle: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, textAlign: 'center' },
+    configErrorBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textFaint, textAlign: 'center', maxWidth: 300 },
+  });
