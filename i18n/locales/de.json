@@ -72,7 +72,9 @@
     "competitionPickerTitle": "Wettbewerbe",
     "searchCompetitionsPlaceholder": "Wettbewerbe suchen",
     "noCompetitionsMatch": "Keine Wettbewerbe gefunden.",
-    "otherRegion": "Andere"
+    "otherRegion": "Andere",
+    "noSelectionTitle": "Kein Spiel ausgewählt",
+    "noSelectionBody": "Wähle ein Spiel aus der Liste, um hier die Analyse von SportMind zu sehen."
   },
   "insights": {
     "title": "KI-Insights",
@@ -137,7 +139,9 @@
     "signalLegendPositive": "Positiv",
     "signalLegendNegative": "Negativ",
     "signalLegendNeutral": "Keine klare Richtung",
-    "signalLegendCaption": "Legende, keine Daten"
+    "signalLegendCaption": "Legende, keine Daten",
+    "noSelectionTitle": "Kein Team ausgewählt",
+    "noSelectionBody": "Folge einem Team, um hier die aktuelle Einschätzung von SportMind zu sehen."
   },
   "notifications": {
     "title": "Benachrichtigungen",

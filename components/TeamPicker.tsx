@@ -3,6 +3,7 @@ import { Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } f
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import type { Match, Team } from '@/data/mockData';
 import { getCompetitionInfo } from '@/data/competitions';
 import SearchBar from './SearchBar';
@@ -53,6 +54,7 @@ function deriveTeamSubtitle(team: Team, matches: Match[]): string {
  * SectionList so only visible rows are ever mounted.
  */
 export default function TeamPicker({ visible, onClose, onSelect, teams, matches, excludeIds, search, onSearchChange, title }: Props) {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
 
   const sections = useMemo<Section[]>(() => {
@@ -88,13 +90,14 @@ export default function TeamPicker({ visible, onClose, onSelect, teams, matches,
           autoFocus
           height={40}
           fontSize={13}
-          style={styles.searchBar}
+          style={[styles.searchBar, singleColumnStyle(layout)]}
         />
 
         <SectionList
           sections={sections}
           keyExtractor={(row) => row.team.id}
           contentContainerStyle={styles.listContent}
+          style={singleColumnStyle(layout)}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={<Text style={styles.emptyText}>{t('insights.noTeamsMatch')}</Text>}
           renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}

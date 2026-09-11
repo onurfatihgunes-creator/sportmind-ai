@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CaretDownIcon, CaretRightIcon, CaretUpIcon, CpuIcon, Fil
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import MethodologyContent from '@/components/MethodologyContent';
 
 const PRIVACY_POLICY_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/privacy-policy.html';
@@ -41,6 +42,7 @@ const links: LegalLink[] = [
 ];
 
 export default function LegalHubScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   // Methodology expands INLINE here instead of navigating to a separate screen — the
   // same content is still also reachable as its own route (app/legal/methodology.tsx,
@@ -58,7 +60,7 @@ export default function LegalHubScreen() {
         <Text style={styles.headerTitle}>{t('legal.title')}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]}>
         <View style={styles.group}>
           {links.map((link, index) => {
             const isLast = index === links.length - 1;

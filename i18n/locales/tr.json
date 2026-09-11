@@ -72,7 +72,9 @@
     "competitionPickerTitle": "Ligler",
     "searchCompetitionsPlaceholder": "Lig ara",
     "noCompetitionsMatch": "Aramanla eşleşen lig yok.",
-    "otherRegion": "Diğer"
+    "otherRegion": "Diğer",
+    "noSelectionTitle": "Seçili maç yok",
+    "noSelectionBody": "SportMind analizini burada görmek için listeden bir maç seç."
   },
   "insights": {
     "title": "AI Öngörüler",
@@ -137,7 +139,9 @@
     "signalLegendPositive": "Olumlu",
     "signalLegendNegative": "Olumsuz",
     "signalLegendNeutral": "Belirgin yön yok",
-    "signalLegendCaption": "Renk anahtarı, veri değil"
+    "signalLegendCaption": "Renk anahtarı, veri değil",
+    "noSelectionTitle": "Seçili takım yok",
+    "noSelectionBody": "SportMind’in güncel görüşünü burada görmek için bir takım takip et."
   },
   "notifications": {
     "title": "Bildirimler",

@@ -1,16 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CheckIcon, PlusIcon, XIcon } from 'phosphor-react-native';
+import { CheckIcon, PlusIcon, ShieldIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
 import type { Team } from '@/data/mockData';
 import { fetchAllTeams, resolveTeamById } from '@/data/liveData';
 import TeamPicker from '@/components/TeamPicker';
+import NotFoundState from '@/components/NotFoundState';
 import TeamIntelligence from '@/components/TeamIntelligence';
+import SplitPane from '@/components/SplitPane';
 import Disclaimer from '@/components/Disclaimer';
 
 /** Normal AI Insights: "What does SportMind currently think about the team(s) I follow?"
@@ -25,6 +28,8 @@ export default function InsightsScreen() {
   const { t } = useTranslation();
   const { teams, matches, changeEvents, analysisChanges, isLive } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
+  const layout = useAdaptiveLayout();
+  const dual = layout.panes === 'dual';
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -121,119 +126,155 @@ export default function InsightsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={[styles.shell, railInsetStyle(layout)]}>
+      <ScrollView
+        contentContainerStyle={[styles.content, dual && styles.contentWide]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>{t('insights.title')}</Text>
         <Text style={styles.subtitle}>{t('insights.subtitle')}</Text>
 
-        <Text style={styles.kicker}>{t('insights.teamsKicker')}</Text>
-        {followedTeams.length === 0 ? (
-          <>
-            <Text style={styles.emptyText}>{t('insights.followingEmptyBody', { max: MAX_FOLLOWED_TEAMS })}</Text>
-            <Pressable style={styles.addButton} onPress={() => setShowPicker(true)}>
-              <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
-              <Text style={styles.addButtonText}>{t('insights.addTeamShort')}</Text>
-            </Pressable>
-          </>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {followedTeams.map((team) => {
-              const selected = team.id === selectedTeamId;
-              return (
-                <Pressable
-                  key={team.id}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  onPress={() => setSelectedTeamId(team.id)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={selected ? t('insights.chipSelectedLabel', { team: team.name }) : team.name}
-                >
-                  {selected && <CheckIcon size={12} weight="bold" color={colors.primaryTint} />}
-                  <Text style={[styles.chipText, selected && styles.chipTextSelected]} numberOfLines={1}>
-                    {team.name}
-                  </Text>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => toggleTeam(team.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('insights.chipRemoveLabel', { team: team.name })}
-                  >
-                    <XIcon size={13} weight="bold" color={selected ? colors.primaryTint : colors.textFainter} />
-                  </Pressable>
-                </Pressable>
-              );
-            })}
-            {canFollowMore && (
-              <Pressable
-                style={styles.addChip}
-                onPress={() => setShowPicker(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('insights.addTeamShort')}
-              >
-                <PlusIcon size={14} weight="bold" color={colors.primaryLink} />
+        {/* SELECTION -> ANALYSIS. The team chips and the change feed for the teams this
+            user follows on one side, SportMind's current read of the selected team on the
+            other, so choosing a team no longer scrolls its analysis out of reach. */}
+        <SplitPane
+          dual={dual}
+          primaryFlex={1}
+          secondaryFlex={1.35}
+          primary={<View>
+          <Text style={styles.kicker}>{t('insights.teamsKicker')}</Text>
+          {followedTeams.length === 0 ? (
+            <>
+              <Text style={styles.emptyText}>{t('insights.followingEmptyBody', { max: MAX_FOLLOWED_TEAMS })}</Text>
+              <Pressable style={styles.addButton} onPress={() => setShowPicker(true)}>
+                <PlusIcon size={13} weight="bold" color={colors.primaryLink} />
+                <Text style={styles.addButtonText}>{t('insights.addTeamShort')}</Text>
               </Pressable>
-            )}
-          </ScrollView>
-        )}
-
-        <TeamPicker
-          visible={showPicker}
-          onClose={() => setShowPicker(false)}
-          teams={pickerTeams}
-          matches={matches}
-          excludeIds={teamIds}
-          search={pickerSearch}
-          onSearchChange={setPickerSearch}
-          title={t('insights.addTeamShort')}
-          onSelect={(teamId) => {
-            toggleTeam(teamId);
-            setSelectedTeamId(teamId);
-            setShowPicker(false);
-            setPickerSearch('');
-          }}
-        />
-
-        {selectedTeam && (
-          <View style={styles.contentWrap}>
-            <TeamIntelligence team={selectedTeam} nextMatch={nextMatch} analysisChanges={matchAnalysisChanges} />
-          </View>
-        )}
-
-        <Text style={styles.kicker}>{t('insights.recentChangesKicker')}</Text>
-        {recentChanges.length === 0 ? (
-          <Text style={styles.emptyText}>{t('insights.recentChangesEmpty')}</Text>
-        ) : (
-          <View style={{ gap: 8, marginBottom: 16 }}>
-            {recentChanges.map((event) => {
-              const match = matches.find((m) => m.id === event.matchId);
-              if (!match) return null;
-              const delta = event.to - event.from;
-              return (
-                <Pressable key={event.id} style={styles.changeRow} onPress={() => router.push(`/match/${match.id}?tab=change`)}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.changeMatchup} numberOfLines={1}>
-                      {match.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {match.away.name}
+            </>
+          ) : (
+            <ChipContainer dual={dual}>
+              {followedTeams.map((team) => {
+                const selected = team.id === selectedTeamId;
+                return (
+                  <Pressable
+                    key={team.id}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => setSelectedTeamId(team.id)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={selected ? t('insights.chipSelectedLabel', { team: team.name }) : team.name}
+                  >
+                    {selected && <CheckIcon size={12} weight="bold" color={colors.primaryTint} />}
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]} numberOfLines={1}>
+                      {team.name}
                     </Text>
-                    <Text style={styles.changeDescription}>{t(`changeEvents.${event.key}`)}</Text>
-                  </View>
-                  <View style={[styles.deltaChip, { backgroundColor: delta >= 0 ? colors.successMuted : colors.warningMuted }]}>
-                    <Text style={[styles.deltaChipText, { color: delta >= 0 ? colors.successText : colors.warningText }]}>
-                      {delta > 0 ? '+' : ''}
-                      {delta}
-                    </Text>
-                  </View>
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => toggleTeam(team.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('insights.chipRemoveLabel', { team: team.name })}
+                    >
+                      <XIcon size={13} weight="bold" color={selected ? colors.primaryTint : colors.textFainter} />
+                    </Pressable>
+                  </Pressable>
+                );
+              })}
+              {canFollowMore && (
+                <Pressable
+                  style={styles.addChip}
+                  onPress={() => setShowPicker(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('insights.addTeamShort')}
+                >
+                  <PlusIcon size={14} weight="bold" color={colors.primaryLink} />
                 </Pressable>
-              );
-            })}
-          </View>
-        )}
+              )}
+            </ChipContainer>
+          )}
+
+          <TeamPicker
+            visible={showPicker}
+            onClose={() => setShowPicker(false)}
+            teams={pickerTeams}
+            matches={matches}
+            excludeIds={teamIds}
+            search={pickerSearch}
+            onSearchChange={setPickerSearch}
+            title={t('insights.addTeamShort')}
+            onSelect={(teamId) => {
+              toggleTeam(teamId);
+              setSelectedTeamId(teamId);
+              setShowPicker(false);
+              setPickerSearch('');
+            }}
+          />
+
+          <Text style={styles.kicker}>{t('insights.recentChangesKicker')}</Text>
+          {recentChanges.length === 0 ? (
+            <Text style={styles.emptyText}>{t('insights.recentChangesEmpty')}</Text>
+          ) : (
+            <View style={{ gap: 8, marginBottom: 16 }}>
+              {recentChanges.map((event) => {
+                const match = matches.find((m) => m.id === event.matchId);
+                if (!match) return null;
+                const delta = event.to - event.from;
+                return (
+                  <Pressable key={event.id} style={styles.changeRow} onPress={() => router.push(`/match/${match.id}?tab=change`)}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.changeMatchup} numberOfLines={1}>
+                        {match.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {match.away.name}
+                      </Text>
+                      <Text style={styles.changeDescription}>{t(`changeEvents.${event.key}`)}</Text>
+                    </View>
+                    <View style={[styles.deltaChip, { backgroundColor: delta >= 0 ? colors.successMuted : colors.warningMuted }]}>
+                      <Text style={[styles.deltaChipText, { color: delta >= 0 ? colors.successText : colors.warningText }]}>
+                        {delta > 0 ? '+' : ''}
+                        {delta}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+          </View>}
+          secondary={<View>
+          {selectedTeam ? (
+            <View style={[styles.contentWrap, dual && styles.contentWrapInPane]}>
+              <TeamIntelligence team={selectedTeam} nextMatch={nextMatch} analysisChanges={matchAnalysisChanges} />
+            </View>
+          ) : (
+            dual && (
+              // Nothing is selected because nothing is followed yet — said plainly, with the
+              // action left where it already is (the selection column beside this one).
+              <NotFoundState icon={ShieldIcon} title={t('insights.noSelectionTitle')} body={t('insights.noSelectionBody')} />
+            )
+          )}
+          </View>}
+        />
 
         <Disclaimer />
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
+/** One row of chips, laid out for the space it is in: a sideways scroller across the full
+ * width of a phone, a wrapping row inside the narrow selection column of a wide window. */
+function ChipContainer({ dual, children }: { dual: boolean; children: ReactNode }) {
+  if (dual) return <View style={[styles.chipRow, styles.chipWrap]}>{children}</View>;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      {children}
+    </ScrollView>
+  );
+}
+
 const styles = StyleSheet.create({
+  shell: { flex: 1 },
+  contentWide: { paddingBottom: 40 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
   title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 4 },
@@ -260,6 +301,8 @@ const styles = StyleSheet.create({
   addButton: { marginTop: 10, minHeight: 44, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderHover, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   addButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   contentWrap: { marginTop: 18, marginBottom: 24 },
+  // Side by side the analysis column starts level with the selection column.
+  contentWrapInPane: { marginTop: 0 },
   changeRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
+import { Platform, StyleProp, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 import { MagnifyingGlassIcon } from 'phosphor-react-native';
 import { colors, fonts, radius } from '@/constants/theme';
 
@@ -10,7 +10,7 @@ type Props = {
   autoFocus?: boolean;
   height?: number;
   fontSize?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 };
 

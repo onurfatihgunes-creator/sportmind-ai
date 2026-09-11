@@ -3,6 +3,7 @@ import { Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } f
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, CheckIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { getCompetitionInfo } from '@/data/competitions';
 import SearchBar from './SearchBar';
 
@@ -29,6 +30,7 @@ type Section = { title: string; data: Row[] };
  * size.
  */
 export default function CompetitionPicker({ visible, onClose, onSelect, competitions, selected, search, onSearchChange }: Props) {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
 
   const sections = useMemo<Section[]>(() => {
@@ -83,13 +85,14 @@ export default function CompetitionPicker({ visible, onClose, onSelect, competit
           autoFocus
           height={40}
           fontSize={13}
-          style={styles.searchBar}
+          style={[styles.searchBar, singleColumnStyle(layout)]}
         />
 
         <SectionList
           sections={sections}
           keyExtractor={(row) => row.key}
           contentContainerStyle={styles.listContent}
+          style={singleColumnStyle(layout)}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={<Text style={styles.emptyText}>{t('explore.noCompetitionsMatch')}</Text>}
           renderSectionHeader={({ section }) => (section.title ? <Text style={styles.sectionHeader}>{section.title}</Text> : null)}

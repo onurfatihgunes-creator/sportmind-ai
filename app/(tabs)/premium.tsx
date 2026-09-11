@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, ClockCountdownIcon, SparkleIcon, XIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { railInsetStyle, singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useEntitlement } from '@/contexts/EntitlementContext';
 import { completePurchase, isPurchaseConfigured, restorePurchases, startPurchase } from '@/services/purchase';
 import Toast, { useToast } from '@/components/Toast';
@@ -38,6 +39,7 @@ import Toast, { useToast } from '@/components/Toast';
 type Stage = 'idle' | 'purchasing' | 'refreshing' | 'confirmed';
 
 export default function PremiumScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const { status, trialEndsAt, refresh } = useEntitlement();
   const { toastState, showToast } = useToast();
@@ -104,7 +106,8 @@ export default function PremiumScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={[styles.shell, railInsetStyle(layout)]}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout), layout.wide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <View style={styles.icon}>
           <SparkleIcon size={24} weight="bold" color={colors.primaryTint} />
         </View>
@@ -156,12 +159,16 @@ export default function PremiumScreen() {
           <Text style={styles.unavailable}>{t('pro.unavailable')}</Text>
         )}
       </ScrollView>
+      </View>
       <Toast state={toastState} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: { flex: 1 },
+  // No bottom tab bar to clear once the navigation has become a side rail.
+  contentWide: { paddingBottom: 40 },
   container: { flex: 1, backgroundColor: colors.backgroundGradientTop },
   closeRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 10, paddingTop: 4 },
   closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

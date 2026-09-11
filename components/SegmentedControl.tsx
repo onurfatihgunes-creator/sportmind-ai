@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, StyleProp, Text, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, withTiming } from 'react-native-reanimated';
 import { colors, fonts, radius } from '@/constants/theme';
 
@@ -15,7 +15,7 @@ type Props = {
   value: string;
   onChange: (key: string) => void;
   height?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   fontSize?: number;
 };
 

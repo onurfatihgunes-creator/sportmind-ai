@@ -13,6 +13,7 @@ import {
   TrayIcon,
 } from 'phosphor-react-native';
 import { colors, confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
@@ -22,6 +23,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 import SegmentedControl from '@/components/SegmentedControl';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import StackedDistributionBar from '@/components/StackedDistributionBar';
+import SplitPane from '@/components/SplitPane';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -32,7 +34,15 @@ export default function HomeScreen() {
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
 
   const { width: windowWidth } = useWindowDimensions();
-  const heroCardWidth = Math.min(360, windowWidth - spacing.screenX - 56);
+  const layout = useAdaptiveLayout();
+  const dual = layout.panes === 'dual';
+  // The highlights carousel sizes its cards against the column it is actually in — on a
+  // wide window that is the primary pane, not the window. Measured with onLayout rather
+  // than re-derived from the flex ratios, so it stays right whatever the pane turns out
+  // to be (including a Split View slice being dragged).
+  const [primaryPaneWidth, setPrimaryPaneWidth] = useState(0);
+  const carouselWidth = dual && primaryPaneWidth > 0 ? primaryPaneWidth : windowWidth - spacing.screenX;
+  const heroCardWidth = Math.min(360, carouselWidth - (dual ? 24 : 56));
 
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
   const heroMatches = useMemo(
@@ -99,7 +109,11 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={[styles.shell, railInsetStyle(layout)]}>
+      <ScrollView
+        contentContainerStyle={[styles.content, dual && styles.contentWide]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.greetingSmall}>{t('home.goodEvening')}</Text>
@@ -125,207 +139,230 @@ export default function HomeScreen() {
           onChange={(key) => setSelectedSport(key as Sport)}
         />
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
-          <View style={styles.sectionHeaderRight}>
-            {!loading && !isLive && (
-              <View style={styles.liveRow}>
-                <View style={[styles.liveDot, { backgroundColor: colors.warning }]} />
-                <Text style={styles.liveText}>{t('home.demoData')}</Text>
-              </View>
-            )}
-            <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
-              <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
-              <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
-            </Pressable>
-          </View>
-        </View>
-
-        {heroMatches.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.heroScroll}
-            contentContainerStyle={{ gap: 12, paddingHorizontal: spacing.screenX }}
-            decelerationRate="fast"
-            snapToInterval={heroCardWidth + 12}
-            snapToAlignment="start"
-          >
-            {heroMatches.map((match) => {
-              const favourite = favouredOutcome(match);
-              const isBasketball = match.sport === 'basketball';
-              const topFactor = [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50))[0] ?? null;
-              return (
-                <Pressable
-                  key={match.id}
-                  style={[styles.hero, { width: heroCardWidth }]}
-                  onPress={() => router.push(`/match/${match.id}`)}
-                >
-                  <Text style={styles.heroCompetition}>{match.competition}</Text>
-                  <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
-                  <View style={styles.heroRow}>
-                    <View style={styles.heroInfo}>
-                      <TeamBadgePair home={match.home} away={match.away} size={30} />
-                      <Text style={[styles.heroTitle, { marginTop: 8 }]}>{match.home.name}</Text>
-                      <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
-                      <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
-                    </View>
-                    <ConfidenceRing
-                      value={favourite.probability}
-                      caption={t('matchAnalysis.winProbabilityCaption')}
-                      favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
-                    />
+        {/* HOME'S TWO RAILS. Not a forced split: these are the two things Home already
+            says — what SportMind finds notable right now (curated highlights plus the one
+            analysis with the clearest single driver), and what is happening to the teams
+            and matches this particular user is attached to. Side by side they stop
+            scrolling each other off screen. Nothing was invented to fill the second
+            column: both sections keep their own real empty states, and on a phone this
+            renders exactly the stack it always did. */}
+        <SplitPane
+          dual={dual}
+          primaryFlex={1.15}
+          secondaryFlex={1}
+          primary={
+            <View onLayout={(e) => setPrimaryPaneWidth(e.nativeEvent.layout.width)}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
+              <View style={styles.sectionHeaderRight}>
+                {!loading && !isLive && (
+                  <View style={styles.liveRow}>
+                    <View style={[styles.liveDot, { backgroundColor: colors.warning }]} />
+                    <Text style={styles.liveText}>{t('home.demoData')}</Text>
                   </View>
-                  <StackedDistributionBar
-                    home={match.outcomes.home}
-                    draw={isBasketball ? 0 : match.outcomes.draw}
-                    away={match.outcomes.away}
-                    height={26}
-                  />
-                  {topFactor && (
-                    <View style={styles.heroReasonRow}>
-                      <LightningIcon size={13} weight="bold" color={colors.primary} />
-                      <Text style={styles.heroReasonText}>
-                        {t('home.heroReason', {
-                          team: topFactor.home >= topFactor.away ? match.home.name : match.away.name,
-                          factor: t(`factors.${topFactor.key}`).toLowerCase(),
+                )}
+                <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
+                  <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
+                  <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
+                </Pressable>
+              </View>
+            </View>
+
+            {heroMatches.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={[styles.heroScroll, dual && styles.heroScrollInPane]}
+                contentContainerStyle={{ gap: 12, paddingHorizontal: dual ? 0 : spacing.screenX }}
+                decelerationRate="fast"
+                snapToInterval={heroCardWidth + 12}
+                snapToAlignment="start"
+              >
+                {heroMatches.map((match) => {
+                  const favourite = favouredOutcome(match);
+                  const isBasketball = match.sport === 'basketball';
+                  const topFactor = [...match.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50))[0] ?? null;
+                  return (
+                    <Pressable
+                      key={match.id}
+                      style={[styles.hero, { width: heroCardWidth }]}
+                      onPress={() => router.push(`/match/${match.id}`)}
+                    >
+                      <Text style={styles.heroCompetition}>{match.competition}</Text>
+                      <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
+                      <View style={styles.heroRow}>
+                        <View style={styles.heroInfo}>
+                          <TeamBadgePair home={match.home} away={match.away} size={30} />
+                          <Text style={[styles.heroTitle, { marginTop: 8 }]}>{match.home.name}</Text>
+                          <Text style={styles.heroVsCentered}>{t('common.vs')}</Text>
+                          <Text style={[styles.heroTitle, { marginBottom: 4 }]}>{match.away.name}</Text>
+                        </View>
+                        <ConfidenceRing
+                          value={favourite.probability}
+                          caption={t('matchAnalysis.winProbabilityCaption')}
+                          favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
+                        />
+                      </View>
+                      <StackedDistributionBar
+                        home={match.outcomes.home}
+                        draw={isBasketball ? 0 : match.outcomes.draw}
+                        away={match.outcomes.away}
+                        height={26}
+                      />
+                      {topFactor && (
+                        <View style={styles.heroReasonRow}>
+                          <LightningIcon size={13} weight="bold" color={colors.primary} />
+                          <Text style={styles.heroReasonText}>
+                            {t('home.heroReason', {
+                              team: topFactor.home >= topFactor.away ? match.home.name : match.away.name,
+                              factor: t(`factors.${topFactor.key}`).toLowerCase(),
+                            })}
+                          </Text>
+                          <ArrowRightIcon size={14} weight="bold" color={colors.primary} />
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
+            )}
+
+            {standout && (
+              <>
+                <Text style={[styles.kicker, styles.sectionSpacer]}>{t('home.standoutKicker')}</Text>
+                <Pressable
+                  style={styles.standoutCard}
+                  onPress={() => router.push(`/match/${standout.match.id}?tab=reasons`)}
+                >
+                  <View style={styles.standoutTop}>
+                    <TeamBadgePair home={standout.match.home} away={standout.match.away} size={28} />
+                    <View style={styles.standoutInfo}>
+                      <Text style={styles.standoutTitle} numberOfLines={1}>
+                        {standout.match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {standout.match.away.name}
+                      </Text>
+                      <Text style={styles.standoutSubtitle} numberOfLines={2}>
+                        {t('home.standoutExplanation', {
+                          team: standout.factor.home >= standout.factor.away ? standout.match.home.name : standout.match.away.name,
+                          factor: t(`factors.${standout.factor.key}`).toLowerCase(),
                         })}
                       </Text>
-                      <ArrowRightIcon size={14} weight="bold" color={colors.primary} />
                     </View>
-                  )}
+                  </View>
+                  <StackedDistributionBar
+                    home={standout.match.outcomes.home}
+                    draw={standout.match.sport === 'basketball' ? 0 : standout.match.outcomes.draw}
+                    away={standout.match.outcomes.away}
+                    height={24}
+                  />
+                  <View style={styles.standoutLinkRow}>
+                    <Text style={styles.standoutLinkText}>{t('common.viewFullAnalysis')}</Text>
+                    <ArrowRightIcon size={12} weight="bold" color={colors.primaryLink} />
+                  </View>
                 </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : (
-          <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
-        )}
+              </>
+            )}
+            </View>
+          }
+          secondary={
+            <View>
+            <Text style={[styles.kicker, styles.sectionSpacer, dual && styles.sectionSpacerFirstInPane]}>{t('insights.followingKicker')}</Text>
+            {followingRows.length > 0 ? (
+              <View style={styles.matchListGroup}>
+                {followingRows.map(({ match, myTeam, opponent }) => {
+                  const favourite = favouredOutcome(match);
+                  return (
+                    <Pressable key={match.id} style={styles.matchRow} onPress={() => router.push(`/match/${match.id}`)}>
+                      <View style={styles.matchRowInfo}>
+                        <Text style={styles.matchRowTeams} numberOfLines={1}>
+                          {myTeam.name}
+                        </Text>
+                        <Text style={styles.matchRowSubtitle} numberOfLines={1}>
+                          {t('home.followingNextMatch', { opponent: opponent.name, kickoff: match.kickoff })}
+                        </Text>
+                      </View>
+                      <View style={styles.matchRowChip}>
+                        <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability) }]}>
+                          {favourite.probability}%
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : (
+              <Pressable style={styles.followCta} onPress={() => router.push('/(tabs)/insights')}>
+                <View style={styles.followCtaIcon}>
+                  <PlusIcon size={16} weight="bold" color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.followCtaTitle}>{t('home.followTitle')}</Text>
+                  <Text style={styles.followCtaBody}>{t('home.followBody')}</Text>
+                </View>
+                <View style={styles.followCtaButton}>
+                  <Text style={styles.followCtaButtonText}>{t('home.followButton')}</Text>
+                </View>
+              </Pressable>
+            )}
 
-        {standout && (
-          <>
-            <Text style={[styles.kicker, styles.sectionSpacer]}>{t('home.standoutKicker')}</Text>
-            <Pressable
-              style={styles.standoutCard}
-              onPress={() => router.push(`/match/${standout.match.id}?tab=reasons`)}
-            >
-              <View style={styles.standoutTop}>
-                <TeamBadgePair home={standout.match.home} away={standout.match.away} size={28} />
-                <View style={styles.standoutInfo}>
-                  <Text style={styles.standoutTitle} numberOfLines={1}>
-                    {standout.match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {standout.match.away.name}
-                  </Text>
-                  <Text style={styles.standoutSubtitle} numberOfLines={2}>
-                    {t('home.standoutExplanation', {
-                      team: standout.factor.home >= standout.factor.away ? standout.match.home.name : standout.match.away.name,
-                      factor: t(`factors.${standout.factor.key}`).toLowerCase(),
-                    })}
-                  </Text>
+            <Text style={[styles.kicker, styles.sectionSpacer]}>{t('home.recentChangeKicker')}</Text>
+            {recentChanges.length > 0 ? (
+              <View style={styles.matchListGroup}>
+                {recentChanges.map(({ event, match }) => {
+                  const delta = event.to - event.from;
+                  return (
+                    <Pressable
+                      key={event.id}
+                      style={styles.changeRow}
+                      onPress={() => router.push(`/match/${event.matchId}?tab=change`)}
+                    >
+                      <View style={[styles.changeDot, { backgroundColor: toneColor(event.tone) }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.changeMatchup} numberOfLines={1}>
+                          {match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
+                        </Text>
+                        <Text style={styles.changeDescription} numberOfLines={1}>
+                          {t(`changeEvents.${event.key}`)}
+                        </Text>
+                      </View>
+                      <View style={[styles.deltaChip, { backgroundColor: toneMutedColor(event.tone) }]}>
+                        <Text style={[styles.deltaChipText, { color: toneTextColor(event.tone) }]}>
+                          {delta > 0 ? '+' : ''}
+                          {delta}
+                        </Text>
+                      </View>
+                      <ArrowRightIcon size={13} weight="bold" color={colors.textFainter} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.changesEmptyCard}>
+                <View style={styles.changesEmptyIcon}>
+                  <TrayIcon size={16} weight="bold" color={colors.textFainter} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.changesEmptyTitle}>{t('home.recentChangesEmptyTitle')}</Text>
+                  <Text style={styles.changesEmptyBody}>{t('home.recentChangesEmptyBody')}</Text>
                 </View>
               </View>
-              <StackedDistributionBar
-                home={standout.match.outcomes.home}
-                draw={standout.match.sport === 'basketball' ? 0 : standout.match.outcomes.draw}
-                away={standout.match.outcomes.away}
-                height={24}
-              />
-              <View style={styles.standoutLinkRow}>
-                <Text style={styles.standoutLinkText}>{t('common.viewFullAnalysis')}</Text>
-                <ArrowRightIcon size={12} weight="bold" color={colors.primaryLink} />
-              </View>
-            </Pressable>
-          </>
-        )}
-
-        <Text style={[styles.kicker, styles.sectionSpacer]}>{t('insights.followingKicker')}</Text>
-        {followingRows.length > 0 ? (
-          <View style={styles.matchListGroup}>
-            {followingRows.map(({ match, myTeam, opponent }) => {
-              const favourite = favouredOutcome(match);
-              return (
-                <Pressable key={match.id} style={styles.matchRow} onPress={() => router.push(`/match/${match.id}`)}>
-                  <View style={styles.matchRowInfo}>
-                    <Text style={styles.matchRowTeams} numberOfLines={1}>
-                      {myTeam.name}
-                    </Text>
-                    <Text style={styles.matchRowSubtitle} numberOfLines={1}>
-                      {t('home.followingNextMatch', { opponent: opponent.name, kickoff: match.kickoff })}
-                    </Text>
-                  </View>
-                  <View style={styles.matchRowChip}>
-                    <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability) }]}>
-                      {favourite.probability}%
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : (
-          <Pressable style={styles.followCta} onPress={() => router.push('/(tabs)/insights')}>
-            <View style={styles.followCtaIcon}>
-              <PlusIcon size={16} weight="bold" color={colors.primary} />
+            )}
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.followCtaTitle}>{t('home.followTitle')}</Text>
-              <Text style={styles.followCtaBody}>{t('home.followBody')}</Text>
-            </View>
-            <View style={styles.followCtaButton}>
-              <Text style={styles.followCtaButtonText}>{t('home.followButton')}</Text>
-            </View>
-          </Pressable>
-        )}
-
-        <Text style={[styles.kicker, styles.sectionSpacer]}>{t('home.recentChangeKicker')}</Text>
-        {recentChanges.length > 0 ? (
-          <View style={styles.matchListGroup}>
-            {recentChanges.map(({ event, match }) => {
-              const delta = event.to - event.from;
-              return (
-                <Pressable
-                  key={event.id}
-                  style={styles.changeRow}
-                  onPress={() => router.push(`/match/${event.matchId}?tab=change`)}
-                >
-                  <View style={[styles.changeDot, { backgroundColor: toneColor(event.tone) }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.changeMatchup} numberOfLines={1}>
-                      {match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
-                    </Text>
-                    <Text style={styles.changeDescription} numberOfLines={1}>
-                      {t(`changeEvents.${event.key}`)}
-                    </Text>
-                  </View>
-                  <View style={[styles.deltaChip, { backgroundColor: toneMutedColor(event.tone) }]}>
-                    <Text style={[styles.deltaChipText, { color: toneTextColor(event.tone) }]}>
-                      {delta > 0 ? '+' : ''}
-                      {delta}
-                    </Text>
-                  </View>
-                  <ArrowRightIcon size={13} weight="bold" color={colors.textFainter} />
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.changesEmptyCard}>
-            <View style={styles.changesEmptyIcon}>
-              <TrayIcon size={16} weight="bold" color={colors.textFainter} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.changesEmptyTitle}>{t('home.recentChangesEmptyTitle')}</Text>
-              <Text style={styles.changesEmptyBody}>{t('home.recentChangesEmptyBody')}</Text>
-            </View>
-          </View>
-        )}
+          }
+        />
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  shell: { flex: 1 },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
+  // No bottom tab bar to clear once the navigation has become a side rail.
+  contentWide: { paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
   greetingSmall: { fontFamily: fonts.body, fontSize: 13, color: colors.textFaint, marginBottom: 3 },
   greetingName: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary },
@@ -345,6 +382,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sectionSpacer: { marginTop: spacing.xl, marginBottom: 9 },
+  sectionSpacerFirstInPane: { marginTop: 0 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
   matchListGroup: { gap: 8, marginBottom: spacing.xxl },
   matchRow: {
@@ -374,6 +412,8 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textTertiary },
   heroScroll: { marginHorizontal: -spacing.screenX, marginBottom: spacing.xxl },
+  // Inside a pane the carousel must stay in the pane, not bleed into the centre gutter.
+  heroScrollInPane: { marginHorizontal: 0 },
   hero: {
     borderWidth: 1,
     borderColor: colors.borderAccent,

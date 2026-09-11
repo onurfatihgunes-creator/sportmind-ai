@@ -3,18 +3,29 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BasketballIcon, BookmarkSimpleIcon, CaretDownIcon, SoccerBallIcon, SortDescendingIcon } from 'phosphor-react-native';
+import { BasketballIcon, BookmarkSimpleIcon, CaretDownIcon, SoccerBallIcon, SortDescendingIcon, SparkleIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { panesForWidth } from '@/constants/layout';
+import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useEntitlement } from '@/contexts/EntitlementContext';
 import SegmentedControl from '@/components/SegmentedControl';
 import SearchBar from '@/components/SearchBar';
 import CompetitionPicker from '@/components/CompetitionPicker';
 import TeamBadgePair from '@/components/TeamBadgePair';
+import MatchAnalysisContent, { type MatchAnalysisTab } from '@/components/MatchAnalysisContent';
+import NotFoundState from '@/components/NotFoundState';
 import Toast, { useToast } from '@/components/Toast';
 
 type DayGroup = { key: string; label: string; matches: Match[] };
+
+/** Explore's list keeps a little less room than the analysis beside it: the rows are
+ *  compact (crest, two lines, a chip) while the detail pane carries the ring, the
+ *  distribution bar and the factor bars. */
+const LIST_FLEX = 1;
+const DETAIL_FLEX = 1.2;
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -50,13 +61,23 @@ export default function ExploreScreen() {
   const params = useLocalSearchParams<{ league?: string }>();
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
+  const { status: entitlementStatus } = useEntitlement();
   const { toastState, showToast } = useToast();
+  const layout = useAdaptiveLayout();
   const [search, setSearch] = useState('');
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
   const [sortAsc, setSortAsc] = useState(false);
   const [competitionPickerOpen, setCompetitionPickerOpen] = useState(false);
   const [competitionSearch, setCompetitionSearch] = useState('');
+
+  // LIST + DETAIL, only when there is genuinely room for both. On a phone this state is
+  // simply never read: tapping a row pushes /match/[id] exactly as it always has. It is
+  // still kept across a fold on purpose — open the device, pick a match, fold it again,
+  // unfold it, and the same match is still selected instead of the pane resetting.
+  const dual = layout.panes === 'dual';
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [detailTab, setDetailTab] = useState<MatchAnalysisTab>('summary');
 
   // Home links here with a `league` param (e.g. from its league chips) — re-apply it
   // whenever it changes, since expo-router reuses this screen's instance across tab visits.
@@ -101,115 +122,201 @@ export default function ExploreScreen() {
     return Array.from(groups.values()).sort((a, b) => a.key.localeCompare(b.key));
   }, [filteredMatches, t]);
 
+  // Resolved against the CURRENT filter result, never against a remembered copy of the
+  // match — so a selection that a sport switch, a league filter or a search has just
+  // filtered away honestly falls back to the no-selection pane rather than leaving a
+  // detail on screen that is no longer in the list beside it.
+  const selectedMatch = useMemo(
+    () => (selectedMatchId ? filteredMatches.find((m) => m.id === selectedMatchId) ?? null : null),
+    [filteredMatches, selectedMatchId],
+  );
+
+  const openMatch = (id: string) => {
+    if (dual) {
+      // Same screen, no navigation: no push, no remount, no second data fetch — the
+      // detail pane reads the Match object the list is already holding.
+      setSelectedMatchId(id);
+      setDetailTab('summary');
+      return;
+    }
+    router.push(`/match/${id}`);
+  };
+
+  const listContent = (
+    <>
+      <Text style={styles.title}>{t('explore.title')}</Text>
+
+      <SearchBar value={search} onChangeText={setSearch} placeholder={t('explore.searchPlaceholder')} />
+
+      <SegmentedControl
+        style={styles.sportSegment}
+        options={[
+          { key: 'football', label: t('home.football'), icon: <SoccerBallIcon size={14} weight="bold" color={colors.textSecondary} /> },
+          { key: 'basketball', label: t('home.basketball'), icon: <BasketballIcon size={14} weight="bold" color={colors.textSecondary} /> },
+        ]}
+        value={selectedSport}
+        onChange={(key) => {
+          setSelectedSport(key as Sport);
+          setSelectedLeague('all');
+        }}
+      />
+
+      <Pressable
+        style={styles.competitionTrigger}
+        onPress={() => setCompetitionPickerOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t('explore.competitionPickerTitle')}
+      >
+        <Text
+          style={[styles.competitionTriggerText, selectedLeague === 'all' && styles.competitionTriggerPlaceholder]}
+          numberOfLines={1}
+        >
+          {selectedLeague === 'all' ? t('explore.selectCompetitionPlaceholder') : selectedLeague}
+        </Text>
+        <CaretDownIcon size={13} weight="bold" color={colors.textSecondary} />
+      </Pressable>
+
+      <CompetitionPicker
+        visible={competitionPickerOpen}
+        onClose={() => setCompetitionPickerOpen(false)}
+        competitions={competitions}
+        selected={selectedLeague}
+        search={competitionSearch}
+        onSearchChange={setCompetitionSearch}
+        onSelect={(competition) => {
+          setSelectedLeague(competition);
+          setCompetitionPickerOpen(false);
+          setCompetitionSearch('');
+        }}
+      />
+
+      {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
+
+      {groupedByDay.map((group) => {
+        const isToday = group.label === t('explore.today');
+        return (
+          <View key={group.key}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.kicker}>{group.label}</Text>
+              {isToday && (
+                <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
+                  <SortDescendingIcon size={13} weight="bold" color={colors.primary} />
+                  <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+                </Pressable>
+              )}
+            </View>
+            <View style={styles.matchList}>
+              {group.matches.map((m, index) => {
+                const favourite = favouredOutcome(m);
+                const watched = isWatched(m.id);
+                const isSelected = dual && m.id === selectedMatchId;
+                return (
+                  <Pressable
+                    key={m.id}
+                    style={[
+                      styles.matchRow,
+                      isToday && index === 0 && styles.matchRowFeatured,
+                      isSelected && styles.matchRowSelected,
+                    ]}
+                    onPress={() => openMatch(m.id)}
+                    // In the two-pane layout a row is no longer a link that takes you
+                    // somewhere, it chooses what the pane beside it shows — so VoiceOver
+                    // gets the selectable semantics to match, and only then.
+                    accessibilityRole={dual ? 'tab' : 'button'}
+                    accessibilityState={dual ? { selected: isSelected } : undefined}
+                  >
+                    <TeamBadgePair home={m.home} away={m.away} />
+                    <View style={styles.matchInfo}>
+                      <Text style={styles.matchTitle}>
+                        {m.home.name} — {m.away.name}
+                      </Text>
+                      <Text style={styles.matchSubtitle}>
+                        {m.kickoff.replace(/^(Today|Tomorrow),\s*/, '')} · {m.competition}
+                      </Text>
+                    </View>
+                    <View style={[styles.pctChip, { backgroundColor: colors.divider }, favourite.probability >= 55 && { backgroundColor: colors.primaryTintStrong }]}>
+                      <Text style={[styles.pctChipText, { color: colors.textSecondaryAlt }, favourite.probability >= 55 && { color: colors.primaryText }]}>
+                        {favourite.probability}%
+                      </Text>
+                    </View>
+                    <Pressable
+                      hitSlop={10}
+                      style={styles.favButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        toggleWatch(m.id);
+                        showToast(watched ? t('common.savedToastRemoved') : t('common.savedToastAdded'));
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={watched ? t('common.savedToastRemoved') : t('common.savedToastAdded')}
+                    >
+                      <BookmarkSimpleIcon size={17} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFainter} />
+                    </Pressable>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{t('explore.title')}</Text>
-
-        <SearchBar value={search} onChangeText={setSearch} placeholder={t('explore.searchPlaceholder')} />
-
-        <SegmentedControl
-          style={styles.sportSegment}
-          options={[
-            { key: 'football', label: t('home.football'), icon: <SoccerBallIcon size={14} weight="bold" color={colors.textSecondary} /> },
-            { key: 'basketball', label: t('home.basketball'), icon: <BasketballIcon size={14} weight="bold" color={colors.textSecondary} /> },
-          ]}
-          value={selectedSport}
-          onChange={(key) => {
-            setSelectedSport(key as Sport);
-            setSelectedLeague('all');
-          }}
-        />
-
-        <Pressable
-          style={styles.competitionTrigger}
-          onPress={() => setCompetitionPickerOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('explore.competitionPickerTitle')}
+      {/* The shell is always here and the list ScrollView is always its first child, in
+          both layouts — folding the device only changes flexDirection and adds a second
+          pane, so the list never unmounts and never loses its scroll position. */}
+      <View style={[styles.shell, dual && styles.shellRow, railInsetStyle(layout)]}>
+        <ScrollView
+          style={dual ? { flex: LIST_FLEX } : undefined}
+          contentContainerStyle={[styles.content, dual && styles.contentWide]}
+          showsVerticalScrollIndicator={false}
         >
-          <Text
-            style={[styles.competitionTriggerText, selectedLeague === 'all' && styles.competitionTriggerPlaceholder]}
-            numberOfLines={1}
-          >
-            {selectedLeague === 'all' ? t('explore.selectCompetitionPlaceholder') : selectedLeague}
-          </Text>
-          <CaretDownIcon size={13} weight="bold" color={colors.textSecondary} />
-        </Pressable>
-
-        <CompetitionPicker
-          visible={competitionPickerOpen}
-          onClose={() => setCompetitionPickerOpen(false)}
-          competitions={competitions}
-          selected={selectedLeague}
-          search={competitionSearch}
-          onSearchChange={setCompetitionSearch}
-          onSelect={(competition) => {
-            setSelectedLeague(competition);
-            setCompetitionPickerOpen(false);
-            setCompetitionSearch('');
-          }}
-        />
-
-        {filteredMatches.length === 0 && <Text style={styles.emptyText}>{t('explore.noResults')}</Text>}
-
-        {groupedByDay.map((group) => {
-          const isToday = group.label === t('explore.today');
-          return (
-            <View key={group.key}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.kicker}>{group.label}</Text>
-                {isToday && (
-                  <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
-                    <SortDescendingIcon size={13} weight="bold" color={colors.primary} />
-                    <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
-                  </Pressable>
-                )}
-              </View>
-              <View style={styles.matchList}>
-                {group.matches.map((m, index) => {
-                  const favourite = favouredOutcome(m);
-                  const watched = isWatched(m.id);
-                  return (
-                    <Pressable
-                      key={m.id}
-                      style={[styles.matchRow, isToday && index === 0 && styles.matchRowFeatured]}
-                      onPress={() => router.push(`/match/${m.id}`)}
-                    >
-                      <TeamBadgePair home={m.home} away={m.away} />
-                      <View style={styles.matchInfo}>
-                        <Text style={styles.matchTitle}>
-                          {m.home.name} — {m.away.name}
-                        </Text>
-                        <Text style={styles.matchSubtitle}>
-                          {m.kickoff.replace(/^(Today|Tomorrow),\s*/, '')} · {m.competition}
-                        </Text>
-                      </View>
-                      <View style={[styles.pctChip, { backgroundColor: colors.divider }, favourite.probability >= 55 && { backgroundColor: colors.primaryTintStrong }]}>
-                        <Text style={[styles.pctChipText, { color: colors.textSecondaryAlt }, favourite.probability >= 55 && { color: colors.primaryText }]}>
-                          {favourite.probability}%
-                        </Text>
-                      </View>
-                      <Pressable
-                        hitSlop={10}
-                        style={styles.favButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          toggleWatch(m.id);
-                          showToast(watched ? t('common.savedToastRemoved') : t('common.savedToastAdded'));
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={watched ? t('common.savedToastRemoved') : t('common.savedToastAdded')}
-                      >
-                        <BookmarkSimpleIcon size={17} weight={watched ? 'fill' : 'regular'} color={watched ? colors.primary : colors.textFainter} />
-                      </Pressable>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
+          {listContent}
+        </ScrollView>
+        {dual && (
+          <>
+            <View style={{ width: layout.gutter }} />
+            <ScrollView
+              style={{ flex: DETAIL_FLEX }}
+              contentContainerStyle={[styles.content, styles.contentWide]}
+              showsVerticalScrollIndicator={false}
+              accessibilityLabel={t('matchAnalysis.title')}
+            >
+              {entitlementStatus === 'expired' ? (
+                // Exactly the boundary the /match/[id] route enforces — a wider window is
+                // not a way around the Pro gate.
+                <NotFoundState
+                  icon={SparkleIcon}
+                  title={t('pro.gateTitle')}
+                  body={t('pro.gateBody')}
+                  ctaLabel={t('pro.upgradeExpired')}
+                  onPressCta={() => router.push('/(tabs)/premium')}
+                />
+              ) : selectedMatch ? (
+                <MatchAnalysisContent
+                  match={selectedMatch}
+                  tab={detailTab}
+                  onTabChange={setDetailTab}
+                  // Roughly half a wide window is still narrower than two real panes, so
+                  // the analysis stays one column in here — panesForWidth decides that
+                  // from the width, not from a guess about the device.
+                  columns={panesForWidth(layout.contentWidth * (DETAIL_FLEX / (LIST_FLEX + DETAIL_FLEX)))}
+                />
+              ) : (
+                // A calm, honest no-selection state — never a default match, never
+                // placeholder content standing in for one.
+                <NotFoundState
+                  icon={SoccerBallIcon}
+                  title={t('explore.noSelectionTitle')}
+                  body={t('explore.noSelectionBody')}
+                />
+              )}
+            </ScrollView>
+          </>
+        )}
+      </View>
       <Toast state={toastState} />
     </SafeAreaView>
   );
@@ -217,7 +324,11 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  shell: { flex: 1 },
+  shellRow: { flexDirection: 'row' },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
+  // No bottom tab bar to clear once the navigation has become a side rail.
+  contentWide: { paddingBottom: 40 },
   title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 14 },
   sportSegment: { marginTop: 14 },
   competitionTrigger: {
@@ -252,6 +363,9 @@ const styles = StyleSheet.create({
     padding: 13,
   },
   matchRowFeatured: { backgroundColor: colors.surfaceSelected, borderColor: colors.borderAccent },
+  // The same selected treatment the competition picker and the team chips already use —
+  // the existing accent tint and accent border, no new colour.
+  matchRowSelected: { backgroundColor: colors.primaryTint, borderColor: colors.primary },
   matchInfo: { flex: 1, minWidth: 0 },
   matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary, marginBottom: 3 },
   matchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },

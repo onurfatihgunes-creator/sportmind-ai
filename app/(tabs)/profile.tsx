@@ -18,11 +18,13 @@ import {
   SparkleIcon,
 } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { railInsetStyle, singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
 
 export default function ProfileScreen() {
+  const layout = useAdaptiveLayout();
   const { t, i18n } = useTranslation();
   const { name, setName } = useProfile();
   const { matchIds } = useWatchlist();
@@ -78,7 +80,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={[styles.shell, railInsetStyle(layout)]}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout), layout.wide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('tabs.profile')}</Text>
 
         <View style={styles.userCard}>
@@ -183,11 +186,15 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: { flex: 1 },
+  // No bottom tab bar to clear once the navigation has become a side rail.
+  contentWide: { paddingBottom: 40 },
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },
   title: { fontFamily: fonts.headline, fontSize: 26, letterSpacing: -0.6, color: colors.textPrimary, marginBottom: 16 },

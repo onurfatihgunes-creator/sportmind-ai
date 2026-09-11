@@ -5,6 +5,7 @@ import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import type { Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
@@ -25,6 +26,7 @@ import NotFoundState from '@/components/NotFoundState';
  * - back returns to the exact Match Analysis screen the user came from via the normal
  *   router stack, not a tab switch. */
 export default function TeamInsightsScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const { teamId } = useLocalSearchParams<{ teamId: string }>();
   const { teams, matches, analysisChanges, isLive } = useAppData();
@@ -105,7 +107,7 @@ export default function TeamInsightsScreen() {
         <View style={styles.iconButton} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}>
           <View style={[styles.crest, { backgroundColor: team.bg }]}>
             <Text style={[styles.crestText, { color: team.fg }]}>{team.code}</Text>

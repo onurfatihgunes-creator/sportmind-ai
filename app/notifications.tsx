@@ -6,12 +6,14 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import Toggle from '@/components/Toggle';
 
 const STORAGE_KEY = 'sportmind_notification_prefs';
 const DEFAULT_TOGGLES = { confidence: true, lineups: true };
 
 export default function NotificationsScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
 
@@ -42,7 +44,7 @@ export default function NotificationsScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]}>
         <View style={styles.toggleCard}>
           <ToggleRow
             title={t('notifications.confidenceChanges')}

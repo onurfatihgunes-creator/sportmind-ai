@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import MethodologyContent from '@/components/MethodologyContent';
 
 // Still a real, standalone route — Profile's "How the model works" row links here
@@ -11,6 +12,7 @@ import MethodologyContent from '@/components/MethodologyContent';
 // (see app/legal/index.tsx). Content itself lives in MethodologyContent so neither path
 // duplicates copy or the real trackRecord data behind it.
 export default function MethodologyScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
 
   return (
@@ -22,7 +24,7 @@ export default function MethodologyScreen() {
         <Text style={styles.headerTitle}>{t('methodology.title')}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]}>
         <MethodologyContent />
       </ScrollView>
     </SafeAreaView>

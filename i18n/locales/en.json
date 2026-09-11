@@ -72,7 +72,9 @@
     "competitionPickerTitle": "Competitions",
     "searchCompetitionsPlaceholder": "Search competitions",
     "noCompetitionsMatch": "No competitions match your search.",
-    "otherRegion": "Other"
+    "otherRegion": "Other",
+    "noSelectionTitle": "No match selected",
+    "noSelectionBody": "Pick a match from the list to see SportMind’s analysis here."
   },
   "insights": {
     "title": "AI Insights",
@@ -137,7 +139,9 @@
     "signalLegendPositive": "Positive",
     "signalLegendNegative": "Negative",
     "signalLegendNeutral": "No clear direction",
-    "signalLegendCaption": "Legend, not data"
+    "signalLegendCaption": "Legend, not data",
+    "noSelectionTitle": "No team selected",
+    "noSelectionBody": "Follow a team to see SportMind’s current read of it here."
   },
   "notifications": {
     "title": "Notifications",

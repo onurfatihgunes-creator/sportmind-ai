@@ -4,6 +4,7 @@ import { ArrowLeftIcon, ArrowRightIcon, BookmarkSimpleIcon } from 'phosphor-reac
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
@@ -12,6 +13,7 @@ import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
 
 export default function MyMatchesScreen() {
+  const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const { matches } = useAppData();
   const { matchIds, toggle } = useWatchlist();
@@ -27,7 +29,7 @@ export default function MyMatchesScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]} showsVerticalScrollIndicator={false}>
         {savedMatches.length > 0 && <Text style={styles.note}>{t('myMatches.note')}</Text>}
 
         {savedMatches.map((m) => {

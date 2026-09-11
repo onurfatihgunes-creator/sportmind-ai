@@ -5,10 +5,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
 import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAppData } from '@/contexts/DataContext';
 import type { Match, Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import RadarChart, { type RadarAxis } from '@/components/RadarChart';
+import SplitPane from '@/components/SplitPane';
 import NotFoundState from '@/components/NotFoundState';
 import { hasTrustedFormSample } from '@/data/dataConfidence';
 
@@ -51,6 +53,8 @@ export default function TeamComparisonScreen() {
   const { t } = useTranslation();
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
   const { teams, matches, isLive } = useAppData();
+  const layout = useAdaptiveLayout();
+  const dual = layout.panes === 'dual';
   const localTeamA = (a && teams[a]) || null;
   const localTeamB = (b && teams[b]) || null;
 
@@ -152,69 +156,80 @@ export default function TeamComparisonScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.teamsRow}>
-          <View style={styles.teamCol}>
-            <View style={[styles.crest, { backgroundColor: teamA.bg }]}>
-              <Text style={[styles.crestText, { color: teamA.fg }]}>{teamA.code}</Text>
+        {/* DATA -> INTERPRETATION. The radar and who is being compared on one side, the
+            per-axis reading of it on the other — the chart keeps its own fixed size
+            rather than being stretched to fill a wider window. */}
+        <SplitPane
+          dual={dual}
+          primaryFlex={1}
+          secondaryFlex={1}
+          primary={<View>
+          <View style={styles.teamsRow}>
+            <View style={styles.teamCol}>
+              <View style={[styles.crest, { backgroundColor: teamA.bg }]}>
+                <Text style={[styles.crestText, { color: teamA.fg }]}>{teamA.code}</Text>
+              </View>
+              <Text style={styles.teamName} numberOfLines={1}>
+                {teamA.name}
+              </Text>
             </View>
-            <Text style={styles.teamName} numberOfLines={1}>
-              {teamA.name}
-            </Text>
-          </View>
-          <Text style={styles.vs}>{t('common.vs')}</Text>
-          <View style={[styles.teamCol, styles.teamColEnd]}>
-            <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={1}>
-              {teamB.name}
-            </Text>
-            <View style={[styles.crest, styles.crestFixed, { backgroundColor: teamB.bg }]}>
-              <Text style={[styles.crestText, { color: teamB.fg }]}>{teamB.code}</Text>
+            <Text style={styles.vs}>{t('common.vs')}</Text>
+            <View style={[styles.teamCol, styles.teamColEnd]}>
+              <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={1}>
+                {teamB.name}
+              </Text>
+              <View style={[styles.crest, styles.crestFixed, { backgroundColor: teamB.bg }]}>
+                <Text style={[styles.crestText, { color: teamB.fg }]}>{teamB.code}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.radarCard}>
-          <RadarChart axes={axes} />
-          <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-              <Text style={styles.legendText}>{teamA.name}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.neutralSeries }]} />
-              <Text style={styles.legendText}>{teamB.name}</Text>
-            </View>
-          </View>
-        </View>
-
-        {strengthsForA.length > 0 && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
-            <View style={styles.strengthChipRow}>
-              {strengthsForA.map((g) => (
-                <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('success') }]}>
-                  <Text style={[styles.strengthChipText, { color: toneTextColor('success') }]}>{g.label}</Text>
-                </View>
-              ))}
+          <View style={styles.radarCard}>
+            <RadarChart axes={axes} />
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+                <Text style={styles.legendText}>{teamA.name}</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.neutralSeries }]} />
+                <Text style={styles.legendText}>{teamB.name}</Text>
+              </View>
             </View>
           </View>
-        )}
-        {strengthsForB.length > 0 && (
-          <View style={[styles.summaryCard, { marginBottom: 0 }]}>
-            <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
-            <View style={styles.strengthChipRow}>
-              {strengthsForB.map((g) => (
-                <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('info') }]}>
-                  <Text style={[styles.strengthChipText, { color: toneTextColor('info') }]}>{g.label}</Text>
-                </View>
-              ))}
+          </View>}
+          secondary={<View style={dual ? styles.summaryColumnInPane : undefined}>
+          {strengthsForA.length > 0 && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
+              <View style={styles.strengthChipRow}>
+                {strengthsForA.map((g) => (
+                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('success') }]}>
+                    <Text style={[styles.strengthChipText, { color: toneTextColor('success') }]}>{g.label}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
-        )}
-        {strengthsForA.length === 0 && strengthsForB.length === 0 && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryText}>{t('teamComparison.tooCloseToCall')}</Text>
-          </View>
-        )}
+          )}
+          {strengthsForB.length > 0 && (
+            <View style={[styles.summaryCard, { marginBottom: 0 }]}>
+              <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
+              <View style={styles.strengthChipRow}>
+                {strengthsForB.map((g) => (
+                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('info') }]}>
+                    <Text style={[styles.strengthChipText, { color: toneTextColor('info') }]}>{g.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          {strengthsForA.length === 0 && strengthsForB.length === 0 && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryText}>{t('teamComparison.tooCloseToCall')}</Text>
+            </View>
+          )}
+          </View>}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -257,6 +272,8 @@ const styles = StyleSheet.create({
   summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 8 },
   summaryText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textTertiary },
   strengthChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  // Beside the radar rather than under it, so the two start on the same line.
+  summaryColumnInPane: { marginTop: 6 },
   strengthChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   strengthChipText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5 },
 });

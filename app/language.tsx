@@ -4,9 +4,11 @@ import { ArrowLeftIcon, CheckIcon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { RTL_LANGUAGES, SUPPORTED_LANGUAGES, setAppLanguage, type SupportedLanguage } from '@/i18n';
 
 export default function LanguageScreen() {
+  const layout = useAdaptiveLayout();
   const { t, i18n } = useTranslation();
 
   const selectLanguage = async (language: SupportedLanguage) => {
@@ -34,7 +36,7 @@ export default function LanguageScreen() {
         <Text style={styles.headerTitle}>{t('language.title')}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]}>
         <View style={styles.group}>
           {SUPPORTED_LANGUAGES.map((language, index) => (
             <Pressable

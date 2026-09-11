@@ -72,7 +72,9 @@
     "competitionPickerTitle": "البطولات",
     "searchCompetitionsPlaceholder": "ابحث عن بطولة",
     "noCompetitionsMatch": "لا توجد بطولات مطابقة لبحثك.",
-    "otherRegion": "أخرى"
+    "otherRegion": "أخرى",
+    "noSelectionTitle": "لم يتم اختيار مباراة",
+    "noSelectionBody": "اختر مباراة من القائمة لرؤية تحليل SportMind هنا."
   },
   "insights": {
     "title": "تحليلات الذكاء الاصطناعي",
@@ -145,7 +147,9 @@
     "signalLegendPositive": "إيجابي",
     "signalLegendNegative": "سلبي",
     "signalLegendNeutral": "لا اتجاه واضح",
-    "signalLegendCaption": "مفتاح الألوان، ليست بيانات"
+    "signalLegendCaption": "مفتاح الألوان، ليست بيانات",
+    "noSelectionTitle": "لم يتم اختيار فريق",
+    "noSelectionBody": "تابِع فريقًا لرؤية قراءة SportMind الحالية عنه هنا."
   },
   "notifications": {
     "title": "الإشعارات",

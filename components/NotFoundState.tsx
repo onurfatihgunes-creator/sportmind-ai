@@ -19,17 +19,21 @@ export default function NotFoundState({
   icon: Icon;
   title: string;
   body: string;
-  ctaLabel: string;
-  onPressCta: () => void;
+  /** Optional together: the wide-window "nothing selected yet" panes reuse this exact
+   *  shape but have nothing to offer a button for — the list beside them is the action. */
+  ctaLabel?: string;
+  onPressCta?: () => void;
 }) {
   return (
     <View style={styles.wrap}>
       <EntityIcon size={28} color={colors.textFainter} />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
-      <Pressable style={styles.cta} onPress={onPressCta}>
-        <Text style={styles.ctaText}>{ctaLabel}</Text>
-      </Pressable>
+      {ctaLabel && onPressCta && (
+        <Pressable style={styles.cta} onPress={onPressCta}>
+          <Text style={styles.ctaText}>{ctaLabel}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

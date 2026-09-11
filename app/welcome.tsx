@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -101,6 +102,7 @@ function ProgressFill({ pct, delayMs }: { pct: number; delayMs: number }) {
 }
 
 export default function WelcomeScreen() {
+  const layout = useAdaptiveLayout();
   const { t, i18n } = useTranslation();
   const dataPointsCount = DATA_POINTS.toLocaleString(i18n.language);
 
@@ -151,7 +153,10 @@ export default function WelcomeScreen() {
         </EntranceChip>
       </View>
 
-      <View style={styles.content}>
+      {/* The copy block is capped and centred on a wide window — a 26pt-padded
+          paragraph stretched across an unfolded display is unreadable, and there is
+          nothing real to put beside it. */}
+      <View style={[styles.content, singleColumnStyle(layout)]}>
         <View>
           <Text style={styles.badge}>{t('welcome.kicker').toUpperCase()}</Text>
         </View>
