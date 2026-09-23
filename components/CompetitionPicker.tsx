@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, CheckIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { CheckIcon } from 'phosphor-react-native';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { getCompetitionInfo } from '@/data/competitions';
+import BackButton from './BackButton';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import SearchBar from './SearchBar';
 
 type Props = {
@@ -32,6 +34,8 @@ type Section = { title: string; data: Row[] };
 export default function CompetitionPicker({ visible, onClose, onSelect, competitions, selected, search, onSearchChange }: Props) {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const sections = useMemo<Section[]>(() => {
     const query = search.trim().toLowerCase();
@@ -72,9 +76,7 @@ export default function CompetitionPicker({ visible, onClose, onSelect, competit
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Pressable style={styles.iconButton} onPress={onClose} hitSlop={12} accessibilityLabel={t('common.close')} accessibilityRole="button">
-            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-          </Pressable>
+          <BackButton style={styles.iconButton} onPress={onClose} accessibilityLabel={t('common.close')} />
           <Text style={styles.headerTitle}>{t('explore.competitionPickerTitle')}</Text>
         </View>
 
@@ -120,7 +122,7 @@ export default function CompetitionPicker({ visible, onClose, onSelect, competit
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon, CaretDownIcon, CaretRightIcon, CaretUpIcon, CpuIcon, FileIcon, FileTextIcon } from 'phosphor-react-native';
-import { router } from 'expo-router';
+import { CaretDownIcon, CaretRightIcon, CaretUpIcon, CpuIcon, FileIcon, FileTextIcon } from 'phosphor-react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import MethodologyContent from '@/components/MethodologyContent';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import BackButton from '@/components/BackButton';
 
 const PRIVACY_POLICY_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/privacy-policy.html';
 const TERMS_OF_SERVICE_URL = 'https://onurfatihgunes-creator.github.io/sportmind-ai/terms-of-service.html';
@@ -44,6 +45,8 @@ const links: LegalLink[] = [
 export default function LegalHubScreen() {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   // Methodology expands INLINE here instead of navigating to a separate screen — the
   // same content is still also reachable as its own route (app/legal/methodology.tsx,
   // linked directly from Profile's "How the model works" row), this is purely an
@@ -54,9 +57,7 @@ export default function LegalHubScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('legal.title')}</Text>
       </View>
 
@@ -99,7 +100,7 @@ export default function LegalHubScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

@@ -1,15 +1,19 @@
+import { useMemo } from 'react';
 import { Alert, I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon, CheckIcon } from 'phosphor-react-native';
-import { router } from 'expo-router';
+import { CheckIcon } from 'phosphor-react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { RTL_LANGUAGES, SUPPORTED_LANGUAGES, setAppLanguage, type SupportedLanguage } from '@/i18n';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import BackButton from '@/components/BackButton';
 
 export default function LanguageScreen() {
   const layout = useAdaptiveLayout();
   const { t, i18n } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const selectLanguage = async (language: SupportedLanguage) => {
     const wasRTL = I18nManager.isRTL;
@@ -30,9 +34,7 @@ export default function LanguageScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('language.title')}</Text>
       </View>
 
@@ -54,7 +56,7 @@ export default function LanguageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon, CheckIcon, DeviceMobileIcon, MoonIcon, SunIcon } from 'phosphor-react-native';
-import { router } from 'expo-router';
+import { CheckIcon, DeviceMobileIcon, MoonIcon, SunIcon } from 'phosphor-react-native';
 import { useTranslation } from 'react-i18next';
 import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { useAppTheme, type ThemeMode } from '@/contexts/ThemeContext';
+import BackButton from '@/components/BackButton';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 
 const MODES: { mode: ThemeMode; Icon: typeof SunIcon }[] = [
@@ -23,9 +23,7 @@ export default function AppearanceScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('appearance.title')}</Text>
       </View>
 

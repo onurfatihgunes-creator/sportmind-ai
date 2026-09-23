@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { ActivityIndicator, Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon } from 'phosphor-react-native';
 import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import type { Match, Team } from '@/data/mockData';
 import { getCompetitionInfo } from '@/data/competitions';
 import SearchBar from './SearchBar';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import BackButton from './BackButton';
 
 type Props = {
   visible: boolean;
@@ -84,9 +84,7 @@ export default function TeamPicker({ visible, onClose, onSelect, teams, matches,
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Pressable style={styles.iconButton} onPress={onClose} hitSlop={12} accessibilityLabel={t('common.close')} accessibilityRole="button">
-            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-          </Pressable>
+          <BackButton style={styles.iconButton} onPress={onClose} accessibilityLabel={t('common.close')} />
           <Text style={styles.headerTitle}>{title}</Text>
         </View>
 

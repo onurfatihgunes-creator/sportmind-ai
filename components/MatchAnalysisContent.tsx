@@ -10,7 +10,7 @@ import {
   SparkleIcon,
   WarningCircleIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, radius } from '@/constants/theme';
+import { fonts, radius, type ThemeColors } from '@/constants/theme';
 import type { PaneCount } from '@/constants/layout';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import { matchFormDataLevel } from '@/data/dataConfidence';
@@ -23,6 +23,7 @@ import StackedDistributionBar from '@/components/StackedDistributionBar';
 import FactorBar from '@/components/FactorBar';
 import ChangeTimeline from '@/components/ChangeTimeline';
 import Disclaimer from '@/components/Disclaimer';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export type MatchAnalysisTab = 'summary' | 'reasons' | 'change';
 
@@ -59,6 +60,8 @@ type Props = {
 export default function MatchAnalysisContent({ match, tab, onTabChange, columns }: Props) {
   const { t } = useTranslation();
   const { changeEvents } = useAppData();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const dual = columns === 'dual';
   const favourite = favouredOutcome(match);
@@ -347,6 +350,8 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
 // localized empty state rather than a silently blank row — never a fabricated result.
 function FormRow({ name, form }: { name: string; form: ('W' | 'D' | 'L')[] }) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const tone = { W: { bg: colors.successMuted, fg: colors.successText }, D: { bg: colors.divider, fg: colors.textSecondaryAlt }, L: { bg: colors.dangerMuted, fg: colors.dangerText } };
   return (
     <View style={styles.formRow}>
@@ -366,7 +371,7 @@ function FormRow({ name, form }: { name: string; form: ('W' | 'D' | 'L')[] }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   matchupCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -386,20 +391,24 @@ const styles = StyleSheet.create({
   teamInsightsCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     marginTop: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 7,
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
     maxWidth: '100%',
   },
   teamInsightsCtaPressed: { backgroundColor: colors.primaryLinkHover },
+  // fontSize/letterSpacing trimmed from 11/0.3 — at 375px width, "AI INSIGHTS" (English)
+  // clipped to "AI INSIG…" inside this pill's share of a flex:1 team column (confirmed
+  // live); Turkish/Arabic already fit. Smallest change that gives English back its full
+  // label without touching the card's layout/columns.
   teamInsightsCtaText: {
     flexShrink: 1,
     fontFamily: fonts.bodySemiBold,
-    fontSize: 11,
-    letterSpacing: 0.3,
+    fontSize: 10,
+    letterSpacing: 0.15,
     textTransform: 'uppercase',
     color: colors.highlightText,
   },

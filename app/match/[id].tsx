@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, BookmarkSimpleIcon, SoccerBallIcon, SparkleIcon } from 'phosphor-react-native';
-import { colors, fonts, spacing } from '@/constants/theme';
+import { BookmarkSimpleIcon, SoccerBallIcon, SparkleIcon } from 'phosphor-react-native';
+import { fonts, spacing, type ThemeColors } from '@/constants/theme';
 import { panesForWidth } from '@/constants/layout';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { type Match } from '@/data/mockData';
@@ -12,9 +12,11 @@ import { resolveMatchById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import MatchAnalysisContent, { type MatchAnalysisTab } from '@/components/MatchAnalysisContent';
 import NotFoundState from '@/components/NotFoundState';
 import Toast, { useToast } from '@/components/Toast';
+import BackButton from '@/components/BackButton';
 
 export default function MatchAnalysisScreen() {
   const { t } = useTranslation();
@@ -24,6 +26,8 @@ export default function MatchAnalysisScreen() {
   const { toastState, showToast } = useToast();
   const { status: entitlementStatus } = useEntitlement();
   const layout = useAdaptiveLayout();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const localMatch = matches.find((m) => m.id === params.id) ?? null;
 
   // A match id absent from the currently-loaded top-30-per-sport window (a stale/shared
@@ -71,9 +75,7 @@ export default function MatchAnalysisScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('matchAnalysis.title')}</Text>
         {match ? (
           <Pressable
@@ -134,7 +136,7 @@ export default function MatchAnalysisScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

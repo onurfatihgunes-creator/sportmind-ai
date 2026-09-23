@@ -198,6 +198,20 @@ function restoreAll() {
   mock.restoreAll();
 }
 
+// enrichWithBsd's own candidate window is rolling — ENRICHMENT_WINDOW_PAST_DAYS/
+// FUTURE_DAYS off `new Date()` at call time (bsdEnrichment.ts), not a fixed calendar
+// range — so every fixture date below is expressed relative to "now" rather than a
+// hardcoded date. A prior version of this file hardcoded 2026-09-08 (the real date
+// confirmed live when it was written); by 2026-09-23 that date had aged out of the
+// window entirely, failing every test built on it with "0 events matched" — a stale
+// fixture, not a regression in enrichWithBsd()'s own (unchanged, correct) logic.
+function isoDaysFromNow(days: number, hour = 19): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  d.setUTCHours(hour, 0, 0, 0);
+  return d.toISOString();
+}
+
 // A single real, matched BSD league/season/event/match set reused across tests —
 // mirrors real shapes confirmed live earlier this session (Premier League, England).
 const LEAGUE = { id: 1, name: 'Premier League', country: 'England', is_active: true, priority: 1 };
@@ -208,7 +222,7 @@ const REAL_MATCH = {
   sport: 'football',
   home_team_id: 'home-1',
   away_team_id: 'away-1',
-  kickoff_at: '2026-09-08T19:00:00Z',
+  kickoff_at: isoDaysFromNow(-1),
 };
 const BSD_EVENT = {
   id: 601071,
@@ -218,7 +232,7 @@ const BSD_EVENT = {
   away_team: 'Arsenal',
   home_team: 'Arsenal',
   away_team_id: 94,
-  event_date: '2026-09-08T19:00:00Z',
+  event_date: isoDaysFromNow(-1),
   status: 'finished' as const,
   home_score: 3,
   away_score: 2,
@@ -289,7 +303,7 @@ test('candidate matching: away team name does not normalize-match — event is s
 
 test('candidate matching: kickoff more than 1 day off the BSD event date is not matched', async () => {
   const db = makeFakeSupabase();
-  db.seed('matches', [{ ...REAL_MATCH, kickoff_at: '2026-09-20T19:00:00Z' }]); // 12 days off BSD_EVENT.event_date
+  db.seed('matches', [{ ...REAL_MATCH, kickoff_at: isoDaysFromNow(2) }]); // 3 days off BSD_EVENT.event_date (>1 day, findConfidentMatch's own threshold) — still inside the enrichment window, so it's fetched as a candidate and rejected for being too far away, not simply never seen
   db.seed('teams', [
     { id: 'home-1', name: 'Arsenal' },
     { id: 'away-1', name: 'Arsenal' },
@@ -520,8 +534,8 @@ test('one event whose lineups call throws does not stop a second, healthy event 
   // findConfidentMatch can't ambiguously cross-match this event against the wrong
   // candidate — both matches kick off the same day, so name is the only real
   // disambiguator here, exactly as it is in production.
-  const secondMatch = { id: '575328', competition: 'Premier League', sport: 'football', home_team_id: 'home-2', away_team_id: 'away-2', kickoff_at: '2026-09-08T21:00:00Z' };
-  const secondEvent = { ...BSD_EVENT, id: 601072, home_team_id: 5, away_team_id: 95, home_team: 'Chelsea', away_team: 'Chelsea', event_date: '2026-09-08T21:00:00Z' };
+  const secondMatch = { id: '575328', competition: 'Premier League', sport: 'football', home_team_id: 'home-2', away_team_id: 'away-2', kickoff_at: isoDaysFromNow(-1, 21) };
+  const secondEvent = { ...BSD_EVENT, id: 601072, home_team_id: 5, away_team_id: 95, home_team: 'Chelsea', away_team: 'Chelsea', event_date: isoDaysFromNow(-1, 21) };
   db.seed('matches', [REAL_MATCH, secondMatch]);
   db.seed('teams', [
     { id: 'home-1', name: 'Arsenal' },

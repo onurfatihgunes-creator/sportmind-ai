@@ -1,11 +1,12 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon } from 'phosphor-react-native';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, spacing } from '@/constants/theme';
+import { fonts, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import MethodologyContent from '@/components/MethodologyContent';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import BackButton from '@/components/BackButton';
 
 // Still a real, standalone route — Profile's "How the model works" row links here
 // directly, independent of the Legal hub's own inline accordion for the same content
@@ -14,13 +15,13 @@ import MethodologyContent from '@/components/MethodologyContent';
 export default function MethodologyScreen() {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('methodology.title')}</Text>
       </View>
 
@@ -31,7 +32,7 @@ export default function MethodologyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

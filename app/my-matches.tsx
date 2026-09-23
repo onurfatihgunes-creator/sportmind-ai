@@ -1,30 +1,33 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon, ArrowRightIcon, BookmarkSimpleIcon } from 'phosphor-react-native';
+import { ArrowRightIcon, BookmarkSimpleIcon } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
+import BackButton from '@/components/BackButton';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import Disclaimer from '@/components/Disclaimer';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function MyMatchesScreen() {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const { matches } = useAppData();
   const { matchIds, toggle } = useWatchlist();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const savedMatches = matches.filter((m) => matchIds.includes(m.id));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('myMatches.title')}</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -83,7 +86,7 @@ export default function MyMatchesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

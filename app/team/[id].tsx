@@ -1,30 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
+import { ShieldIcon } from 'phosphor-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import SplitPane from '@/components/SplitPane';
 import Disclaimer from '@/components/Disclaimer';
 import NotFoundState from '@/components/NotFoundState';
-
-const formTone = {
-  W: { bg: colors.successMuted, fg: colors.successText },
-  D: { bg: colors.divider, fg: colors.textSecondaryAlt },
-  L: { bg: colors.dangerMuted, fg: colors.dangerText },
-} as const;
+import BackButton from '@/components/BackButton';
 
 export default function TeamProfileScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { teams, matches, isLive } = useAppData();
   const layout = useAdaptiveLayout();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  // Reactive twin of the old module-scope constant — same three keys/shape, just
+  // resolved against the live palette instead of the light-only static import.
+  const formTone = {
+    W: { bg: colors.successMuted, fg: colors.successText },
+    D: { bg: colors.divider, fg: colors.textSecondaryAlt },
+    L: { bg: colors.dangerMuted, fg: colors.dangerText },
+  } as const;
   const dual = layout.panes === 'dual';
   const localTeam = (id && teams[id]) || null;
 
@@ -64,9 +69,7 @@ export default function TeamProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-          </Pressable>
+          <BackButton style={styles.iconButton} />
           <Text style={styles.headerTitle}>{t('teamProfile.title')}</Text>
         </View>
         {!resolving && (
@@ -85,9 +88,7 @@ export default function TeamProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('teamProfile.title')}</Text>
       </View>
 
@@ -145,7 +146,7 @@ export default function TeamProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

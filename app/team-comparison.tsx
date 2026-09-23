@@ -3,12 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, ShieldIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { ShieldIcon } from 'phosphor-react-native';
+import { fonts, radius, spacing, toneMutedColor, toneTextColor, type ThemeColors } from '@/constants/theme';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAppData } from '@/contexts/DataContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import type { Match, Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
+import BackButton from '@/components/BackButton';
 import RadarChart, { type RadarAxis } from '@/components/RadarChart';
 import SplitPane from '@/components/SplitPane';
 import NotFoundState from '@/components/NotFoundState';
@@ -54,6 +56,8 @@ export default function TeamComparisonScreen() {
   const { a, b } = useLocalSearchParams<{ a?: string; b?: string }>();
   const { teams, matches, isLive } = useAppData();
   const layout = useAdaptiveLayout();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const dual = layout.panes === 'dual';
   const localTeamA = (a && teams[a]) || null;
   const localTeamB = (b && teams[b]) || null;
@@ -106,9 +110,7 @@ export default function TeamComparisonScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-            <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-          </Pressable>
+          <BackButton style={styles.iconButton} />
           <Text style={styles.headerTitle}>{t('teamComparison.title')}</Text>
         </View>
         {!resolving && (
@@ -149,9 +151,7 @@ export default function TeamComparisonScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('teamComparison.title')}</Text>
       </View>
 
@@ -204,8 +204,8 @@ export default function TeamComparisonScreen() {
               <Text style={styles.summaryTitle}>{t('teamComparison.strength', { team: teamA.name })}</Text>
               <View style={styles.strengthChipRow}>
                 {strengthsForA.map((g) => (
-                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('success') }]}>
-                    <Text style={[styles.strengthChipText, { color: toneTextColor('success') }]}>{g.label}</Text>
+                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('success', colors) }]}>
+                    <Text style={[styles.strengthChipText, { color: toneTextColor('success', colors) }]}>{g.label}</Text>
                   </View>
                 ))}
               </View>
@@ -216,8 +216,8 @@ export default function TeamComparisonScreen() {
               <Text style={[styles.summaryTitle, { color: colors.textSecondary }]}>{t('teamComparison.strength', { team: teamB.name })}</Text>
               <View style={styles.strengthChipRow}>
                 {strengthsForB.map((g) => (
-                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('info') }]}>
-                    <Text style={[styles.strengthChipText, { color: toneTextColor('info') }]}>{g.label}</Text>
+                  <View key={g.key} style={[styles.strengthChip, { backgroundColor: toneMutedColor('info', colors) }]}>
+                    <Text style={[styles.strengthChipText, { color: toneTextColor('info', colors) }]}>{g.label}</Text>
                   </View>
                 ))}
               </View>
@@ -235,7 +235,7 @@ export default function TeamComparisonScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },

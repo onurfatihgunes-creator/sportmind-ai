@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeftIcon } from 'phosphor-react-native';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import Toggle from '@/components/Toggle';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import BackButton from '@/components/BackButton';
 
 const STORAGE_KEY = 'sportmind_notification_prefs';
 const DEFAULT_TOGGLES = { confidence: true, lineups: true };
@@ -15,6 +15,8 @@ const DEFAULT_TOGGLES = { confidence: true, lineups: true };
 export default function NotificationsScreen() {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
 
   // Previously in-memory only — reset to the default on every visit, which read
@@ -37,9 +39,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeftIcon size={20} weight="bold" color={colors.textSecondary} />
-        </Pressable>
+        <BackButton style={styles.iconButton} />
         <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -74,6 +74,8 @@ export default function NotificationsScreen() {
 }
 
 function ToggleRow({ title, subtitle, value, onChange }: { title: string; subtitle: string; value: boolean; onChange: (v: boolean) => void }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1 }}>
@@ -85,7 +87,7 @@ function ToggleRow({ title, subtitle, value, onChange }: { title: string; subtit
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
