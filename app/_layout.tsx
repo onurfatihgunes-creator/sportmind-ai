@@ -17,7 +17,9 @@ import 'react-native-reanimated';
 import { fonts, spacing } from '@/constants/theme';
 import { initI18n } from '@/i18n';
 import { isMissingProductionConfig } from '@/lib/supabase';
+import { ensureRevenueCatConfigured } from '@/services/revenueCat';
 import { DataProvider } from '@/contexts/DataContext';
+import DataGate from '@/components/DataGate';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
@@ -60,6 +62,11 @@ function RootLayoutInner() {
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
     AsyncStorage.getItem(HAS_SEEN_WELCOME_KEY).then((value) => setHasSeenWelcome(value === 'true'));
+    // Fire-and-forget: a no-op wherever isRevenueCatConfigured() is false
+    // (no Android key, or not Android at all — see services/revenueCat.ts),
+    // and nothing below depends on it having finished, so it never gates
+    // `ready`.
+    void ensureRevenueCatConfigured();
   }, []);
 
   useEffect(() => {
@@ -122,25 +129,27 @@ function RootLayoutInner() {
           <FollowedTeamsProvider>
             <ProfileProvider>
               <EntitlementProvider>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.background },
-                  }}
-                >
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
-                  <Stack.Screen name="match/[id]" />
-                  <Stack.Screen name="team/[id]" />
-                  <Stack.Screen name="team-insights/[teamId]" />
-                  <Stack.Screen name="my-matches" />
-                  <Stack.Screen name="notifications" />
-                  <Stack.Screen name="team-comparison" />
-                  <Stack.Screen name="legal/index" />
-                  <Stack.Screen name="legal/methodology" />
-                  <Stack.Screen name="language" />
-                  <Stack.Screen name="appearance" />
-                </Stack>
+                <DataGate colors={colors}>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: colors.background },
+                    }}
+                  >
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
+                    <Stack.Screen name="match/[id]" />
+                    <Stack.Screen name="team/[id]" />
+                    <Stack.Screen name="team-insights/[teamId]" />
+                    <Stack.Screen name="my-matches" />
+                    <Stack.Screen name="notifications" />
+                    <Stack.Screen name="team-comparison" />
+                    <Stack.Screen name="legal/index" />
+                    <Stack.Screen name="legal/methodology" />
+                    <Stack.Screen name="language" />
+                    <Stack.Screen name="appearance" />
+                  </Stack>
+                </DataGate>
               </EntitlementProvider>
             </ProfileProvider>
           </FollowedTeamsProvider>

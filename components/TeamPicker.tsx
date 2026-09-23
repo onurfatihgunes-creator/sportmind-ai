@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
-import { Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import type { Match, Team } from '@/data/mockData';
 import { getCompetitionInfo } from '@/data/competitions';
 import SearchBar from './SearchBar';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = {
   visible: boolean;
@@ -15,6 +16,10 @@ type Props = {
   teams: Record<string, Team>;
   matches: Match[];
   excludeIds: string[];
+  /** True while `teams` is still a transient, about-to-change list (the caller's full-
+   * directory fetch is in flight) — see insights.tsx's own comment for the live-reproduced
+   * mis-tap bug this prevents. The list is shown, but not selectable, until this is false. */
+  loading: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   title: string;
@@ -53,9 +58,11 @@ function deriveTeamSubtitle(team: Team, matches: Match[]): string {
  * earlier in this project), each row disambiguated by country+competition, and backed by
  * SectionList so only visible rows are ever mounted.
  */
-export default function TeamPicker({ visible, onClose, onSelect, teams, matches, excludeIds, search, onSearchChange, title }: Props) {
+export default function TeamPicker({ visible, onClose, onSelect, teams, matches, excludeIds, loading, search, onSearchChange, title }: Props) {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const sections = useMemo<Section[]>(() => {
     const query = search.trim().toLowerCase();
@@ -93,43 +100,54 @@ export default function TeamPicker({ visible, onClose, onSelect, teams, matches,
           style={[styles.searchBar, singleColumnStyle(layout)]}
         />
 
-        <SectionList
-          sections={sections}
-          keyExtractor={(row) => row.team.id}
-          contentContainerStyle={styles.listContent}
-          style={singleColumnStyle(layout)}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={<Text style={styles.emptyText}>{t('insights.noTeamsMatch')}</Text>}
-          renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.row}
-              onPress={() => onSelect(item.team.id)}
-              accessibilityRole="button"
-              accessibilityLabel={item.subtitle ? `${item.team.name}, ${item.subtitle}` : item.team.name}
-            >
-              <View style={[styles.badge, { backgroundColor: item.team.bg }]}>
-                <Text style={[styles.badgeText, { color: item.team.fg }]}>{item.team.code}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.teamName}>{item.team.name}</Text>
-                {item.subtitle.length > 0 && <Text style={styles.teamSubtitle}>{item.subtitle}</Text>}
-              </View>
-            </Pressable>
-          )}
-        />
+        {loading ? (
+          // The list bound to `teams` right now is the caller's small, transient window —
+          // about to be replaced by its full-directory fetch settling. Shown as a loading
+          // state instead of an interactive (and about-to-change) list — see this file's
+          // own Props doc comment for the live-reproduced mis-tap this prevents.
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+          <SectionList
+            sections={sections}
+            keyExtractor={(row) => row.team.id}
+            contentContainerStyle={styles.listContent}
+            style={singleColumnStyle(layout)}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={<Text style={styles.emptyText}>{t('insights.noTeamsMatch')}</Text>}
+            renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.row}
+                onPress={() => onSelect(item.team.id)}
+                accessibilityRole="button"
+                accessibilityLabel={item.subtitle ? `${item.team.name}, ${item.subtitle}` : item.team.name}
+              >
+                <View style={[styles.badge, { backgroundColor: item.team.bg }]}>
+                  <Text style={[styles.badgeText, { color: item.team.fg }]}>{item.team.code}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.teamName}>{item.team.name}</Text>
+                  {item.subtitle.length > 0 && <Text style={styles.teamSubtitle}>{item.subtitle}</Text>}
+                </View>
+              </Pressable>
+            )}
+          />
+        )}
       </SafeAreaView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingBottom: 4 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
   searchBar: { marginHorizontal: spacing.screenX, marginTop: 6, marginBottom: 10 },
   listContent: { paddingHorizontal: spacing.screenX, paddingBottom: 40 },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
   emptyText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint, marginTop: 12 },
   sectionHeader: {
     fontFamily: fonts.bodyMedium,

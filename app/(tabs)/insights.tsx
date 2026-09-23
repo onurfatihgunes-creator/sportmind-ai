@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CheckIcon, PlusIcon, ShieldIcon, XIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import type { Team } from '@/data/mockData';
 import { fetchAllTeams, resolveTeamById } from '@/data/liveData';
 import TeamPicker from '@/components/TeamPicker';
@@ -29,6 +30,8 @@ export default function InsightsScreen() {
   const { teams, matches, changeEvents, analysisChanges, isLive } = useAppData();
   const { teamIds, toggle: toggleTeam, canFollowMore } = useFollowedTeams();
   const layout = useAdaptiveLayout();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const dual = layout.panes === 'dual';
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
@@ -42,11 +45,24 @@ export default function InsightsScreen() {
   // never blocks the rest of this screen, and falls back to the smaller `teams` record
   // (still real data, just narrower) if the fetch hasn't resolved yet or isn't live.
   const [allTeams, setAllTeams] = useState<Record<string, Team> | null>(null);
+  // True only while the full-directory fetch is actually in flight — distinct from
+  // `!allTeams`, which also stays true forever on a genuine fetch failure (falling back to
+  // the smaller `teams` record as its own final, stable answer, not a transient one).
+  // Root cause of a real reported bug: TeamPicker used to render+accept taps on `teams`
+  // (the small list) immediately, then silently swap to the full ~750-team list the
+  // instant this fetch resolved — reproduced live as a mis-tap (tapping "Charlotte FC"
+  // selected "AFC Ajax" instead) whenever the swap landed mid-gesture. TeamPicker now
+  // stays non-interactive until this settles, so the list a person taps is always the one
+  // they'll actually get.
+  const [allTeamsLoading, setAllTeamsLoading] = useState(false);
   useEffect(() => {
     if (!showPicker || allTeams || !isLive) return;
     let cancelled = false;
+    setAllTeamsLoading(true);
     fetchAllTeams().then((result) => {
-      if (!cancelled && Object.keys(result).length > 0) setAllTeams(result);
+      if (cancelled) return;
+      if (Object.keys(result).length > 0) setAllTeams(result);
+      setAllTeamsLoading(false);
     });
     return () => {
       cancelled = true;
@@ -152,7 +168,7 @@ export default function InsightsScreen() {
               </Pressable>
             </>
           ) : (
-            <ChipContainer dual={dual}>
+            <ChipContainer dual={dual} styles={styles}>
               {followedTeams.map((team) => {
                 const selected = team.id === selectedTeamId;
                 return (
@@ -198,6 +214,7 @@ export default function InsightsScreen() {
             teams={pickerTeams}
             matches={matches}
             excludeIds={teamIds}
+            loading={allTeamsLoading}
             search={pickerSearch}
             onSearchChange={setPickerSearch}
             title={t('insights.addTeamShort')}
@@ -262,7 +279,15 @@ export default function InsightsScreen() {
 
 /** One row of chips, laid out for the space it is in: a sideways scroller across the full
  * width of a phone, a wrapping row inside the narrow selection column of a wide window. */
-function ChipContainer({ dual, children }: { dual: boolean; children: ReactNode }) {
+function ChipContainer({
+  dual,
+  styles,
+  children,
+}: {
+  dual: boolean;
+  styles: ReturnType<typeof createStyles>;
+  children: ReactNode;
+}) {
   if (dual) return <View style={[styles.chipRow, styles.chipWrap]}>{children}</View>;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
@@ -271,7 +296,7 @@ function ChipContainer({ dual, children }: { dual: boolean; children: ReactNode 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   shell: { flex: 1 },
   contentWide: { paddingBottom: 40 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },

@@ -90,10 +90,14 @@ async function upsertBsdTeam(id: string, name: string) {
 // constraint: 'scheduled' | 'finished' | 'postponed') — collapsed the same way
 // fetchFixtures.ts already collapses football-data.org's own richer set (IN_PLAY/PAUSED/etc
 // all fall through to 'scheduled' there too), so an in-progress match is still treated as
-// upcoming/predictable rather than needing a status this schema has no room for.
-function bsdStatusOf(event: BsdEvent) {
-  if (event.status === 'finished') return 'finished';
+// upcoming/predictable rather than needing a status this schema has no room for. A real,
+// non-null score overrides an unmapped/lagging status string the same way fetchFixtures.ts
+// and fetchBsdFixtures.ts now do — this exact fallback path produced the live-confirmed
+// stuck rows bsd-215984/bsd-215985 (real scores, status never flipped to 'finished').
+export function bsdStatusOf(event: BsdEvent) {
   if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
+  const hasFinalScore = event.home_score != null && event.away_score != null;
+  if (event.status === 'finished' || hasFinalScore) return 'finished';
   return 'scheduled';
 }
 

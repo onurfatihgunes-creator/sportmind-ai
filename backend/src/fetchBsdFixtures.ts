@@ -36,10 +36,15 @@ async function upsertBsdTeam(id: string, name: string) {
 }
 
 // Same status collapse as fetchTurkishFixtures.ts's BSD path — BSD's richer status
-// vocabulary folds into SportMind's 3-value `matches.status` check constraint.
-function bsdStatusOf(event: BsdEvent) {
-  if (event.status === 'finished') return 'finished';
+// vocabulary folds into SportMind's 3-value `matches.status` check constraint. A real,
+// non-null score overrides an unmapped/lagging status string the same way
+// fetchFixtures.ts's football-data.org path now does — see that file's own comment for
+// the live-confirmed case (BSD events bsd-215984/bsd-215985 stuck 'scheduled' with real
+// final scores already reported).
+export function bsdStatusOf(event: BsdEvent) {
   if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
+  const hasFinalScore = event.home_score != null && event.away_score != null;
+  if (event.status === 'finished' || hasFinalScore) return 'finished';
   return 'scheduled';
 }
 

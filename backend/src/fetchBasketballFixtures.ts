@@ -22,8 +22,26 @@ async function upsertTeam(team: BdlTeam) {
   if (error) throw error;
 }
 
+/**
+ * balldontlie returns 0 (not null) for home_team_score/visitor_team_score on a game that
+ * hasn't been played yet — unlike football-data.org, which sends a real null for an
+ * unplayed fixture's score.fullTime (see fetchFixtures.ts's upsertMatch). Copying that 0
+ * verbatim persisted a fake "0-0" score on every scheduled NBA game (559 rows confirmed
+ * live) — currently harmless (the mobile app never reads matches.home_score/away_score at
+ * all, see data/liveData.ts's matchSelect) but a real latent trap for any future consumer
+ * that checks "score is not null" as its finished-match signal. Only a genuinely finished
+ * game's score is ever persisted; every other status gets a real null, matching football's
+ * own semantics. Exported standalone so this is directly testable — see
+ * fetchBasketballFixtures.test.ts.
+ */
+export function resolveNbaScore(status: 'scheduled' | 'finished', rawScore: number | null): number | null {
+  return status === 'finished' ? rawScore : null;
+}
+
 async function upsertMatch(game: BdlGame) {
   const status = game.status === 'Final' ? 'finished' : 'scheduled';
+  const home_score = resolveNbaScore(status, game.home_team_score);
+  const away_score = resolveNbaScore(status, game.visitor_team_score);
   const { error } = await supabase.from('matches').upsert({
     id: gameId(game.id),
     competition: 'NBA',
@@ -32,8 +50,8 @@ async function upsertMatch(game: BdlGame) {
     away_team_id: teamId(game.visitor_team.id),
     kickoff_at: game.datetime,
     status,
-    home_score: game.home_team_score,
-    away_score: game.visitor_team_score,
+    home_score,
+    away_score,
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
