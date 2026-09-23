@@ -2,6 +2,7 @@ import { ACTIVE_WINDOW_DAYS, BSD_FIXTURE_LEAGUES, FORM_LOOKBACK_DAYS } from './c
 import { getCurrentSeason, getEvents, getLeagues, type BsdEvent, type BsdLeague } from './bsdFootball.js';
 import { supabase } from './supabaseClient.js';
 import { resolveTeamId } from './teamIdentity.js';
+import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
 
 /**
  * Config-driven BSD fixture ingestion for BSD_FIXTURE_LEAGUES — competitions where BSD is
@@ -38,14 +39,15 @@ async function upsertBsdTeam(id: string, name: string) {
 // Same status collapse as fetchTurkishFixtures.ts's BSD path — BSD's richer status
 // vocabulary folds into SportMind's 3-value `matches.status` check constraint. A real,
 // non-null score overrides an unmapped/lagging status string the same way
-// fetchFixtures.ts's football-data.org path now does — see that file's own comment for
-// the live-confirmed case (BSD events bsd-215984/bsd-215985 stuck 'scheduled' with real
-// final scores already reported).
-export function bsdStatusOf(event: BsdEvent) {
+// fetchFixtures.ts's football-data.org path does — including its kickoff-age guard (a
+// placeholder 0-0 on a future fixture, or a live in-progress score, must not read as a
+// final result); see that file's own comment for the live-confirmed cases.
+export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
   if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
-  const hasFinalScore = event.home_score != null && event.away_score != null;
-  if (event.status === 'finished' || hasFinalScore) return 'finished';
-  return 'scheduled';
+  if (event.status === 'finished') return 'finished';
+  const hasScore = event.home_score != null && event.away_score != null;
+  const minutesSinceKickoff = (now.getTime() - new Date(event.event_date).getTime()) / 60_000;
+  return hasScore && minutesSinceKickoff >= MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE ? 'finished' : 'scheduled';
 }
 
 async function upsertBsdMatch(event: BsdEvent, competition: string, homeId: string, awayId: string) {

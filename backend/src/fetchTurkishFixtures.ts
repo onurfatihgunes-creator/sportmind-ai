@@ -3,6 +3,7 @@ import { getLeagueMatches, SUPER_LIG_ID, type RflMatch } from './rapidApiFootbal
 import { getCurrentSeason, getEvents, getLeagues, type BsdEvent } from './bsdFootball.js';
 import { supabase } from './supabaseClient.js';
 import { resolveTeamId } from './teamIdentity.js';
+import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
 
 // Prefixed to keep this provider's raw ids from colliding with football-data.org's and
 // balldontlie's ids — the fallback id when resolveTeamId finds no existing cross-provider
@@ -92,13 +93,14 @@ async function upsertBsdTeam(id: string, name: string) {
 // all fall through to 'scheduled' there too), so an in-progress match is still treated as
 // upcoming/predictable rather than needing a status this schema has no room for. A real,
 // non-null score overrides an unmapped/lagging status string the same way fetchFixtures.ts
-// and fetchBsdFixtures.ts now do — this exact fallback path produced the live-confirmed
-// stuck rows bsd-215984/bsd-215985 (real scores, status never flipped to 'finished').
-export function bsdStatusOf(event: BsdEvent) {
+// and fetchBsdFixtures.ts do (kickoff-age guard included) — this exact fallback path
+// produced the live-confirmed stuck rows bsd-215984/bsd-215985.
+export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
   if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
-  const hasFinalScore = event.home_score != null && event.away_score != null;
-  if (event.status === 'finished' || hasFinalScore) return 'finished';
-  return 'scheduled';
+  if (event.status === 'finished') return 'finished';
+  const hasScore = event.home_score != null && event.away_score != null;
+  const minutesSinceKickoff = (now.getTime() - new Date(event.event_date).getTime()) / 60_000;
+  return hasScore && minutesSinceKickoff >= MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE ? 'finished' : 'scheduled';
 }
 
 async function upsertBsdMatch(event: BsdEvent, homeId: string, awayId: string) {
@@ -154,9 +156,15 @@ async function recordBsdFormIfFinished(event: BsdEvent, homeId: string, awayId: 
  * already have the real "Super Lig 26/27" season (BSD league id 11, season id 1539) with
  * real fixtures on 2026-09-04..07 matching TFF's confirmed matchday window exactly.
  *
- * This only ever ADDS forward-looking coverage — it never touches historical rows (those
- * still come from RapidAPI within FORM_LOOKBACK_DAYS) — and self-disables the moment
- * RapidAPI's own listing catches up to the current season, with no manual toggle needed.
+ * It self-disables the moment RapidAPI's own listing catches up to the current season, with
+ * no manual toggle needed. It must cover the LOOKBACK window too, not just forward: this
+ * used to be called with `windowStart = today`, on the assumption historical rows "still
+ * come from RapidAPI" — but the whole reason this fallback runs is that RapidAPI is stuck
+ * on the OLD season, so it can never supply current-season results. Confirmed live
+ * (2026-09-24): nine Süper Lig matches from Sep 18-20 sat 'scheduled' with no score
+ * because nothing ever re-fetched them after they left the forward window, while BSD
+ * itself already reported them finished (e.g. event 216001, Göztepe 2-2 Rizespor) —
+ * leaving every Süper Lig team's team_form stale since Sep 14.
  */
 async function fetchSuperLigFromBsd(windowStart: Date, windowEnd: Date): Promise<number> {
   const tier1 = BSD_TIER1_LEAGUES.find((l) => l.competition === 'Süper Lig');
@@ -238,7 +246,7 @@ export async function fetchTurkishFixtures() {
   if (!hasCurrentSeasonCoverage) {
     console.log('  RapidAPI Süper Lig has no fixtures at/after yesterday — falling back to BSD for current-season coverage.');
     try {
-      const bsdCount = await fetchSuperLigFromBsd(today, windowEnd);
+      const bsdCount = await fetchSuperLigFromBsd(formStart, windowEnd);
       console.log(`  ${bsdCount} Süper Lig fixtures synced (BSD fallback)`);
     } catch (error) {
       console.error('  BSD Süper Lig fallback failed:', error);

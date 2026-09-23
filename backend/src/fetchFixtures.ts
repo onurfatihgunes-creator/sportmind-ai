@@ -24,26 +24,34 @@ async function upsertTeam(id: string, team: FdTeam) {
  * PAUSED, SUSPENDED, AWARDED, ...) and has been observed to lag behind the score itself
  * settling (a match can carry a real, non-null final score while `status` hasn't
  * flipped to FINISHED yet on the provider's own side) — confirmed live: match 542704
- * stuck at `status='scheduled'` with a real 0-0 final score, aged out of the
- * active/lookback fetch window so it was never re-fetched to self-correct. A real,
- * non-null score is itself the authoritative signal a match has concluded (this is only
- * ever called with one null for a match that hasn't been played — see
- * recordFormIfFinished's identical null-check), so it overrides an ambiguous/unmapped
- * status string rather than silently falling through to 'scheduled'. Exported standalone
- * so the status decision is directly testable — see fetchFixtures.test.ts.
+ * stuck at `status='scheduled'` with a real 0-0 final score.
+ *
+ * A non-null score overrides an ambiguous status ONLY once the match has had time to
+ * finish (kickoff at least MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE ago). Without that
+ * guard, the first version of this rule misfired both ways, confirmed live: (1) the
+ * provider sends a placeholder 0-0 for some unplayed fixtures — La Liga 564685, kicking
+ * off weeks from now, was flipped to 'finished'; (2) a match in progress carries a live,
+ * non-final score and was marked finished mid-game. Exported standalone (with an
+ * injectable `now`) so the decision is directly testable — see fetchFixtures.test.ts.
  */
+export const MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE = 180;
+
 export function resolveFootballMatchStatus(
   providerStatus: string,
   homeScore: number | null,
   awayScore: number | null,
+  kickoffIso: string,
+  now: Date = new Date(),
 ): 'scheduled' | 'finished' | 'postponed' {
   if (providerStatus === 'POSTPONED') return 'postponed';
-  const hasFinalScore = homeScore !== null && awayScore !== null;
-  return providerStatus === 'FINISHED' || hasFinalScore ? 'finished' : 'scheduled';
+  if (providerStatus === 'FINISHED') return 'finished';
+  const hasScore = homeScore !== null && awayScore !== null;
+  const minutesSinceKickoff = (now.getTime() - new Date(kickoffIso).getTime()) / 60_000;
+  return hasScore && minutesSinceKickoff >= MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE ? 'finished' : 'scheduled';
 }
 
 async function upsertMatch(match: FdMatch, competitionName: string, homeId: string, awayId: string) {
-  const status = resolveFootballMatchStatus(match.status, match.score.fullTime.home, match.score.fullTime.away);
+  const status = resolveFootballMatchStatus(match.status, match.score.fullTime.home, match.score.fullTime.away, match.utcDate);
 
   const { error } = await supabase.from('matches').upsert({
     id: String(match.id),
