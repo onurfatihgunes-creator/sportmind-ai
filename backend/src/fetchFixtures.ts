@@ -43,6 +43,7 @@ export function resolveFootballMatchStatus(
   homeScore: number | null,
   awayScore: number | null,
   kickoffIso: string,
+  winner: string | null | undefined,
   now: Date = new Date(),
 ): 'scheduled' | 'finished' | 'postponed' {
   // CANCELLED folds into 'postponed' exactly as the BSD/RapidAPI paths already collapse
@@ -52,7 +53,13 @@ export function resolveFootballMatchStatus(
   // reports it 'canceled') was written as a finished 0-0 that never happened.
   if (providerStatus === 'POSTPONED' || providerStatus === 'CANCELLED') return 'postponed';
   if (providerStatus === 'FINISHED') return 'finished';
-  const hasScore = homeScore !== null && awayScore !== null;
+  // The score alone is not proof of a result: Ligue 1 542704 kept a finished 0-0 after the
+  // CANCELLED mapping above (its provider status is something else, and BSD independently
+  // reports the match canceled). football-data.org's `score.winner` is the provider's own
+  // verdict — HOME_TEAM/AWAY_TEAM/DRAW only for a match that produced a result, null for a
+  // placeholder — so the override additionally requires it. Absent (undefined) counts as
+  // unconfirmed, which falls back to the provider status alone: the safe direction.
+  const hasScore = homeScore !== null && awayScore !== null && winner != null;
   const minutesSinceKickoff = (now.getTime() - new Date(kickoffIso).getTime()) / 60_000;
   return hasScore && minutesSinceKickoff >= MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE ? 'finished' : 'scheduled';
 }
@@ -70,7 +77,7 @@ export function persistedScore(status: 'scheduled' | 'finished' | 'postponed', s
 }
 
 async function upsertMatch(match: FdMatch, competitionName: string, homeId: string, awayId: string) {
-  const status = resolveFootballMatchStatus(match.status, match.score.fullTime.home, match.score.fullTime.away, match.utcDate);
+  const status = resolveFootballMatchStatus(match.status, match.score.fullTime.home, match.score.fullTime.away, match.utcDate, match.score.winner);
 
   const { error } = await supabase.from('matches').upsert({
     id: String(match.id),
