@@ -96,7 +96,7 @@ async function upsertBsdTeam(id: string, name: string) {
 // and fetchBsdFixtures.ts do (kickoff-age guard included) — this exact fallback path
 // produced the live-confirmed stuck rows bsd-215984/bsd-215985.
 export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
-  // BSD spells it 'canceled' (one L) in real responses (confirmed live: Nantes v Toulouse);
+  // BSD spells it 'canceled' (one L) in real responses (confirmed live against BSD's API for Nantes v Toulouse, event 2063);
   // its own typed union only listed 'cancelled', so a cancelled event's placeholder 0-0
   // slipped past this check and into the score override below.
   if (event.status === 'cancelled' || event.status === 'canceled' || event.status === 'postponed') return 'postponed';

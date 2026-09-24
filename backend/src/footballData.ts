@@ -18,9 +18,6 @@ export type FdMatch = {
   awayTeam: FdTeam;
   score: {
     fullTime: { home: number | null; away: number | null };
-    /** football-data.org's own verdict on the result: HOME_TEAM | AWAY_TEAM | DRAW once a match
-     * actually produced one, null for a match that did not (unplayed, cancelled placeholder). */
-    winner?: 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null;
   };
 };
 

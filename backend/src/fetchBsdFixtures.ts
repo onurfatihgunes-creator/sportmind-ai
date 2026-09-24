@@ -43,7 +43,7 @@ async function upsertBsdTeam(id: string, name: string) {
 // placeholder 0-0 on a future fixture, or a live in-progress score, must not read as a
 // final result); see that file's own comment for the live-confirmed cases.
 export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
-  // BSD spells it 'canceled' (one L) in real responses (confirmed live: Nantes v Toulouse);
+  // BSD spells it 'canceled' (one L) in real responses (confirmed live against BSD's API for Nantes v Toulouse, event 2063);
   // its own typed union only listed 'cancelled', so a cancelled event's placeholder 0-0
   // slipped past this check and into the score override below.
   if (event.status === 'cancelled' || event.status === 'canceled' || event.status === 'postponed') return 'postponed';

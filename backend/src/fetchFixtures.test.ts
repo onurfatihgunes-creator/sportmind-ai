@@ -17,45 +17,45 @@ const NOW = new Date('2026-09-24T12:00:00Z');
 const hoursFromNow = (h: number) => new Date(NOW.getTime() + h * 3_600_000).toISOString();
 
 test('a real final score overrides an unmapped/lagging provider status once the match has had time to finish', () => {
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', 0, 0, hoursFromNow(-30), 'DRAW', NOW), 'finished');
-  assert.equal(resolveFootballMatchStatus('SUSPENDED', 2, 1, hoursFromNow(-5), 'HOME_TEAM', NOW), 'finished');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', 0, 0, hoursFromNow(-30), NOW), 'finished');
+  assert.equal(resolveFootballMatchStatus('SUSPENDED', 2, 1, hoursFromNow(-5), NOW), 'finished');
 });
 
-test('a placeholder 0-0 on a future fixture is never finished — the 564685 case', () => {
-  assert.equal(resolveFootballMatchStatus('TIMED', 0, 0, hoursFromNow(24 * 27), null, NOW), 'scheduled');
-  assert.equal(resolveFootballMatchStatus('SCHEDULED', 0, 0, hoursFromNow(1), null, NOW), 'scheduled');
+test('a placeholder 0-0 on a future TIMED fixture (the provider even sends winner DRAW for it) is never finished — the 564685 case', () => {
+  assert.equal(resolveFootballMatchStatus('TIMED', 0, 0, hoursFromNow(24 * 27), NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('SCHEDULED', 0, 0, hoursFromNow(1), NOW), 'scheduled');
 });
 
 test('a match in progress with a live score is not finished before the guard window elapses', () => {
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(-0.75), null, NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(-0.75), NOW), 'scheduled');
   const justUnder = -(MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE - 1) / 60;
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(justUnder), null, NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(justUnder), NOW), 'scheduled');
   const justOver = -(MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE + 1) / 60;
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(justOver), 'HOME_TEAM', NOW), 'finished');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, 0, hoursFromNow(justOver), NOW), 'finished');
 });
 
 test('provider FINISHED is always finished, regardless of kickoff age', () => {
-  assert.equal(resolveFootballMatchStatus('FINISHED', 3, 1, hoursFromNow(-3), null, NOW), 'finished');
+  assert.equal(resolveFootballMatchStatus('FINISHED', 3, 1, hoursFromNow(-3), NOW), 'finished');
 });
 
 test('a genuinely upcoming match (no score yet) stays scheduled', () => {
-  assert.equal(resolveFootballMatchStatus('SCHEDULED', null, null, hoursFromNow(48), null, NOW), 'scheduled');
-  assert.equal(resolveFootballMatchStatus('TIMED', null, null, hoursFromNow(-100), null, NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('SCHEDULED', null, null, hoursFromNow(48), NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('TIMED', null, null, hoursFromNow(-100), NOW), 'scheduled');
 });
 
 test('a partial score (one side null) never counts as final', () => {
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, null, hoursFromNow(-30), null, NOW), 'scheduled');
-  assert.equal(resolveFootballMatchStatus('IN_PLAY', null, 1, hoursFromNow(-30), null, NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', 1, null, hoursFromNow(-30), NOW), 'scheduled');
+  assert.equal(resolveFootballMatchStatus('IN_PLAY', null, 1, hoursFromNow(-30), NOW), 'scheduled');
 });
 
 test('POSTPONED is never reinterpreted as finished, even with a score present', () => {
-  assert.equal(resolveFootballMatchStatus('POSTPONED', null, null, hoursFromNow(-30), null, NOW), 'postponed');
-  assert.equal(resolveFootballMatchStatus('POSTPONED', 0, 0, hoursFromNow(-30), null, NOW), 'postponed');
+  assert.equal(resolveFootballMatchStatus('POSTPONED', null, null, hoursFromNow(-30), NOW), 'postponed');
+  assert.equal(resolveFootballMatchStatus('POSTPONED', 0, 0, hoursFromNow(-30), NOW), 'postponed');
 });
 
-test('a CANCELLED match is postponed, never finished — its placeholder 0-0 is not a result (Ligue 1 542704)', () => {
-  assert.equal(resolveFootballMatchStatus('CANCELLED', 0, 0, hoursFromNow(-24 * 130), null, NOW), 'postponed');
-  assert.equal(resolveFootballMatchStatus('CANCELLED', null, null, hoursFromNow(-24 * 130), null, NOW), 'postponed');
+test('a CANCELLED match is postponed, never finished — its placeholder 0-0 is not a result', () => {
+  assert.equal(resolveFootballMatchStatus('CANCELLED', 0, 0, hoursFromNow(-24 * 130), NOW), 'postponed');
+  assert.equal(resolveFootballMatchStatus('CANCELLED', null, null, hoursFromNow(-24 * 130), NOW), 'postponed');
 });
 
 test('persistedScore: only a finished match keeps its score; scheduled/postponed placeholders become null', () => {
@@ -66,11 +66,6 @@ test('persistedScore: only a finished match keeps its score; scheduled/postponed
   assert.equal(persistedScore('postponed', 0), null);
 });
 
-test('a stale non-FINISHED status with a placeholder 0-0 and NO winner is not a result — Ligue 1 542704', () => {
-  assert.equal(resolveFootballMatchStatus('SUSPENDED', 0, 0, hoursFromNow(-24 * 130), null, NOW), 'scheduled');
-  assert.equal(resolveFootballMatchStatus('SUSPENDED', 0, 0, hoursFromNow(-24 * 130), undefined, NOW), 'scheduled');
-});
-
-test('the same 0-0 WITH a provider-confirmed DRAW is a real result and finishes', () => {
-  assert.equal(resolveFootballMatchStatus('SUSPENDED', 0, 0, hoursFromNow(-24 * 130), 'DRAW', NOW), 'finished');
+test("a provider-official AWARDED 0-0 draw long after kickoff finishes — Ligue 1 542704", () => {
+  assert.equal(resolveFootballMatchStatus('AWARDED', 0, 0, hoursFromNow(-24 * 130), NOW), 'finished');
 });
