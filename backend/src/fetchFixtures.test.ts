@@ -11,12 +11,12 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveFootballMatchStatus, MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
+import { resolveFootballMatchStatus, persistedScore, MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
 
 const NOW = new Date('2026-09-24T12:00:00Z');
 const hoursFromNow = (h: number) => new Date(NOW.getTime() + h * 3_600_000).toISOString();
 
-test('a real final score overrides an unmapped/lagging provider status once the match has had time to finish — the 542704 case', () => {
+test('a real final score overrides an unmapped/lagging provider status once the match has had time to finish', () => {
   assert.equal(resolveFootballMatchStatus('IN_PLAY', 0, 0, hoursFromNow(-30), NOW), 'finished');
   assert.equal(resolveFootballMatchStatus('SUSPENDED', 2, 1, hoursFromNow(-5), NOW), 'finished');
 });
@@ -51,4 +51,17 @@ test('a partial score (one side null) never counts as final', () => {
 test('POSTPONED is never reinterpreted as finished, even with a score present', () => {
   assert.equal(resolveFootballMatchStatus('POSTPONED', null, null, hoursFromNow(-30), NOW), 'postponed');
   assert.equal(resolveFootballMatchStatus('POSTPONED', 0, 0, hoursFromNow(-30), NOW), 'postponed');
+});
+
+test('a CANCELLED match is postponed, never finished — its placeholder 0-0 is not a result (Ligue 1 542704)', () => {
+  assert.equal(resolveFootballMatchStatus('CANCELLED', 0, 0, hoursFromNow(-24 * 130), NOW), 'postponed');
+  assert.equal(resolveFootballMatchStatus('CANCELLED', null, null, hoursFromNow(-24 * 130), NOW), 'postponed');
+});
+
+test('persistedScore: only a finished match keeps its score; scheduled/postponed placeholders become null', () => {
+  assert.equal(persistedScore('finished', 0), 0);
+  assert.equal(persistedScore('finished', 3), 3);
+  assert.equal(persistedScore('finished', null), null);
+  assert.equal(persistedScore('scheduled', 0), null);
+  assert.equal(persistedScore('postponed', 0), null);
 });

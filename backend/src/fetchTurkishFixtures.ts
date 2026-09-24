@@ -3,7 +3,7 @@ import { getLeagueMatches, SUPER_LIG_ID, type RflMatch } from './rapidApiFootbal
 import { getCurrentSeason, getEvents, getLeagues, type BsdEvent } from './bsdFootball.js';
 import { supabase } from './supabaseClient.js';
 import { resolveTeamId } from './teamIdentity.js';
-import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
+import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE, persistedScore } from './fetchFixtures.js';
 
 // Prefixed to keep this provider's raw ids from colliding with football-data.org's and
 // balldontlie's ids — the fallback id when resolveTeamId finds no existing cross-provider
@@ -37,8 +37,8 @@ async function upsertMatch(match: RflMatch, homeId: string, awayId: string) {
     away_team_id: awayId,
     kickoff_at: match.status.utcTime,
     status: statusOf(match),
-    home_score: match.home.score,
-    away_score: match.away.score,
+    home_score: persistedScore(statusOf(match), match.home.score),
+    away_score: persistedScore(statusOf(match), match.away.score),
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
@@ -96,7 +96,10 @@ async function upsertBsdTeam(id: string, name: string) {
 // and fetchBsdFixtures.ts do (kickoff-age guard included) — this exact fallback path
 // produced the live-confirmed stuck rows bsd-215984/bsd-215985.
 export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
-  if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
+  // BSD spells it 'canceled' (one L) in real responses (confirmed live: Nantes v Toulouse);
+  // its own typed union only listed 'cancelled', so a cancelled event's placeholder 0-0
+  // slipped past this check and into the score override below.
+  if (event.status === 'cancelled' || event.status === 'canceled' || event.status === 'postponed') return 'postponed';
   if (event.status === 'finished') return 'finished';
   const hasScore = event.home_score != null && event.away_score != null;
   const minutesSinceKickoff = (now.getTime() - new Date(event.event_date).getTime()) / 60_000;
@@ -112,8 +115,8 @@ async function upsertBsdMatch(event: BsdEvent, homeId: string, awayId: string) {
     away_team_id: awayId,
     kickoff_at: event.event_date,
     status: bsdStatusOf(event),
-    home_score: event.home_score,
-    away_score: event.away_score,
+    home_score: persistedScore(bsdStatusOf(event), event.home_score),
+    away_score: persistedScore(bsdStatusOf(event), event.away_score),
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;

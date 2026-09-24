@@ -43,7 +43,7 @@ export type BsdSeason = {
 };
 
 export type BsdEventStatus =
-  | '1st_half' | '2nd_half' | 'aet' | 'cancelled' | 'delayed' | 'extratime' | 'finished'
+  | '1st_half' | '2nd_half' | 'aet' | 'cancelled' | 'canceled' | 'delayed' | 'extratime' | 'finished'
   | 'halftime' | 'inprogress' | 'notstarted' | 'penalties' | 'postponed' | 'unresolved';
 
 export type BsdEvent = {

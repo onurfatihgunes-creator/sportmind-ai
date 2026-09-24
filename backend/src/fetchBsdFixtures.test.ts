@@ -50,6 +50,11 @@ test('a genuinely upcoming match (no score yet) stays scheduled', () => {
   assert.equal(bsdStatusOf(event({ status: 'notstarted', event_date: hoursFromNow(48) }), NOW), 'scheduled');
 });
 
+test("BSD's real 'canceled' spelling (one L) is postponed, never finished — Nantes v Toulouse placeholder 0-0", () => {
+  const e = event({ status: 'canceled' as BsdEvent['status'], event_date: hoursFromNow(-24 * 130), home_score: 0, away_score: 0 });
+  assert.equal(bsdStatusOf(e, NOW), 'postponed');
+});
+
 test('cancelled/postponed are never reinterpreted as finished', () => {
   assert.equal(bsdStatusOf(event({ status: 'cancelled' }), NOW), 'postponed');
   assert.equal(bsdStatusOf(event({ status: 'postponed', home_score: 0, away_score: 0 }), NOW), 'postponed');

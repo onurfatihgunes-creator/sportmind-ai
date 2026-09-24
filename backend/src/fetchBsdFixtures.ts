@@ -2,7 +2,7 @@ import { ACTIVE_WINDOW_DAYS, BSD_FIXTURE_LEAGUES, FORM_LOOKBACK_DAYS } from './c
 import { getCurrentSeason, getEvents, getLeagues, type BsdEvent, type BsdLeague } from './bsdFootball.js';
 import { supabase } from './supabaseClient.js';
 import { resolveTeamId } from './teamIdentity.js';
-import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE } from './fetchFixtures.js';
+import { MIN_MINUTES_SINCE_KICKOFF_FOR_SCORE_OVERRIDE, persistedScore } from './fetchFixtures.js';
 
 /**
  * Config-driven BSD fixture ingestion for BSD_FIXTURE_LEAGUES — competitions where BSD is
@@ -43,7 +43,10 @@ async function upsertBsdTeam(id: string, name: string) {
 // placeholder 0-0 on a future fixture, or a live in-progress score, must not read as a
 // final result); see that file's own comment for the live-confirmed cases.
 export function bsdStatusOf(event: BsdEvent, now: Date = new Date()) {
-  if (event.status === 'cancelled' || event.status === 'postponed') return 'postponed';
+  // BSD spells it 'canceled' (one L) in real responses (confirmed live: Nantes v Toulouse);
+  // its own typed union only listed 'cancelled', so a cancelled event's placeholder 0-0
+  // slipped past this check and into the score override below.
+  if (event.status === 'cancelled' || event.status === 'canceled' || event.status === 'postponed') return 'postponed';
   if (event.status === 'finished') return 'finished';
   const hasScore = event.home_score != null && event.away_score != null;
   const minutesSinceKickoff = (now.getTime() - new Date(event.event_date).getTime()) / 60_000;
@@ -59,8 +62,8 @@ async function upsertBsdMatch(event: BsdEvent, competition: string, homeId: stri
     away_team_id: awayId,
     kickoff_at: event.event_date,
     status: bsdStatusOf(event),
-    home_score: event.home_score,
-    away_score: event.away_score,
+    home_score: persistedScore(bsdStatusOf(event), event.home_score),
+    away_score: persistedScore(bsdStatusOf(event), event.away_score),
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
