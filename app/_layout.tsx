@@ -10,7 +10,7 @@ import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
@@ -25,6 +25,7 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
 import { EntitlementProvider } from '@/contexts/EntitlementContext';
 import { AppThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
+import { useWelcomeRedirect } from '@/hooks/useWelcomeRedirect';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -76,11 +77,14 @@ function RootLayoutInner() {
   const ready = fontsLoaded && i18nReady && hasSeenWelcome !== null;
 
   useEffect(() => {
-    if (ready) {
-      SplashScreen.hideAsync();
-      if (!hasSeenWelcome) router.replace('/welcome');
-    }
-  }, [ready, hasSeenWelcome]);
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  // See hooks/useWelcomeRedirect.ts for why this can't just be a plain
+  // router.replace() call inside a useEffect here — that shape is exactly
+  // what caused the 2026-09-30 infinite-remount/frozen-screen bug.
+  const navigateToWelcome = useCallback(() => router.replace('/welcome'), []);
+  useWelcomeRedirect(ready, hasSeenWelcome, navigateToWelcome);
 
   // Recomputed whenever the resolved scheme/colors change — this is the ONE place
   // React Navigation's own chrome (header/tab-bar defaults, focused-route background)
