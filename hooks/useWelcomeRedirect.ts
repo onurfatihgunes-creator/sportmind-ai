@@ -20,6 +20,11 @@ import { useEffect, useRef } from 'react';
  * A plain `useRef` guard alone did not fix it, because the whole component
  * — including its refs — was being remounted, not just re-rendered.
  *
+ * UPDATE 2026-10-12: deferring one frame fixed web but NOT native — on an Android
+ * emulator the loop persisted (89 replaces / 89 remounts) because <Stack> was still
+ * unmounted behind DataGate's spinner. app/_layout.tsx now only calls this hook from
+ * <WelcomeRedirect>, which mounts inside DataGate, i.e. once <Stack> exists.
+ *
  * This hook only proves the "exactly once, deferred" contract in isolation
  * (see useWelcomeRedirect.test.ts) — it cannot reproduce the remount
  * cascade itself, which is a real browser/expo-router-web phenomenon, not

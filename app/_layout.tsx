@@ -80,11 +80,8 @@ function RootLayoutInner() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
-  // See hooks/useWelcomeRedirect.ts for why this can't just be a plain
-  // router.replace() call inside a useEffect here — that shape is exactly
-  // what caused the 2026-09-30 infinite-remount/frozen-screen bug.
-  const navigateToWelcome = useCallback(() => router.replace('/welcome'), []);
-  useWelcomeRedirect(ready, hasSeenWelcome, navigateToWelcome);
+  // The first-launch redirect to /welcome is rendered by <WelcomeRedirect> below,
+  // inside DataGate — see its comment and hooks/useWelcomeRedirect.ts.
 
   // Recomputed whenever the resolved scheme/colors change — this is the ONE place
   // React Navigation's own chrome (header/tab-bar defaults, focused-route background)
@@ -134,6 +131,7 @@ function RootLayoutInner() {
             <ProfileProvider>
               <EntitlementProvider>
                 <DataGate colors={colors}>
+                  <WelcomeRedirect hasSeenWelcome={hasSeenWelcome} />
                   <Stack
                     screenOptions={{
                       headerShown: false,
@@ -161,6 +159,18 @@ function RootLayoutInner() {
       </DataProvider>
     </NavigationThemeProvider>
   );
+}
+
+// Lives INSIDE DataGate on purpose: DataGate renders a spinner instead of <Stack> until
+// the first fetch resolves, and calling router.replace() while <Stack> is not mounted
+// sends expo-router into an infinite remount loop on native Android/iOS too (verified on
+// an Android emulator: 89 replace calls and 89 DataProvider remounts in ~25s, app never
+// leaves the spinner). Mounting this only once DataGate lets its children through means
+// the navigator exists when the redirect fires.
+function WelcomeRedirect({ hasSeenWelcome }: { hasSeenWelcome: boolean | null }) {
+  const navigateToWelcome = useCallback(() => router.replace('/welcome'), []);
+  useWelcomeRedirect(true, hasSeenWelcome, navigateToWelcome);
+  return null;
 }
 
 function ConfigurationErrorScreen({ styles }: { styles: ReturnType<typeof createStyles> }) {
