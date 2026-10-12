@@ -2,7 +2,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { HouseIcon, CompassIcon, LightningIcon, UserIcon } from 'phosphor-react-native';
 import { useEffect, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { fonts, type ThemeColors } from '@/constants/theme';
@@ -54,16 +54,22 @@ export default function AppTabBar({ state, descriptors, navigation }: BottomTabB
     [rail],
   );
 
+  // expo-blur only blurs on iOS; on Android it paints a plain translucent View, which let
+  // the screen content show through the bar and collide with the tab labels. Android gets
+  // an opaque, theme-aware surface instead; iOS keeps the BlurView.
+  const opaque = Platform.OS === 'android';
+
   return (
     <View
       style={[
         styles.wrap,
+        opaque && styles.opaque,
         rail
           ? [styles.rail, leadingEdge, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]
           : [styles.bottomBar, { height: 66 + insets.bottom, paddingBottom: insets.bottom }],
       ]}
     >
-      <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      {!opaque && <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
       <Animated.View
         style={[
           styles.indicator,
@@ -101,6 +107,7 @@ export default function AppTabBar({ state, descriptors, navigation }: BottomTabB
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   wrap: { position: 'absolute' },
+  opaque: { backgroundColor: colors.surface },
   bottomBar: {
     left: 0,
     right: 0,
