@@ -1,10 +1,14 @@
 import { Link, Stack } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts } from '@/constants/theme';
+import { fonts, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function NotFoundScreen() {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <>
       <Stack.Screen options={{ title: t('notFound.routeTitle') }} />
@@ -19,7 +23,7 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',

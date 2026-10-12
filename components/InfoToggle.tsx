@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { InfoIcon } from 'phosphor-react-native';
-import { colors, fonts } from '@/constants/theme';
+import { fonts, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = { label: string; explanation: string };
 
@@ -12,6 +13,8 @@ type Props = { label: string; explanation: string };
  * be built in-tree rather than relying on the native dialog.
  */
 export default function InfoToggle({ label, explanation }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,7 +35,7 @@ export default function InfoToggle({ label, explanation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   label: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
   explanation: { fontFamily: fonts.body, fontSize: 11, lineHeight: 16, color: colors.textFaint, marginTop: 4, maxWidth: 320 },

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, StyleProp, Text, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, withTiming } from 'react-native-reanimated';
-import { colors, fonts, radius } from '@/constants/theme';
+import { fonts, radius, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export type SegmentOption = {
   key: string;
@@ -23,6 +24,8 @@ type Props = {
  * the active option (labels vary in length, so a fixed percentage can't be used) — mirrors
  * the design handoff's sport/league/tab/plan segments, which all share this exact mechanic. */
 export default function SegmentedControl({ options, value, onChange, height = 38, style, fontSize = 13 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [layouts, setLayouts] = useState<Record<string, { x: number; width: number }>>({});
   const reduceMotion = useReducedMotion();
 
@@ -76,7 +79,7 @@ export default function SegmentedControl({ options, value, onChange, height = 38
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   track: {
     backgroundColor: colors.segmentTrack,
     padding: 4,

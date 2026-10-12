@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -37,6 +38,7 @@ export default function ConfidenceRing({
   caption,
   favoredSide,
 }: Props) {
+  const { colors } = useAppTheme();
   const resolvedCaptionFontSize = captionFontSize ?? Math.max(7, size * 0.075);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;

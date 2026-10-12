@@ -1,13 +1,14 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { HouseIcon, CompassIcon, LightningIcon, UserIcon } from 'phosphor-react-native';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { colors, fonts } from '@/constants/theme';
+import { fonts, type ThemeColors } from '@/constants/theme';
 import { NAV_RAIL_WIDTH } from '@/constants/layout';
 import { isRTLLayout, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 const ICONS = { index: HouseIcon, explore: CompassIcon, insights: LightningIcon, profile: UserIcon } as const;
 
@@ -29,6 +30,8 @@ const RAIL_ITEM_HEIGHT = 64;
 export default function AppTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  const { colors, scheme } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const layout = useAdaptiveLayout();
   const rail = layout.navigation === 'sideRail';
   const routes = state.routes.filter((r) => ICONS[r.name as keyof typeof ICONS]);
@@ -60,7 +63,7 @@ export default function AppTabBar({ state, descriptors, navigation }: BottomTabB
           : [styles.bottomBar, { height: 66 + insets.bottom, paddingBottom: insets.bottom }],
       ]}
     >
-      <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <Animated.View
         style={[
           styles.indicator,
@@ -96,7 +99,7 @@ export default function AppTabBar({ state, descriptors, navigation }: BottomTabB
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   wrap: { position: 'absolute' },
   bottomBar: {
     left: 0,
@@ -141,3 +144,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 });
+

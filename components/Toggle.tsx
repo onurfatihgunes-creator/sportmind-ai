@@ -7,11 +7,12 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { colors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = { value: boolean; onChange: (value: boolean) => void };
 
 export default function Toggle({ value, onChange }: Props) {
+  const { colors } = useAppTheme();
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(value ? 1 : 0);
 

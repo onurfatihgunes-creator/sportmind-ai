@@ -12,13 +12,14 @@ import {
   SparkleIcon,
   TrayIcon,
 } from 'phosphor-react-native';
-import { colors, confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import ConfidenceRing from '@/components/ConfidenceRing';
 import SegmentedControl from '@/components/SegmentedControl';
 import TeamBadgePair from '@/components/TeamBadgePair';
@@ -31,6 +32,8 @@ export default function HomeScreen() {
   const { teamIds: followedTeamIds } = useFollowedTeams();
   const { name } = useProfile();
   const { status: entitlementStatus } = useEntitlement();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
 
   const layout = useAdaptiveLayout();
@@ -281,7 +284,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <View style={styles.matchRowChip}>
-                        <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability) }]}>
+                        <Text style={[styles.matchRowChipText, { color: confidenceColor(favourite.probability, colors) }]}>
                           {favourite.probability}%
                         </Text>
                       </View>
@@ -315,7 +318,7 @@ export default function HomeScreen() {
                       style={styles.changeRow}
                       onPress={() => router.push(`/match/${event.matchId}?tab=change`)}
                     >
-                      <View style={[styles.changeDot, { backgroundColor: toneColor(event.tone) }]} />
+                      <View style={[styles.changeDot, { backgroundColor: toneColor(event.tone, colors) }]} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.changeMatchup} numberOfLines={1}>
                           {match.home.name} <Text style={styles.heroVs}>{t('common.vs')}</Text> {match.away.name}
@@ -324,8 +327,8 @@ export default function HomeScreen() {
                           {t(`changeEvents.${event.key}`)}
                         </Text>
                       </View>
-                      <View style={[styles.deltaChip, { backgroundColor: toneMutedColor(event.tone) }]}>
-                        <Text style={[styles.deltaChipText, { color: toneTextColor(event.tone) }]}>
+                      <View style={[styles.deltaChip, { backgroundColor: toneMutedColor(event.tone, colors) }]}>
+                        <Text style={[styles.deltaChipText, { color: toneTextColor(event.tone, colors) }]}>
                           {delta > 0 ? '+' : ''}
                           {delta}
                         </Text>
@@ -355,7 +358,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   shell: { flex: 1 },
   content: { paddingHorizontal: spacing.screenX, paddingBottom: 120, paddingTop: spacing.sm },

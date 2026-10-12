@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { colors, fonts } from '@/constants/theme';
+import { fonts, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = {
   label: string;
@@ -17,6 +18,8 @@ type Props = {
 /** A single labeled head-to-head bar used in Match Analysis' "Nedenler" tab — replaces the
  * old FactorCompareBar, matching the redesign's bar + two-side-percentage layout. */
 export default function FactorBar({ label, homePct, awayPct, homeName, awayName, qualifier, highlighted, delay = 0 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(reduceMotion ? 1 : 0);
 
@@ -54,7 +57,7 @@ export default function FactorBar({ label, homePct, awayPct, homeName, awayName,
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
   qualifier: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },

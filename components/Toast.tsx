@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { colors, fonts, radius } from '@/constants/theme';
+import { fonts, radius, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export type ToastState = { id: number; message: string } | null;
 
@@ -30,6 +31,8 @@ export function useToast() {
 const VISIBLE_DURATION_MS = 1800;
 
 export default function Toast({ state }: { state: ToastState }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(0);
   const [renderedMessage, setRenderedMessage] = useState<string | null>(null);
@@ -64,7 +67,7 @@ export default function Toast({ state }: { state: ToastState }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   wrap: {
     position: 'absolute',
     left: 24,

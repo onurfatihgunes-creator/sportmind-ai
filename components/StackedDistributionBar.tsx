@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Segment = { pct: number; color: string; textColor: string };
 
@@ -26,6 +27,7 @@ function Bar({ segment, delay }: { segment: Segment; delay: number }) {
 /** The 3-part outcome-distribution bar on Home's hero card and Match Analysis. `draw` can
  * be 0 to render a 2-segment (basketball) bar. */
 export default function StackedDistributionBar({ home, draw, away, height = 34 }: { home: number; draw: number; away: number; height?: number }) {
+  const { colors } = useAppTheme();
   return (
     <View style={[styles.row, { height }]}>
       <Bar segment={{ pct: home, color: colors.primary, textColor: colors.primaryTint }} delay={300} />

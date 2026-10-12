@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Icon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 /** The shared honest "not found" state for a route whose id param didn't resolve to a
  * real entity — after checking Supabase directly (see data/liveData.ts's
@@ -24,6 +26,8 @@ export default function NotFoundState({
   ctaLabel?: string;
   onPressCta?: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.wrap}>
       <EntityIcon size={28} color={colors.textFainter} />
@@ -38,7 +42,7 @@ export default function NotFoundState({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   wrap: { alignItems: 'center', paddingTop: spacing.xxl, paddingHorizontal: spacing.lg, gap: 8 },
   title: { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary, marginTop: 8, textAlign: 'center' },
   body: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, textAlign: 'center', maxWidth: 260 },

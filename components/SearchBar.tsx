@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, StyleProp, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 import { MagnifyingGlassIcon } from 'phosphor-react-native';
-import { colors, fonts, radius } from '@/constants/theme';
+import { fonts, radius, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = {
   value: string;
@@ -32,6 +33,8 @@ export default function SearchBar({
   style,
   accessibilityLabel,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [focused, setFocused] = useState(false);
 
   return (
@@ -53,7 +56,7 @@ export default function SearchBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',

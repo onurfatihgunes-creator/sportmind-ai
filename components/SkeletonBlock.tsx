@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, type DimensionValue } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { colors, radius } from '@/constants/theme';
+import { radius, type ThemeColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 /** A pulsing placeholder shaped like the real chip/text it stands in for while data is
  * mid-fetch — never a stand-in for a guessed value, just a shape while we wait. Pulse is
@@ -15,6 +16,8 @@ export default function SkeletonBlock({
   height?: number;
   radius?: number;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(reduceMotion ? 0.6 : 1);
 
@@ -28,6 +31,6 @@ export default function SkeletonBlock({
   return <Animated.View style={[styles.block, { width, height, borderRadius: cornerRadius }, style]} />;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   block: { backgroundColor: colors.divider },
 });

@@ -3,7 +3,7 @@ import { View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Polygon, Text as SvgText } from 'react-native-svg';
 import Animated, { useAnimatedProps, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
 
@@ -113,8 +113,11 @@ const VIEWBOX_HEIGHT = 250;
  * geometrically centered in its real container, on any screen size, with no separate
  * centering logic needed.
  */
-export default function RadarChart({ axes, colorA = colors.primary, colorB = colors.neutralSeries }: { axes: RadarAxis[]; colorA?: string; colorB?: string }) {
+export default function RadarChart({ axes, colorA, colorB }: { axes: RadarAxis[]; colorA?: string; colorB?: string }) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const resolvedColorA = colorA ?? colors.primary;
+  const resolvedColorB = colorB ?? colors.neutralSeries;
   const count = axes.length;
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
 
@@ -138,8 +141,8 @@ export default function RadarChart({ axes, colorA = colors.primary, colorB = col
           const p = point(i, MAX_R, count);
           return <Line key={i} x1={CENTER.x} y1={CENTER.y} x2={p.x} y2={p.y} stroke={colors.border} strokeWidth={1} />;
         })}
-        <Series axes={axes} pick={(a) => a.a} color={colorA} delay={200} />
-        <Series axes={axes} pick={(a) => a.b} color={colorB} dashed delay={350} />
+        <Series axes={axes} pick={(a) => a.a} color={resolvedColorA} delay={200} />
+        <Series axes={axes} pick={(a) => a.b} color={resolvedColorB} dashed delay={350} />
         {axes.map((axis, i) => {
           const p = point(i, MAX_R + 24, count);
           const noData = !axisHasData(axis);

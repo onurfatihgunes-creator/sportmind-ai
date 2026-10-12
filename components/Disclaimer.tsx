@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { StyleProp, Text, TextStyle } from 'react-native';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function Disclaimer({ style }: { style?: StyleProp<TextStyle> }) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
   return (
     <Text
       style={[

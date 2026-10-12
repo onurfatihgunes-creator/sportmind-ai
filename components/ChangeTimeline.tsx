@@ -1,13 +1,17 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { TrayIcon, type Icon } from 'phosphor-react-native';
-import { colors, fonts, toneColor, toneMutedColor, toneTextColor } from '@/constants/theme';
+import { fonts, toneColor, toneMutedColor, toneTextColor, type ThemeColors } from '@/constants/theme';
 import type { ChangeEvent } from '@/data/mockData';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = { events: ChangeEvent[]; ArrowIcon: Icon; emptyText: string };
 
 export default function ChangeTimeline({ events, ArrowIcon, emptyText }: Props) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   if (events.length === 0) {
     return (
@@ -27,15 +31,15 @@ export default function ChangeTimeline({ events, ArrowIcon, emptyText }: Props) 
         const delta = event.to - event.from;
         return (
           <View key={event.id} style={[styles.row, index < events.length - 1 && { paddingBottom: 18 }]}>
-            <View style={[styles.dot, { backgroundColor: toneColor(event.tone), shadowColor: toneMutedColor(event.tone) }]} />
+            <View style={[styles.dot, { backgroundColor: toneColor(event.tone, colors), shadowColor: toneMutedColor(event.tone, colors) }]} />
             <Text style={styles.timestamp}>{event.timestamp}</Text>
             <Text style={styles.title}>{t(`changeEvents.${event.key}`)}</Text>
             <View style={styles.deltaRow}>
               <Text style={styles.deltaValue}>{event.from}%</Text>
               <ArrowIcon size={11} color={colors.textFaint} weight="bold" />
-              <Text style={[styles.deltaValue, { color: toneTextColor(event.tone) }]}>{event.to}%</Text>
-              <View style={[styles.chip, { backgroundColor: toneMutedColor(event.tone) }]}>
-                <Text style={[styles.chipText, { color: toneTextColor(event.tone) }]}>
+              <Text style={[styles.deltaValue, { color: toneTextColor(event.tone, colors) }]}>{event.to}%</Text>
+              <View style={[styles.chip, { backgroundColor: toneMutedColor(event.tone, colors) }]}>
+                <Text style={[styles.chipText, { color: toneTextColor(event.tone, colors) }]}>
                   {delta > 0 ? '+' : ''}
                   {delta}
                 </Text>
@@ -48,7 +52,7 @@ export default function ChangeTimeline({ events, ArrowIcon, emptyText }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   spine: { position: 'absolute', left: 4, top: 6, bottom: 16, width: 1, backgroundColor: colors.borderAccent },
   row: { position: 'relative' },
   dot: { position: 'absolute', left: -20, top: 4, width: 9, height: 9, borderRadius: 5, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 0 } },

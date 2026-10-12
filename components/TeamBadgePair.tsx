@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
 import type { Team } from '@/data/mockData';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = { home: Team; away: Team; size?: number };
 
@@ -8,6 +9,7 @@ type Props = { home: Team; away: Team; size?: number };
  * headers). Real logos are intentionally not used — see design handoff README's Assets
  * section — a colored initials badge stands in, sized/overlapped per spec (-size*0.3). */
 export default function TeamBadgePair({ home, away, size = 26 }: Props) {
+  const { colors } = useAppTheme();
   const fontSize = Math.round(size * 0.36);
   return (
     <View style={styles.row}>

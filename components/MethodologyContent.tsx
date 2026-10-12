@@ -1,18 +1,13 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ArrowsClockwiseIcon, ChartLineUpIcon, DatabaseIcon, PercentIcon, XCircleIcon } from 'phosphor-react-native';
 import type { Icon } from 'phosphor-react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { useAppData } from '@/contexts/DataContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 type MethodologySection = { Icon: Icon; key: string; iconColor?: string };
-
-const sections: MethodologySection[] = [
-  { Icon: DatabaseIcon, key: 'dataSources' },
-  { Icon: PercentIcon, key: 'confidence' },
-  { Icon: ArrowsClockwiseIcon, key: 'whyChange' },
-  { Icon: XCircleIcon, key: 'cannotDo', iconColor: colors.dangerText },
-];
 
 /**
  * The actual methodology content, extracted so it can render either as its own full
@@ -23,6 +18,19 @@ const sections: MethodologySection[] = [
 export default function MethodologyContent() {
   const { t } = useTranslation();
   const { trackRecord } = useAppData();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  // Depends on colors (iconColor for 'cannotDo') so it has to live inside the component
+  // rather than at module scope like the rest of the static row config.
+  const sections: MethodologySection[] = useMemo(
+    () => [
+      { Icon: DatabaseIcon, key: 'dataSources' },
+      { Icon: PercentIcon, key: 'confidence' },
+      { Icon: ArrowsClockwiseIcon, key: 'whyChange' },
+      { Icon: XCircleIcon, key: 'cannotDo', iconColor: colors.dangerText },
+    ],
+    [colors],
+  );
 
   return (
     <>
@@ -67,7 +75,7 @@ export default function MethodologyContent() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: spacing.sm },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   cardTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },

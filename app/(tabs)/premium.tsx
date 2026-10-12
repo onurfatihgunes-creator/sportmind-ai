@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, ClockCountdownIcon, SparkleIcon, XIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { completePurchase, isPurchaseConfigured, restorePurchases, startPurchase } from '@/services/purchase';
 import Toast, { useToast } from '@/components/Toast';
 
@@ -43,6 +44,8 @@ export default function PremiumScreen() {
   const { t } = useTranslation();
   const { status, trialEndsAt, refresh } = useEntitlement();
   const { toastState, showToast } = useToast();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [stage, setStage] = useState<Stage>('idle');
   const configured = isPurchaseConfigured();
 
@@ -167,7 +170,7 @@ export default function PremiumScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   shell: { flex: 1 },
   // No bottom tab bar to clear once the navigation has become a side rail.
   contentWide: { paddingBottom: 40 },

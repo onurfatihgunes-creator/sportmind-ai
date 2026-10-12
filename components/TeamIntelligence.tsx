@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,13 +10,14 @@ import {
   CaretRightIcon,
   CaretUpIcon,
 } from 'phosphor-react-native';
-import { colors, fonts, radius, toneMutedColor, toneTextColor, type ChangeTone } from '@/constants/theme';
+import { fonts, radius, toneMutedColor, toneTextColor, type ChangeTone, type ThemeColors } from '@/constants/theme';
 import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
 import { getLatestSquadSnapshot, type SquadSnapshot } from '@/data/liveData';
 import { hasTrustedFormSample } from '@/data/dataConfidence';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
 import SkeletonBlock from '@/components/SkeletonBlock';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 const EMPTY_SNAPSHOT: SquadSnapshot = { unavailable: [], lineup: null, sourceMatchId: null };
 
@@ -82,13 +83,15 @@ function describeChange(event: AnalysisChangeEvent, t: (key: string, opts?: Reco
 }
 
 function LegendEntry({ Icon, tone, label }: { Icon: typeof ArrowUpIcon; tone: ChangeTone; label: string }) {
-  const color = toneTextColor(tone);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const color = toneTextColor(tone, colors);
   // The border is deliberately the SAME pale tone the chips already use as their own
   // fill (toneMutedColor) — confirmed live that toneColor still read as strong as a
   // real chip's border; a legend key competing with the chips it explains defeats the
   // point. Icon + text stay at full toneTextColor so the meaning is still unambiguous.
   return (
-    <View style={[styles.legendEntry, { borderColor: toneMutedColor(tone) }]}>
+    <View style={[styles.legendEntry, { borderColor: toneMutedColor(tone, colors) }]}>
       <Icon size={11} weight="bold" color={color} />
       <Text style={[styles.legendEntryText, { color }]}>{label}</Text>
     </View>
@@ -96,11 +99,13 @@ function LegendEntry({ Icon, tone, label }: { Icon: typeof ArrowUpIcon; tone: Ch
 }
 
 function SignalChip({ label, direction }: { label: string; direction: SignalDir }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const Icon = direction === 'up' ? ArrowUpIcon : direction === 'down' ? ArrowDownIcon : ArrowRightIcon;
   const tone = direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'neutral';
-  const textColor = toneTextColor(tone);
+  const textColor = toneTextColor(tone, colors);
   return (
-    <View style={[styles.signalChip, { backgroundColor: toneMutedColor(tone) }]}>
+    <View style={[styles.signalChip, { backgroundColor: toneMutedColor(tone, colors) }]}>
       <Text style={[styles.signalChipText, { color: textColor }]}>{label}</Text>
       <Icon size={12} weight="bold" color={textColor} />
     </View>
@@ -108,15 +113,19 @@ function SignalChip({ label, direction }: { label: string; direction: SignalDir 
 }
 
 function Chip({ label, tone }: { label: string; tone: ChangeTone }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <View style={[styles.smallChip, { backgroundColor: toneMutedColor(tone) }]}>
-      <Text style={[styles.smallChipText, { color: toneTextColor(tone) }]}>{label}</Text>
+    <View style={[styles.smallChip, { backgroundColor: toneMutedColor(tone, colors) }]}>
+      <Text style={[styles.smallChipText, { color: toneTextColor(tone, colors) }]}>{label}</Text>
     </View>
   );
 }
 
 function PlayerImpactRow({ entry, first }: { entry: PlayerImpactEntry; first?: boolean }) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const tone = entry.impact === 'high' ? 'danger' : entry.impact === 'medium' ? 'warning' : 'success';
   return (
     <View style={[styles.playerRow, first && styles.playerRowFirst]}>
@@ -127,8 +136,8 @@ function PlayerImpactRow({ entry, first }: { entry: PlayerImpactEntry; first?: b
           {entry.reason ? ` · ${humanizeReason(entry.reason)}` : ''}
         </Text>
       </View>
-      <View style={[styles.impactChip, { backgroundColor: toneMutedColor(tone) }]}>
-        <Text style={[styles.impactChipText, { color: toneTextColor(tone) }]}>{t(`insights.impact${entry.impact.charAt(0).toUpperCase()}${entry.impact.slice(1)}`)}</Text>
+      <View style={[styles.impactChip, { backgroundColor: toneMutedColor(tone, colors) }]}>
+        <Text style={[styles.impactChipText, { color: toneTextColor(tone, colors) }]}>{t(`insights.impact${entry.impact.charAt(0).toUpperCase()}${entry.impact.slice(1)}`)}</Text>
       </View>
     </View>
   );
@@ -151,6 +160,8 @@ export default function TeamIntelligence({
   analysisChanges: AnalysisChangeEvent[];
 }) {
   const { t } = useTranslation();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [squadExpanded, setSquadExpanded] = useState(false);
   const [squadSnapshot, setSquadSnapshot] = useState<SquadSnapshot>(EMPTY_SNAPSHOT);
   const [squadLoading, setSquadLoading] = useState(true);
@@ -411,7 +422,7 @@ export default function TeamIntelligence({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyCard: { padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   emptyText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textFaint },
   card: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },

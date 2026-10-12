@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { BasketballIcon, BookmarkSimpleIcon, CaretDownIcon, SoccerBallIcon, SortDescendingIcon, SparkleIcon } from 'phosphor-react-native';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { panesForWidth } from '@/constants/layout';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
 import { useAppData } from '@/contexts/DataContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import SegmentedControl from '@/components/SegmentedControl';
 import SearchBar from '@/components/SearchBar';
 import CompetitionPicker from '@/components/CompetitionPicker';
@@ -64,6 +65,8 @@ export default function ExploreScreen() {
   const { status: entitlementStatus } = useEntitlement();
   const { toastState, showToast } = useToast();
   const layout = useAdaptiveLayout();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
   const [selectedLeague, setSelectedLeague] = useState(params.league ?? 'all');
@@ -322,7 +325,7 @@ export default function ExploreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   shell: { flex: 1 },
   shellRow: { flexDirection: 'row' },
