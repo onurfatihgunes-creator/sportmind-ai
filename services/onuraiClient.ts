@@ -155,8 +155,13 @@ async function mint(): Promise<AnonymousSession | null> {
  * sessions unconfigured on this deployment) — callers treat that the same
  * way Mutfak's own `ensureAnonymousSession` does: every call below simply
  * 401s honestly rather than inventing a client-side identity.
+ *
+ * Exported (in addition to being used internally by `onuraiApi`) so
+ * `services/revenueCat.ts` can set RevenueCat's `appUserID` to this exact
+ * identity — the one Vera/OnurAI already knows this device by — rather than
+ * a second, disconnected identity of its own invention.
  */
-async function ownerToken(): Promise<string | null> {
+export async function ownerToken(): Promise<string | null> {
   const existing = await restore();
   if (existing) return existing.ownerToken;
   const minted = await mint();

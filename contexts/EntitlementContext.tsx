@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { readEntitlement, type Entitlement } from '@/services/entitlement';
+import { hasActiveRevenueCatEntitlement } from '@/services/revenueCat';
 
 /**
  * The one authoritative subscription state for the whole app (Stylist's
@@ -34,6 +35,22 @@ const EntitlementContext = createContext<EntitlementContextValue>({
   refresh: async () => {},
 });
 
+/**
+ * Vera's own 14-day trial/Pro decision is untouched and still governs
+ * everything except this one case: this task wires no RevenueCat → Vera
+ * webhook, so a device that just bought SportMind Pro through Google Play
+ * can have Vera's own answer still say `expired` for a while. Checked only
+ * when Vera has already said the trial is over — during the trial, Vera's
+ * own answer stands exactly as before — and only to widen access, never
+ * narrow it: `hasActiveRevenueCatEntitlement` resolving false (iOS, no key,
+ * or not yet reporting the purchase) simply leaves Vera's `expired` answer
+ * standing, which is the existing paywall behavior. A pure function so this
+ * one decision is directly testable without rendering the provider.
+ */
+export function resolveDisplayedEntitlement(veraEntitlement: Entitlement, revenueCatActive: boolean): Entitlement {
+  return veraEntitlement === 'expired' && revenueCatActive ? 'pro' : veraEntitlement;
+}
+
 export function EntitlementProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<EntitlementStatus>('loading');
   const [trialEndsAt, setTrialEndsAt] = useState<number | null>(null);
@@ -41,8 +58,12 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     const state = await readEntitlement();
+    // Only asked when Vera has already said the trial is over — during the
+    // trial itself, Vera's own answer decides everything and this call
+    // (and its network round trip) never happens.
+    const revenueCatActive = state.entitlement === 'expired' ? await hasActiveRevenueCatEntitlement() : false;
     if (!mounted.current) return;
-    setStatus(state.entitlement);
+    setStatus(resolveDisplayedEntitlement(state.entitlement, revenueCatActive));
     setTrialEndsAt(state.trialEndsAt);
   }, []);
 

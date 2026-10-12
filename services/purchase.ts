@@ -1,46 +1,45 @@
 import { readEntitlement, type EntitlementState } from '@/services/entitlement';
+import { getMonthlyPackage, isRevenueCatConfigured as isRevenueCatReady } from '@/services/revenueCat';
+import Purchases from 'react-native-purchases';
 
 /**
- * Buying SportMind Pro: the seam, and an honest account of why nothing is
- * behind it yet — transplanted from Stylist's services/stylist/purchase.ts,
- * which is in exactly the same state: no billing SDK installed, no store
- * product created, no price configured on either platform.
+ * Buying SportMind Pro: the seam. Purchases now really flow through
+ * RevenueCat on Android (see services/revenueCat.ts) once a real Android
+ * public SDK key is configured — `isPurchaseConfigured()` follows that
+ * directly rather than a hardcoded false. There is still no iOS provider
+ * and still no purchase system there at all; see services/revenueCat.ts's
+ * own header for why the Android-only key gates every function here too.
  *
- * THERE IS NO PURCHASE SYSTEM IN THIS APP TODAY. This module is the shape
- * that work will take once a provider (RevenueCat, or direct StoreKit/Play
- * Billing) is chosen and a real product exists in App Store Connect /
- * Google Play Console. Nothing here invents a product id, a price, a
- * currency or a billing period — see PHASE 17 in the report this ships
- * with for exactly what is missing and where it has to be created.
+ * THE PRODUCT ITSELF IS NEVER NAMED HERE. `startPurchase()` resolves the
+ * one real package (`getMonthlyPackage()` — RevenueCat's own `$rc_monthly`
+ * inside its `default` Offering) rather than this file hardcoding a product
+ * id, a price, or a currency; that mapping lives entirely on the
+ * RevenueCat/Google Play Console dashboards.
  *
- * SportMind Pro's confirmed price is ₺49.90/month (see app/(tabs)/premium.tsx's
- * pro.price/pro.priceSuffix, shown there as real informational copy) — that is the
- * number to enter when the store product is created in App Store Connect / Google
- * Play Console. It still has no place in THIS file: once a real purchase flow exists,
- * the price a specific buyer is actually charged must come from the store's own
- * localised, currency-correct response (which may legitimately differ by region/store
- * policy), never be assumed to match the marketing copy exactly. isPurchaseConfigured()
- * stays false until that real, store-supplied price exists to drive an actual charge.
- *
- * THE AUTHORITY IS THE SHARED, ACCOUNT-WIDE ENTITLEMENT, AND THIS FILE IS
- * NOT IT. Exactly like Stylist: a provider confirming a purchase would be
- * evidence that money moved, never a decision that this device is Pro. The
- * only thing that may conclude that is a re-read of readEntitlement() —
- * see services/entitlement.ts and apps/api's onurai_api.entitlements — after
- * the provider (once one exists) has told that one shared backend, which
- * unlocks Pro for Stylist, Mutfak and SportMind together, not this
- * Specialist alone.
+ * THE AUTHORITY IS STILL SPORTMIND'S OWN `sportmind_pro` ENTITLEMENT, AND
+ * THIS FILE IS STILL NOT IT — never the account-wide `Vera Pro` this file
+ * used to check. RevenueCat confirming a purchase is evidence that money
+ * moved, never itself the decision that this device is Pro — only a
+ * re-read of readEntitlement() may conclude that (see
+ * services/entitlement.ts). Nothing in this task wires a RevenueCat → Vera
+ * webhook, so immediately after a real purchase that re-read can
+ * legitimately still answer trial/expired until that backend-to-backend
+ * sync exists — completePurchase() below already treats that as `pending`,
+ * not `failed`, for exactly this reason. See
+ * contexts/EntitlementContext.tsx for where that gap is bridged in the
+ * meantime: if Vera's own answer is `expired` but RevenueCat's own record
+ * for this device already shows `sportmind_pro` active, the UI still shows
+ * Pro rather than a paywall a device that just paid should never see.
  */
 
 /**
- * Whether a purchase can be started at all. False today, for the same
- * reason it is false in Stylist: read rather than assumed by every surface
- * that would offer to buy, so a "Go Pro" button that opened nothing never
- * exists — the purchase actions on the paywall are conditioned on this and
- * appear by themselves once a provider is wired in.
+ * Whether a purchase can be started at all — true only once RevenueCat has
+ * a real Android key configured (see services/revenueCat.ts). Read rather
+ * than assumed by every surface that would offer to buy, so a "Go Pro"
+ * button that opens nothing never exists.
  */
 export function isPurchaseConfigured(): boolean {
-  return false;
+  return isRevenueCatReady();
 }
 
 /** How a purchase attempt ended. `cancelled` is not a failure — the person
@@ -51,17 +50,36 @@ export type PurchaseOutcome =
   | { ok: false; reason: 'unavailable' | 'cancelled' | 'failed' | 'pending' };
 
 /**
- * Start a purchase, or say that there is none to start. The provider call
- * (RevenueCat.purchasePackage, or the platform SDK directly) goes inside the
- * guarded branch below once isPurchaseConfigured() can be true; its result
- * would feed completePurchase, which is what actually decides anything.
+ * Start a purchase: resolve the one real monthly package, buy it through
+ * RevenueCat, and — as a sanity check that the dashboard's package really
+ * did grant what it promises, not the app-wide access decision itself —
+ * confirm RevenueCat's own result already shows `sportmind_pro` active
+ * before handing off to completePurchase(), which is what actually decides
+ * anything (see this file's header).
  */
 export async function startPurchase(): Promise<PurchaseOutcome> {
   if (!isPurchaseConfigured()) {
     return { ok: false, reason: 'unavailable' };
   }
-  /* THE PROVIDER CALL GOES HERE, and only here, once one is chosen. */
-  return { ok: false, reason: 'unavailable' };
+  const monthly = await getMonthlyPackage();
+  if (!monthly) {
+    return { ok: false, reason: 'unavailable' };
+  }
+  try {
+    const { customerInfo } = await Purchases.purchasePackage(monthly);
+    if (!customerInfo.entitlements.active.sportmind_pro) {
+      // The store purchase itself went through but RevenueCat's own record
+      // does not yet show the entitlement — evidence money moved, not a
+      // reason to tell the person it failed (see this file's header).
+      return { ok: false, reason: 'pending' };
+    }
+  } catch (error) {
+    if ((error as { userCancelled?: boolean } | null)?.userCancelled) {
+      return { ok: false, reason: 'cancelled' };
+    }
+    return { ok: false, reason: 'failed' };
+  }
+  return completePurchase();
 }
 
 /**
@@ -75,7 +93,12 @@ export async function restorePurchases(): Promise<PurchaseOutcome> {
   if (!isPurchaseConfigured()) {
     return { ok: false, reason: 'unavailable' };
   }
-  return { ok: false, reason: 'unavailable' };
+  try {
+    await Purchases.restorePurchases();
+  } catch {
+    return { ok: false, reason: 'failed' };
+  }
+  return completePurchase();
 }
 
 /**
