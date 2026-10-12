@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import Animated, {
@@ -156,7 +156,11 @@ export default function WelcomeScreen() {
       {/* The copy block is capped and centred on a wide window — a 26pt-padded
           paragraph stretched across an unfolded display is unreadable, and there is
           nothing real to put beside it. */}
-      <View style={[styles.content, singleColumnStyle(layout)]}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={[styles.contentInner, singleColumnStyle(layout)]}
+        showsVerticalScrollIndicator={false}
+      >
         <View>
           <Text style={styles.badge}>{t('welcome.kicker').toUpperCase()}</Text>
         </View>
@@ -165,7 +169,7 @@ export default function WelcomeScreen() {
         <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]} onPress={finish}>
           <Text style={styles.primaryButtonText}>{t('welcome.start')}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -182,7 +186,16 @@ const styles = StyleSheet.create({
   // safe-area edge, while the hero keeps its 400pt floor so it never gets crushed on short
   // screens (content's own children still size naturally, so nothing clips).
   heroBlock: { flex: 0.58, minHeight: 400, position: 'relative' },
-  content: { flex: 0.42, justifyContent: 'center', paddingHorizontal: 26, paddingBottom: 12, gap: 16 },
+  // A plain View here clipped the button off the bottom of the screen whenever the
+  // badge/title/body/button stack grew taller than this 0.42 flex share — confirmed on a
+  // device report where "Get started" was entirely missing (long Turkish body copy + the
+  // device's own font-scale setting was enough to push it below the fold, with nothing to
+  // scroll to reach it). Splitting the flex share (content, on the ScrollView itself) from
+  // the centering/padding (contentInner, as its contentContainerStyle) keeps the original
+  // centered look when everything fits, and makes the button reachable by scrolling instead
+  // of invisible when it doesn't.
+  content: { flex: 0.42 },
+  contentInner: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 26, paddingBottom: 12, gap: 16 },
 
   statusPillWrap: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center' },
   statusPill: {
