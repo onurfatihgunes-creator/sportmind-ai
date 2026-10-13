@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseIncidents, incidentsAgreeWithFinalScore, parseTeamMatchStats } from './matchStatsParsing.js';
+import { parseIncidents, parseIncidentsDeduped, dedupeByKey, incidentKey, incidentsAgreeWithFinalScore, parseTeamMatchStats } from './matchStatsParsing.js';
 
 test('parseIncidents maps BSD incident shape to typed rows', () => {
   const rows = parseIncidents('m1', 999, [
@@ -114,4 +114,52 @@ test('parseTeamMatchStats: only produces a row for a side actually present in ra
   const rows = parseTeamMatchStats('m1', 'h', 'a', 1, { home: { total_shots: 5 } });
   assert.equal(rows.length, 1);
   assert.equal(rows[0].side, 'home');
+});
+
+
+// ---- Regression: BSD enrichment "ON CONFLICT DO UPDATE command cannot affect row a second time" (21000).
+// Live 2026-10-13: matches 564704 (La Liga 3-3) and 559667 (Ligue 1 4-1) had every BSD table filled except
+// match_incidents — an identical-key pair in one batch made Postgres reject the whole upsert.
+
+test('parseIncidents: two incidents with the same conflict key collapse to one row (first wins), valid rows stay', () => {
+  const rows = parseIncidents('m1', 7, [
+    { type: 'goal', player: 'A. Diao', minute: 90, is_home: true },
+    { type: 'yellow_card', player: 'C. Player', minute: 12, is_home: false },
+    { type: 'goal', player: 'A. Diao', minute: 90, is_home: true }, // same key: e.g. 90+2' and 90+5' both reported as minute 90
+    { type: 'goal', player: 'A. Diao', minute: 91, is_home: true }, // different minute: kept
+    { type: 'goal', player: 'A. Diao', minute: 90, is_home: false }, // other side: kept
+  ]);
+  assert.equal(rows.length, 4);
+  assert.deepEqual(rows.map(incidentKey).length, new Set(rows.map(incidentKey)).size, 'no conflict key appears twice');
+  assert.deepEqual(rows.map((r) => [r.incident_type, r.minute, r.is_home]), [
+    ['goal', 90, true],
+    ['yellow_card', 12, false],
+    ['goal', 91, true],
+    ['goal', 90, false],
+  ]);
+});
+
+test('parseIncidentsDeduped: reports how many rows were collapsed and lets a duplicate fill a missing assist, never overwrite one', () => {
+  const noAssistFirst = parseIncidentsDeduped('m1', 7, [
+    { type: 'goal', player: 'A', minute: 10, is_home: true },
+    { type: 'goal', player: 'A', minute: 10, is_home: true, assist: 'B' },
+  ]);
+  assert.equal(noAssistFirst.collapsed, 1);
+  assert.equal(noAssistFirst.rows[0].assist_player_name, 'B');
+  const assistFirst = parseIncidentsDeduped('m1', 7, [
+    { type: 'goal', player: 'A', minute: 10, is_home: true, assist: 'B' },
+    { type: 'goal', player: 'A', minute: 10, is_home: true, assist: 'C' },
+  ]);
+  assert.equal(assistFirst.rows[0].assist_player_name, 'B');
+  assert.equal(parseIncidentsDeduped('m1', 7, []).collapsed, 0);
+});
+
+test('dedupeByKey: keeps order, drops only repeats, and is a no-op without repeats', () => {
+  const rows = [{ k: 'a', v: 1 }, { k: 'b', v: 2 }, { k: 'a', v: 3 }, { k: 'c', v: 4 }];
+  const out = dedupeByKey(rows, (r) => r.k);
+  assert.deepEqual(out.rows, [{ k: 'a', v: 1 }, { k: 'b', v: 2 }, { k: 'c', v: 4 }]);
+  assert.equal(out.collapsed, 1);
+  const unique = dedupeByKey([{ k: 'x' }, { k: 'y' }], (r) => r.k);
+  assert.equal(unique.collapsed, 0);
+  assert.equal(unique.rows.length, 2);
 });

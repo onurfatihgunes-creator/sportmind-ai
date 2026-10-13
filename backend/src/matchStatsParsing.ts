@@ -29,8 +29,42 @@ function isTeamScopedIncident(i: BsdIncident): i is BsdIncident & { is_home: boo
   return typeof i.is_home === 'boolean' && typeof i.player === 'string';
 }
 
-export function parseIncidents(matchId: string, eventId: number, incidents: BsdIncident[]): MatchIncidentRow[] {
-  return incidents.filter(isTeamScopedIncident).map((i) => ({
+/**
+ * One row per conflict key, first occurrence wins, order otherwise preserved.
+ *
+ * WHY THIS EXISTS: Postgres rejects an upsert in which two rows of the SAME statement carry the
+ * same conflict key ("ON CONFLICT DO UPDATE command cannot affect row a second time", 21000) —
+ * and it rejects the WHOLE statement, so one duplicate used to cost a match every row it was
+ * batched with (confirmed live 2026-10-13: matches 564704 and 559667 had every BSD table filled
+ * except match_incidents). The tables' own unique constraints allow only one row per key, so
+ * keeping the first of an identical-key group loses nothing the database could have stored; it
+ * only stops one bad group from discarding the valid rows beside it. `merge` lets a later
+ * duplicate fill a field the kept row lacks (never overwrite one it has).
+ */
+export function dedupeByKey<T>(rows: readonly T[], key: (row: T) => string, merge?: (kept: T, duplicate: T) => T): { rows: T[]; collapsed: number } {
+  const kept = new Map<string, T>();
+  let collapsed = 0;
+  for (const row of rows) {
+    const k = key(row);
+    const existing = kept.get(k);
+    if (existing === undefined) {
+      kept.set(k, row);
+    } else {
+      collapsed += 1;
+      if (merge) kept.set(k, merge(existing, row));
+    }
+  }
+  return { rows: Array.from(kept.values()), collapsed };
+}
+
+/** match_incidents' unique key — `unique (match_id, incident_type, minute, is_home, player_name)`. */
+export const incidentKey = (r: Pick<MatchIncidentRow, 'match_id' | 'incident_type' | 'minute' | 'is_home' | 'player_name'>) =>
+  JSON.stringify([r.match_id, r.incident_type, r.minute, r.is_home, r.player_name]);
+
+/** Same as parseIncidents, but also reports how many rows were collapsed into an earlier one with
+ *  the same conflict key (so the caller can log it instead of failing silently). */
+export function parseIncidentsDeduped(matchId: string, eventId: number, incidents: BsdIncident[]): { rows: MatchIncidentRow[]; collapsed: number } {
+  const parsed: MatchIncidentRow[] = incidents.filter(isTeamScopedIncident).map((i) => ({
     match_id: matchId,
     incident_type: i.type,
     minute: i.minute,
@@ -39,6 +73,11 @@ export function parseIncidents(matchId: string, eventId: number, incidents: BsdI
     assist_player_name: i.assist ?? null,
     bsd_event_id: eventId,
   }));
+  return dedupeByKey(parsed, incidentKey, (kept, dup) => (kept.assist_player_name == null && dup.assist_player_name != null ? { ...kept, assist_player_name: dup.assist_player_name } : kept));
+}
+
+export function parseIncidents(matchId: string, eventId: number, incidents: BsdIncident[]): MatchIncidentRow[] {
+  return parseIncidentsDeduped(matchId, eventId, incidents).rows;
 }
 
 /** True only when the derived goal tally from real 'goal' incidents exactly matches the

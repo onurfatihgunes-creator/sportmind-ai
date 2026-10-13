@@ -14,7 +14,7 @@ import {
 import { normalizeTeamName } from './teamIdentity.js';
 import { supabase } from './supabaseClient.js';
 import { detectAvailabilityDelta, detectLineupStatusChange, type DetectedChange } from './analysisEngine.js';
-import { parseIncidents, parseTeamMatchStats } from './matchStatsParsing.js';
+import { dedupeByKey, parseIncidentsDeduped, parseTeamMatchStats } from './matchStatsParsing.js';
 
 /**
  * BSD enrichment — attaches lineups/player-availability/player-stats/raw team
@@ -116,7 +116,7 @@ async function persistPlayerStats(match: CandidateMatch, event: BsdEvent) {
   // if that ever changes, `player_name` must be resolved to a real name (the
   // same way player_availability's real names / bsd_players' cache already do
   // it) before it reaches any user-facing surface — never rendered as-is.
-  const rows = stats.map((s) => ({
+  const { rows, collapsed } = dedupeByKey(stats.map((s) => ({
     match_id: match.id,
     player_name: String(s.player_id),
     team_name: s.team_id === event.home_team_id ? match.homeName : s.team_id === event.away_team_id ? match.awayName : null,
@@ -130,7 +130,8 @@ async function persistPlayerStats(match: CandidateMatch, event: BsdEvent) {
     shots_on_target: s.shots_on_target,
     bsd_event_id: event.id,
     updated_at: new Date().toISOString(),
-  }));
+  })), (r) => JSON.stringify([r.match_id, r.player_name]));
+  if (collapsed > 0) console.log(`  BSD: match ${match.id}: ${collapsed} player-stat row(s) repeated a player id and were collapsed.`);
   const { error } = await supabase.from('match_player_stats').upsert(rows, { onConflict: 'match_id,player_name' });
   if (error) throw error;
 }
@@ -181,7 +182,11 @@ async function persistIncidents(matchId: string, event: BsdEvent) {
   }
   if (!incidents || incidents.length === 0) return;
 
-  const rows = parseIncidents(matchId, event.id, incidents);
+  // Deduplicated on the table's own unique key before the upsert: one identical-key pair in a batch
+  // makes Postgres reject the whole statement (21000) and the match loses every incident row.
+  const { rows, collapsed } = parseIncidentsDeduped(matchId, event.id, incidents);
+  if (collapsed > 0) console.log(`  BSD: match ${matchId}: ${collapsed} incident(s) shared a conflict key with an earlier one and were collapsed.`);
+  if (rows.length === 0) return;
   const { error } = await supabase.from('match_incidents').upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })), {
     onConflict: 'match_id,incident_type,minute,is_home,player_name',
   });
@@ -359,16 +364,22 @@ async function enrichOneMatch(match: CandidateMatch, event: BsdEvent) {
       ...lineups.unavailable_players.home.map((p) => ({ ...p, team_id: match.home_team_id })),
       ...lineups.unavailable_players.away.map((p) => ({ ...p, team_id: match.away_team_id })),
     ];
-    const rows = allUnavailable.map((p) => ({
-      match_id: match.id,
-      team_id: p.team_id,
-      player_name: p.name,
-      status: p.status,
-      reason: p.reason,
-      bsd_player_id: p.id, // may be null — BSD returns id: null for a small minority of entries
-      bsd_event_id: event.id,
-      updated_at: new Date().toISOString(),
-    }));
+    // `unique (match_id, player_name)` — the same name listed twice (e.g. one player on both lists)
+    // would otherwise sink the whole batch; the first listing is kept.
+    const { rows, collapsed } = dedupeByKey(
+      allUnavailable.map((p) => ({
+        match_id: match.id,
+        team_id: p.team_id,
+        player_name: p.name,
+        status: p.status,
+        reason: p.reason,
+        bsd_player_id: p.id, // may be null — BSD returns id: null for a small minority of entries
+        bsd_event_id: event.id,
+        updated_at: new Date().toISOString(),
+      })),
+      (r) => JSON.stringify([r.match_id, r.player_name]),
+    );
+    if (collapsed > 0) console.log(`  BSD: match ${match.id}: ${collapsed} unavailable-player row(s) repeated a name and were collapsed.`);
 
     if (rows.length > 0) {
       const { error } = await supabase.from('player_availability').upsert(rows, { onConflict: 'match_id,player_name' });
