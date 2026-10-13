@@ -1,67 +1,82 @@
 # Google Play Data Safety — SportMind AI
 
-Internal reference for filling out the Play Console "Data safety" form. Not
-user-facing (the public Privacy Policy is `docs/privacy-policy.html`).
+Internal reference for filling out the Play Console "Data safety" form. Not user-facing (the public
+policy is `docs/privacy-policy.html`). **This file does not submit anything**: the form is filled in
+by a person in Play Console, and the live policy page is published separately.
 
-Derived from a code audit on 2026-09-19 (package `com.onurfatihgunes.sportmindai`).
-Every row cites the file(s) that back the claim. Google Play's own category
-definitions change over time — treat the "DATA TYPE" column as the closest
-current match, not a guaranteed final label, and re-check against the live
-Play Console form before submitting.
+Package `com.onurfatihgunes.sportmindai`. Re-audited against commit `23d9e6c` (October 2026) with
+`PURCHASES_ENABLED = false`. Each row names the code or test that backs it and says how it can be
+re-checked. Play's category names change; treat the "Play data type" column as the closest current
+match and re-read it against the live form.
 
-"COLLECTED" follows Play's definition: transmitted off the device to us or a
-third party. Data that is only read/written to local device storage and never
-sent over the network is **not** "collected" under that definition, even
-though the app does process it locally.
+"Collected" follows Play's definition: data transmitted off the device, to us or to anyone else, other
+than data processed only transiently in memory. Data kept only in local storage is **not** collected.
 
-| DATA TYPE | COLLECTED | SHARED | PURPOSE | OPTIONAL/REQUIRED | SOURCE IN CODE |
-|---|---|---|---|---|---|
-| Name (user-set display name) | NO — local only | NO | App functionality (personalization) | Optional (defaults to "Player") | `contexts/ProfileContext.tsx` (`sportmind_profile_name`, AsyncStorage only, no network send) |
-| Email address | NO — never requested | NO | — | — | No auth/account code exists anywhere in the app |
-| User IDs / Account IDs | NO — no accounts | NO | — | — | `services/onuraiClient.ts` header comment: "NO SIGN-IN IS ADDED... SportMind has no accounts" |
-| Device or other IDs (anonymous app-installation token) | YES | NO (sent only to our own OnurAI/Vera backend, not a third party) | App functionality (trial/Pro entitlement check) | Required for entitlement checks; app fails open to "trial" if unavailable (`services/entitlement.ts` catch branch) | `services/onuraiClient.ts` (`ANON_KEY = 'sportmind.onurai.anonymous_session'`, minted via `POST /v1/sportmind/anonymous-session`, sent as `Authorization: Bearer` on `onuraiApi()` calls); `services/entitlement.ts` |
-| Precise or approximate location | NO | NO | — | — | No `expo-location` or geolocation API anywhere in the codebase (verified via dependency + full-text search) |
-| Photos, videos, camera | NO | NO | — | — | No `expo-camera` / `expo-image-picker` / `expo-media-library`; no camera usage description in iOS config |
-| Microphone / audio | NO | NO | — | — | No audio-recording API anywhere in the codebase |
-| Contacts | NO | NO | — | — | No `expo-contacts`; no contacts API usage |
-| App activity (matches viewed, searches, taps) | NO | NO | — | — | Supabase reads (`lib/supabase.ts`) are anonymous public-read queries (`persistSession: false`, RLS "public read" policies) with no per-user identity attached; watchlist/followed teams stay local (`contexts/WatchlistContext.tsx`, `contexts/FollowedTeamsContext.tsx`) |
-| Purchase history | NO — no purchase capability exists | NO | — | — | `services/purchase.ts`: `isPurchaseConfigured()` hardcoded `return false`; `startPurchase()`/`restorePurchases()` always return `{ ok: false, reason: 'unavailable' }`. No RevenueCat, no `react-native-iap`, no billing SDK in `package.json`. Price text on the paywall (`app/(tabs)/premium.tsx`) is informational copy only, not wired to a charge. |
-| Diagnostics / crash logs | NO | NO | — | — | No Sentry/Firebase/Crashlytics/Bugsnag or any crash-reporting SDK in `package.json` or source |
-| Analytics | NO | NO | — | — | No Firebase Analytics, Amplitude, Mixpanel, PostHog, or Segment in `package.json` or source. `@opentelemetry/api` is present in `package.json` but is an unused transitive dependency — no import of it anywhere in `app/`, `components/`, `contexts/`, `services/`, or `lib/` |
-| Advertising ID | NO | NO | — | — | No ad SDK of any kind present |
-| Language / locale preference | NO — local only | NO | App functionality | Optional | `i18n/index.ts` (`sportmind-ai-language`, AsyncStorage only) |
-| Theme/appearance preference | NO — local only | NO | App functionality | Optional | `contexts/ThemeContext.tsx` (`sportmind_appearance_mode`, AsyncStorage only) |
-| Notification preferences | NO — local only | NO | App functionality (UI state; no delivery system exists) | Optional | `app/notifications.tsx` (`sportmind_notification_prefs`) — explicitly documented in-code as "no push-notification delivery infrastructure exists yet" |
-| Watchlisted matches / followed teams | NO — local only | NO | App functionality (personalization) | Optional | `contexts/WatchlistContext.tsx`, `contexts/FollowedTeamsContext.tsx` |
+## What the app actually does on the network
 
-## Third-party services contacted by the app
+Exactly two kinds of outbound traffic exist in the shipped app:
 
-| Service | What is sent | Why |
+| Destination | What is sent | Evidence / how to re-check |
 |---|---|---|
-| Supabase (our own project) | No per-user data — anonymous public-read queries only, via a client-safe anon key (`EXPO_PUBLIC_SUPABASE_ANON_KEY`), RLS-restricted to public read | Fetch match fixtures / predictions content |
-| OnurAI / Vera platform backend (`EXPO_PUBLIC_ONURAI_API_URL`) | Anonymous session bearer token only (see "Device or other IDs" row above) | Trial/Pro entitlement check |
+| Our Supabase project (anon, read-only PostgREST queries) | Table filters (match ids, team ids, dates). No name, account, device or advertising identifier. The host necessarily sees connection metadata (IP address, time). | `lib/supabase.ts` (`persistSession: false`, anon key), `data/liveData.ts`. Re-check: run the app behind a proxy / read `adb logcat` network logs. |
+| `onurfatihgunes-creator.github.io` (privacy policy, terms) | Only when the person taps the link on the Legal screen; opens in the system browser, outside the app. | `app/legal/index.tsx`. |
 
-Sports-data providers (football-data.org, balldontlie.io, RapidAPI Football,
-BSD/Bzzoiro Sports Data) are called **server-side only**, by our own backend
-(`backend/src/*.ts`), never directly by the app, and never with any end-user
-data — they receive our backend's own API credentials and league/date query
-parameters only. Listed here for completeness since the Privacy Policy
-references them as the origin of match content.
+**No request goes to the OnurAI/Vera backend.** With `PURCHASES_ENABLED = false`,
+`services/entitlement.ts` returns before any request and mints no session token, `EntitlementProvider`
+never refreshes, and RevenueCat is never configured. Proof: `services/purchasesDisabled.test.ts`
+asserts `onuraiApi`, `ownerToken`, `Purchases.configure/getOfferings/getCustomerInfo/purchasePackage/restorePurchases`
+are never called, even with a key present. The sports-data providers (football-data.org, balldontlie.io,
+RapidAPI Football, BSD) are called only by our GitHub Actions backend (`backend/src/*`), never by the app.
+
+## SDKs in the build
+
+| SDK | Present | Active in this release | Notes |
+|---|---|---|---|
+| `react-native-purchases` (RevenueCat, includes the Play Billing client) | Yes — kept deliberately | **No.** Never configured while the flag is off; no key in the EAS production environment. | `com.android.vending.BILLING` is removed from the manifest (`app.json` → `blockedPermissions`, see `docs/release-permissions.md`). **If purchases return, this section and the form change** (purchase history, device/user ID via RevenueCat). |
+| `@supabase/supabase-js` | Yes | Yes | Read-only anon client. |
+| Analytics / ads / crash reporting (Firebase, Sentry, Amplitude, AdMob …) | No | — | Absent from `package.json`. `@opentelemetry/api` is an unused transitive dependency (no import in app code). |
+
+## Data safety form — proposed answers
+
+| Play data type | Collected | Shared | Purpose | Notes |
+|---|---|---|---|---|
+| Personal info (name, email, address, phone, other) | No | No | — | Display name is typed by the user and stored only locally (`contexts/ProfileContext.tsx`). No accounts exist. |
+| Financial info / purchase history | No | No | — | No payment or purchase feature is reachable. |
+| Location | No | No | — | No location API or permission. |
+| Photos, videos, audio, files, contacts, calendar | No | No | — | No such APIs; storage permissions are blocked. |
+| Messages, web browsing history | No | No | — | — |
+| App activity (interactions, search history, installed apps) | No | No | — | Watchlist / followed teams / searches stay local (`contexts/WatchlistContext.tsx`, `contexts/FollowedTeamsContext.tsx`). |
+| App info and performance (crash logs, diagnostics) | No | No | — | No crash SDK. Google Play's own Android vitals are collected by Google, not by the app. |
+| Device or other IDs | No | No | — | No identifier is created or sent. A token minted by *earlier test builds* may remain in local storage (`sportmind.onurai.anonymous_session`); this version neither reads nor sends it. |
+| Data encrypted in transit | Yes | | | All requests are HTTPS (Supabase). |
+| Data deletion request | Not applicable | | | No accounts. Local data: Profile → Clear My Data, or uninstall. |
+
+### Items that need a human decision before the form is submitted
+1. **IP address / request metadata at Supabase.** Play treats data that is sent to a server and *stored*
+   as collected. Supabase's own access logs and retention for this project are not visible from this
+   repository. Decide, after checking the Supabase project's log settings, whether to declare
+   "Approximate location / IP address — collected, not shared, app functionality" or to rely on the
+   transient-processing exemption. **Not assumed either way.**
+2. **Play Console's treatment of a bundled but inactive billing SDK.** Whether the console still asks
+   billing-related questions for an AAB that contains `react-native-purchases` without the BILLING
+   permission can only be seen in the console.
+3. **Content rating / "Contains in-app purchases" label.** There are no in-app products; confirm the
+   store listing shows none.
+
+## Local-only storage (not "collected")
+
+| Key | Holds | Cleared by Clear My Data |
+|---|---|---|
+| `sportmind_profile_name` | Display name | Yes |
+| `sportmind_watchlist_match_ids` | Saved matches | Yes |
+| `sportmind_followed_team_ids` | Followed teams | Yes |
+| `sportmind-ai-language` | Language | Yes |
+| `sportmind_notification_prefs` | Toggle states (no push delivery exists) | Yes |
+| `sportmind_appearance_mode` | Light/Dark/System | No (uninstall) |
+| `sportmind_has_seen_welcome` | First-run flag | No (uninstall) |
+| `sportmind.onurai.anonymous_session`, `sportmind_device_id`, `sportmind_local_trial_started_at`, `sportmind_legacy_trial_migration_v1` | Only present on devices that ran earlier test builds; not read or sent by this version | No (uninstall) |
 
 ## Account deletion requirement
 
-Google Play requires an in-app account-deletion path **only for apps that
-support account creation**. SportMind AI has no account system — confirmed
-by the explicit "NO SIGN-IN IS ADDED" statement in `services/onuraiClient.ts`
-and the absence of any auth/login code in `app/` or `contexts/`. This
-requirement does not apply.
-
-A local "Clear My Data" control exists regardless (`app/(tabs)/profile.tsx`,
-`clearData()`), which removes: `sportmind_profile_name`,
-`sportmind_watchlist_match_ids`, `sportmind_followed_team_ids`,
-`sportmind-ai-language`, `sportmind_notification_prefs`. It does **not**
-clear `sportmind_appearance_mode`, `sportmind_has_seen_welcome`, or the
-anonymous entitlement token (`sportmind.onurai.anonymous_session`) — a minor
-completeness gap, not a Play Store blocker, since none of those three hold
-personal data (a UI preference, a boolean flag, and an anonymous token with
-no PII).
+Applies only to apps that support account creation. SportMind AI has none (no sign-in code in `app/` or
+`contexts/`), so no in-app account-deletion path or deletion URL is required.
