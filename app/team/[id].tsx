@@ -142,12 +142,14 @@ export default function TeamProfileScreen() {
               <Pressable key={m.id} style={styles.matchRow} onPress={() => router.push(`/match/${m.id}`)}>
                 <TeamBadgePair home={m.home.id === team.id ? team : opponent} away={m.home.id === team.id ? opponent : team} size={28} />
                 <View style={styles.matchInfo}>
-                  <Text style={styles.matchTitle}>{t('teamProfile.vsPrefix', { team: opponent.name })}</Text>
-                  <Text style={styles.matchSubtitle}>{kickoffText(m, t, i18n.language)}</Text>
+                  <Text style={styles.matchTitle} maxFontSizeMultiplier={1.3}>{t('teamProfile.vsPrefix', { team: opponent.name })}</Text>
+                  <Text style={styles.matchSubtitle} maxFontSizeMultiplier={1.3}>{kickoffText(m, t, i18n.language)}</Text>
+                  {/* Under the title, not beside it: "AI prediction: <long club name> favoured" beside a
+                      flex:1 column left the title ~1 character wide on a phone (seen on the release APK). */}
+                  <Text style={[styles.matchTag, favoursThisTeam ? styles.matchTagPositive : styles.matchTagNeutral]} maxFontSizeMultiplier={1.3}>
+                    {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
+                  </Text>
                 </View>
-                <Text style={[styles.matchTag, favoursThisTeam ? styles.matchTagPositive : styles.matchTagNeutral]}>
-                  {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
-                </Text>
               </Pressable>
             );
           })}
@@ -189,10 +191,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 12,
     marginBottom: spacing.sm,
   },
-  matchInfo: { flex: 1 },
+  matchInfo: { flex: 1, minWidth: 0 },
   matchTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
   matchSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 2 },
-  matchTag: { fontFamily: fonts.bodyMedium, fontSize: 10.5 },
+  matchTag: { fontFamily: fonts.bodyMedium, fontSize: 10.5, marginTop: 4 },
   matchTagPositive: { color: colors.successText },
   matchTagNeutral: { color: colors.textFaint },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
