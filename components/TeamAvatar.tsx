@@ -10,12 +10,14 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Initials font size as a share of the circle, tuned to how many characters have to fit:
- *  three bold capitals need a smaller em than one. Pure so the sizing is directly testable. */
-export function avatarFontSize(code: string, size: number): number {
-  const length = code.length;
-  const share = length <= 1 ? 0.46 : length === 2 ? 0.4 : 0.32;
-  return Math.round(size * share * 10) / 10;
+/** One text size for every avatar, applied to 1, 2 and 3 letter codes alike so initials never look
+ *  bigger on one badge than the next; nothing is fitted or recalculated per code. It is as large
+ *  as it can be while the widest realistic code still has air around it: at 0.40 "MUN" ran from
+ *  one edge of the circle to the other (measured at 34dp), at 0.36 it keeps ~2dp on each side. */
+export const AVATAR_FONT_SHARE = 0.36;
+
+export function avatarFontSize(size: number): number {
+  return Math.round(size * AVATAR_FONT_SHARE * 10) / 10;
 }
 
 /**
@@ -25,7 +27,8 @@ export function avatarFontSize(code: string, size: number): number {
  *
  * The circle is a fixed size, so the text inside it deliberately ignores the system font scale
  * (allowFontScaling off) — scaling it is what pushed three-letter codes out of the circle and
- * wrapped them onto two lines. The team name next to it is ordinary text and still scales.
+ * wrapped them onto two lines — and it has one fixed size for every code length. The team name
+ * next to it is ordinary text and still scales.
  */
 export default function TeamAvatar({ team, size = 30, style }: Props) {
   const code = (team.code ?? '').trim().toUpperCase().slice(0, 3);
@@ -35,9 +38,8 @@ export default function TeamAvatar({ team, size = 30, style }: Props) {
       <Text
         numberOfLines={1}
         allowFontScaling={false}
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-        style={[styles.code, { fontSize: avatarFontSize(code, size), color: team.fg, maxWidth: size - 4 }]}
+        ellipsizeMode="clip"
+        style={[styles.code, { fontSize: avatarFontSize(size), color: team.fg }]}
       >
         {code}
       </Text>

@@ -15,6 +15,7 @@ import RadarChart, { type RadarAxis } from '@/components/RadarChart';
 import SplitPane from '@/components/SplitPane';
 import NotFoundState from '@/components/NotFoundState';
 import TeamAvatar from '@/components/TeamAvatar';
+import { compactTeamName } from '@/data/teamLabel';
 import { hasTrustedFormSample } from '@/data/dataConfidence';
 
 /** Real per-team stats derived client-side from whatever matches involving this team are
@@ -168,14 +169,14 @@ export default function TeamComparisonScreen() {
           <View style={styles.teamsRow}>
             <View style={styles.teamCol}>
               <TeamAvatar team={teamA} size={34} />
-              <Text style={styles.teamName} numberOfLines={1}>
-                {teamA.name}
+              <Text style={styles.teamName} numberOfLines={2} maxFontSizeMultiplier={1.3}>
+                {compactTeamName(teamA.name)}
               </Text>
             </View>
             <Text style={styles.vs}>{t('common.vs')}</Text>
             <View style={[styles.teamCol, styles.teamColEnd]}>
-              <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={1}>
-                {teamB.name}
+              <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={2} maxFontSizeMultiplier={1.3}>
+                {compactTeamName(teamB.name)}
               </Text>
               <TeamAvatar team={teamB} size={34} />
             </View>
@@ -186,11 +187,11 @@ export default function TeamComparisonScreen() {
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-                <Text style={styles.legendText}>{teamA.name}</Text>
+                <Text style={styles.legendText} maxFontSizeMultiplier={1.3}>{compactTeamName(teamA.name)}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: colors.neutralSeries }]} />
-                <Text style={styles.legendText}>{teamB.name}</Text>
+                <Text style={styles.legendText} maxFontSizeMultiplier={1.3}>{compactTeamName(teamB.name)}</Text>
               </View>
             </View>
           </View>
@@ -258,10 +259,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   teamNameEnd: { textAlign: 'right' },
   vs: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
   radarCard: { marginTop: 14, padding: 16, paddingTop: 18, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center' },
-  legendRow: { flexDirection: 'row', gap: 18, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // wrap + shrinkable items: two long club names side by side were wider than the card and ran
+  // off its edge (cut mid-name at 320dp); now they wrap onto a second line instead.
+  legendRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 18, rowGap: 6, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider, alignSelf: 'stretch' },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%', flexShrink: 1 },
   legendDot: { width: 10, height: 10, borderRadius: 3 },
-  legendText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
+  legendText: { flexShrink: 1, fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
   summaryCard: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, marginTop: 12 },
   summaryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryText, marginBottom: 8 },
   summaryText: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.textTertiary },

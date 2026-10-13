@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,6 +14,7 @@ import { fonts, radius, type ThemeColors } from '@/constants/theme';
 import type { PaneCount } from '@/constants/layout';
 import { favouredOutcome, type Match } from '@/data/mockData';
 import { matchFormDataLevel } from '@/data/dataConfidence';
+import { compactTeamName } from '@/data/teamLabel';
 import { deriveSportMindView } from '@/data/sportMindView';
 import { useAppData } from '@/contexts/DataContext';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -28,6 +29,21 @@ import { isRTLLayout } from '@/hooks/useAdaptiveLayout';
 import TeamAvatar from '@/components/TeamAvatar';
 
 export type MatchAnalysisTab = 'summary' | 'reasons' | 'change';
+
+/** The largest the system font scale may make the text in the narrow columns (matchup header,
+ *  legend, expected goals). Beyond this the layout adapts instead of the words running out of
+ *  their column; the headline numbers are not capped by anything but this same ceiling. */
+const MAX_TEXT_SCALE = 1.3;
+/** Both team names reserve two lines, so a one-line name leaves its space below it and the
+ *  two columns of the matchup header keep the same shape. */
+const TEAM_NAME_LINES = 2;
+const TEAM_NAME_LINE_HEIGHT = 16;
+
+/** Below this many "text-scale-1" dp of matchup-card width the three-column header and the
+ *  full club names no longer fit, so the screen switches to the compact arrangement. */
+const TIGHT_CARD_WIDTH = 290;
+/** Page gutter + card border, used only until the card has been measured. */
+const CARD_CHROME = 42;
 
 type Props = {
   match: Match;
@@ -65,6 +81,20 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  // Whether the matchup fits its three-column header and full club names is a question of
+  // the width this content really has (a phone, or half of Explore's wide detail pane) against
+  // the text size the person chose — so it is measured, not guessed from the window.
+  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const [cardWidth, setCardWidth] = useState(0);
+  const textScale = Math.min(Math.max(fontScale, 1), MAX_TEXT_SCALE);
+  const availableWidth = cardWidth > 0 ? cardWidth : windowWidth - CARD_CHROME;
+  const tight = availableWidth / textScale < TIGHT_CARD_WIDTH;
+  const shortName = (name: string) => (tight ? compactTeamName(name) : name);
+  const onCardLayout = (e: LayoutChangeEvent) => {
+    const w = Math.round(e.nativeEvent.layout.width);
+    setCardWidth((prev) => (prev === w ? prev : w));
+  };
+
   const dual = columns === 'dual';
   const favourite = favouredOutcome(match);
   const isBasketball = match.sport === 'basketball';
@@ -86,50 +116,61 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
   const formDataLevel = matchFormDataLevel(match.home.form, match.away.form);
   const sportMindView = useMemo(() => deriveSportMindView(match, formDataLevel), [match, formDataLevel]);
 
+  const renderTeam = (team: Match['home']) => (
+    <View style={styles.teamCol}>
+      <Pressable
+        style={styles.teamProfileTouchable}
+        onPress={() => router.push(`/team/${team.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={team.name}
+      >
+        <TeamAvatar team={team} size={38} style={styles.crest} />
+        <Text
+          style={[styles.teamName, { minHeight: TEAM_NAME_LINES * TEAM_NAME_LINE_HEIGHT * textScale }]}
+          numberOfLines={TEAM_NAME_LINES}
+          maxFontSizeMultiplier={MAX_TEXT_SCALE}
+        >
+          {shortName(team.name)}
+        </Text>
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
+        onPress={() => router.push(`/team-insights/${team.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: team.name })}
+      >
+        <Text
+          style={styles.teamInsightsCtaText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          maxFontSizeMultiplier={1.15}
+        >
+          {t('matchAnalysis.teamInsightsCta')}
+        </Text>
+        <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
+      </Pressable>
+    </View>
+  );
+
   const context = (
     <>
-      <View style={styles.matchupCard}>
-        <View style={styles.teamCol}>
-          <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.home.id}`)}>
-            <TeamAvatar team={match.home} size={38} style={styles.crest} />
-            <Text style={styles.teamName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {match.home.name}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
-            onPress={() => router.push(`/team-insights/${match.home.id}`)}
-            accessibilityRole="button"
-            accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.home.name })}
-          >
-            <Text style={styles.teamInsightsCtaText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {t('matchAnalysis.teamInsightsCta')}
-            </Text>
-            <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
-          </Pressable>
-        </View>
-        <View style={styles.kickoffCol}>
-          <Text style={styles.kickoffDay}>{match.kickoff.split(',')[0]}</Text>
-          <Text style={styles.kickoffTime}>{match.kickoff.split(',')[1]?.trim()}</Text>
-        </View>
-        <View style={styles.teamCol}>
-          <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.away.id}`)}>
-            <TeamAvatar team={match.away} size={38} style={styles.crest} />
-            <Text style={styles.teamName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {match.away.name}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
-            onPress={() => router.push(`/team-insights/${match.away.id}`)}
-            accessibilityRole="button"
-            accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.away.name })}
-          >
-            <Text style={styles.teamInsightsCtaText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {t('matchAnalysis.teamInsightsCta')}
-            </Text>
-            <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
-          </Pressable>
+      <View style={styles.matchupCard} onLayout={onCardLayout}>
+        {tight && (
+          <View style={styles.kickoffRowTight}>
+            <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[0]}</Text>
+            <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[1]?.trim()}</Text>
+          </View>
+        )}
+        <View style={styles.matchupRow}>
+          {renderTeam(match.home)}
+          {!tight && (
+            <View style={styles.kickoffCol}>
+              <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[0]}</Text>
+              <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[1]?.trim()}</Text>
+            </View>
+          )}
+          {renderTeam(match.away)}
         </View>
       </View>
 
@@ -137,15 +178,15 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
         <View style={styles.heroTop}>
           <ConfidenceRing
             value={favourite.probability}
-            size={112}
-            strokeWidth={9}
+            size={tight ? 96 : 112}
+            strokeWidth={tight ? 8 : 9}
             caption={t('matchAnalysis.winProbabilityCaption')}
             favoredSide={favourite.label === 'draw' ? undefined : favourite.label}
           />
           <View style={styles.heroInfo}>
-            <Text style={styles.heroLine}>
+            <Text style={styles.heroLine} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
               {favourite.team
-                ? t('matchAnalysis.teamWinProbability', { team: favourite.team.name })
+                ? t('matchAnalysis.teamWinProbability', { team: shortName(favourite.team.name) })
                 : t('matchAnalysis.drawProbabilityLine')}
             </Text>
             {formDataLevel !== 'full' ? (
@@ -184,16 +225,24 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
         <StackedDistributionBar home={match.outcomes.home} draw={isBasketball ? 0 : match.outcomes.draw} away={match.outcomes.away} />
         <View style={styles.outcomeLegendRow}>
           <View style={[styles.outcomeLegendCell, { alignItems: 'flex-start' }]}>
-            <Text style={styles.outcomeLegendText} numberOfLines={2}>{match.home.name}</Text>
+            <Text style={styles.outcomeLegendText} numberOfLines={3} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
+              {shortName(match.home.name)}
+            </Text>
           </View>
           {!isBasketball && (
             <View style={styles.outcomeLegendDraw}>
-              <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>
+              <Text style={styles.outcomeLegendText} numberOfLines={1} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
+                {t('matchAnalysis.draw')}
+              </Text>
             </View>
           )}
           <View style={[styles.outcomeLegendCell, { alignItems: 'flex-end' }]}>
-            <Text style={[styles.outcomeLegendText, { textAlign: isRTLLayout() ? 'left' : 'right' }]} numberOfLines={2}>
-              {match.away.name}
+            <Text
+              style={[styles.outcomeLegendText, { textAlign: isRTLLayout() ? 'left' : 'right' }]}
+              numberOfLines={3}
+              maxFontSizeMultiplier={MAX_TEXT_SCALE}
+            >
+              {shortName(match.away.name)}
             </Text>
           </View>
         </View>
@@ -216,6 +265,7 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
         value={tab}
         onChange={(k) => onTabChange(k as MatchAnalysisTab)}
         fontSize={12}
+        fill={tight}
       />
 
       {tab === 'summary' && (
@@ -227,8 +277,8 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
                 <View style={styles.xgSplit}>
                   <View style={styles.xgSide}>
                     <View style={styles.xgValueRow}>
-                      <Text style={styles.xgValue}>{formatStat(match.xgHome)}</Text>
-                      <Text style={styles.xgTeam}>{match.home.name}</Text>
+                      <Text style={styles.xgValue} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{formatStat(match.xgHome)}</Text>
+                      <Text style={styles.xgTeam} numberOfLines={2} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{shortName(match.home.name)}</Text>
                     </View>
                     <View style={styles.xgTrack}>
                       <View style={[styles.xgFill, { width: `${(match.xgHome / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.primary }]} />
@@ -237,8 +287,8 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
                   <View style={styles.xgDivider} />
                   <View style={styles.xgSide}>
                     <View style={styles.xgValueRow}>
-                      <Text style={styles.xgValue}>{formatStat(match.xgAway)}</Text>
-                      <Text style={styles.xgTeam}>{match.away.name}</Text>
+                      <Text style={styles.xgValue} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{formatStat(match.xgAway)}</Text>
+                      <Text style={styles.xgTeam} numberOfLines={2} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{shortName(match.away.name)}</Text>
                     </View>
                     <View style={styles.xgTrack}>
                       <View style={[styles.xgFill, { width: `${(match.xgAway / (match.xgHome + match.xgAway)) * 100}%`, backgroundColor: colors.neutralSeries }]} />
@@ -288,15 +338,15 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
                   ? t('matchAnalysis.mostDecisive')
                   : Math.abs(diff) <= 3
                     ? t('matchAnalysis.balanced')
-                    : t('matchAnalysis.favours', { team: diff > 0 ? match.home.name : match.away.name });
+                    : t('matchAnalysis.favours', { team: shortName(diff > 0 ? match.home.name : match.away.name) });
               return (
                 <FactorBar
                   key={factor.key}
                   label={t(`factors.${factor.key}`)}
                   homePct={factor.home}
                   awayPct={factor.away}
-                  homeName={match.home.name}
-                  awayName={match.away.name}
+                  homeName={shortName(match.home.name)}
+                  awayName={shortName(match.away.name)}
                   qualifier={qualifier}
                   highlighted={factor.key === mostDecisiveKey}
                   delay={index * 60}
@@ -389,9 +439,6 @@ function FormRow({ name, form }: { name: string; form: ('W' | 'D' | 'L')[] }) {
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   matchupCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -399,10 +446,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surface,
     marginTop: 6,
   },
-  teamCol: { flex: 1, alignItems: 'center' },
-  teamProfileTouchable: { alignItems: 'center' },
+  matchupRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  // minWidth 0: a flex child will not shrink below its content's natural width unless told it
+  // may, which is how a long club name used to push the whole column past the card.
+  // Name block on top, AI Insights pill pinned to the bottom: the two columns are the same height,
+  // so the pills line up whatever the names wrap to.
+  teamCol: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'space-between' },
+  kickoffRowTight: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  teamProfileTouchable: { alignItems: 'center', alignSelf: 'stretch' },
   crest: { marginBottom: 6 },
-  teamName: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary, textAlign: 'center' },
+  teamName: { fontFamily: fonts.bodyMedium, fontSize: 12, lineHeight: TEAM_NAME_LINE_HEIGHT, color: colors.textPrimary, textAlign: 'center' },
   teamInsightsCta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -428,8 +481,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.highlightText,
   },
-  kickoffCol: { alignItems: 'center', paddingHorizontal: 8 },
-  kickoffDay: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter, marginBottom: 2 },
+  kickoffCol: { alignItems: 'center', alignSelf: 'center', flexShrink: 0, paddingHorizontal: 4 },
+  kickoffDay: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFainter },
   kickoffTime: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },
   hero: {
     marginTop: 16,
@@ -439,7 +492,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.xl,
     backgroundColor: colors.surface,
   },
-  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 18, marginBottom: 18 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 18 },
   heroInfo: { flex: 1, minWidth: 0 },
   heroLine: { fontFamily: fonts.headline, fontSize: 16, lineHeight: 21, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 6 },
   heroCaption: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textTertiary, marginBottom: 10 },
@@ -452,7 +505,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // team names (plus "Draw") were wider than the card and ran off its edge at larger font
   // scales. Home/away now take equal shares and wrap to two lines; the draw label keeps its width.
   outcomeLegendRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 7 },
-  outcomeLegendCell: { flex: 1 },
+  outcomeLegendCell: { flex: 1, minWidth: 0 },
   outcomeLegendDraw: { flexShrink: 0 },
   outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
   tabSegment: { marginTop: 18, marginBottom: 14, alignSelf: 'flex-start' },
@@ -460,10 +513,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface },
   cardLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginBottom: 10 },
   xgSplit: { flexDirection: 'row', gap: 16 },
-  xgSide: { flex: 1 },
-  xgValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 6 },
+  xgSide: { flex: 1, minWidth: 0 },
+  // The team name sits beside the number while it fits and drops under it when it does not
+  // (wrap), instead of running into the neighbouring column. It may shrink to the column width
+  // and wrap onto a second line; the number never shrinks or truncates.
+  xgValueRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6, rowGap: 1, marginBottom: 6 },
   xgValue: { fontFamily: fonts.headline, fontSize: 22, letterSpacing: -0.4, color: colors.textPrimary },
-  xgTeam: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textTertiaryAlt },
+  xgTeam: { flexShrink: 1, maxWidth: '100%', fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 15, color: colors.textTertiaryAlt },
   xgTrack: { height: 5, borderRadius: 3, backgroundColor: colors.divider, overflow: 'hidden' },
   xgFill: { height: '100%', borderRadius: 3 },
   xgDivider: { width: 1, backgroundColor: colors.border },

@@ -5,7 +5,7 @@
  */
 import { Image, Text } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
-import TeamAvatar, { avatarFontSize } from './TeamAvatar';
+import TeamAvatar, { AVATAR_FONT_SHARE, avatarFontSize } from './TeamAvatar';
 
 const base = { code: 'NEW', bg: '#dbe6f2', fg: '#2f4f72' };
 
@@ -18,16 +18,20 @@ function render(team: Parameters<typeof TeamAvatar>[0]['team'], size = 30) {
 }
 
 describe('avatarFontSize', () => {
-  it('uses a smaller em for more characters, so three capitals fit where one would', () => {
+  it('is one size for the circle whatever the code length — nothing is fitted per code', () => {
     for (const size of [26, 28, 30, 34, 52]) {
-      expect(avatarFontSize('NEW', size)).toBeLessThan(avatarFontSize('NE', size));
-      expect(avatarFontSize('NE', size)).toBeLessThan(avatarFontSize('N', size));
+      expect(avatarFontSize(size)).toBe(Math.round(size * AVATAR_FONT_SHARE * 10) / 10);
     }
+    const sizes = ['A', 'AB', 'ABC'].map((code) => {
+      const style = render({ ...base, code }, 30).root.findByType(Text).props.style as unknown[];
+      return (Object.assign({}, ...style.flat(Infinity as never)) as { fontSize: number }).fontSize;
+    });
+    expect(new Set(sizes).size).toBe(1);
   });
 
-  it('keeps three bold capitals inside the circle even at the widest-letter worst case (0.85em each)', () => {
+  it('keeps three bold capitals of average width (0.7em each) inside the circle', () => {
     for (const size of [26, 28, 30, 34, 52]) {
-      expect(3 * 0.85 * avatarFontSize('WWW', size)).toBeLessThanOrEqual(size * 0.85);
+      expect(3 * 0.7 * avatarFontSize(size)).toBeLessThanOrEqual(size * 0.9);
     }
   });
 });
@@ -38,7 +42,7 @@ describe('TeamAvatar', () => {
     expect(text.props.children).toBe('NEW');
     expect(text.props.numberOfLines).toBe(1);
     expect(text.props.allowFontScaling).toBe(false);
-    expect(text.props.adjustsFontSizeToFit).toBe(true);
+    expect(text.props.adjustsFontSizeToFit).toBeFalsy();
   });
 
   it('is exactly the requested size and circular, whatever the code', () => {

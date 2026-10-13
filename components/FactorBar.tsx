@@ -33,8 +33,8 @@ export default function FactorBar({ label, homePct, awayPct, homeName, awayName,
   return (
     <View>
       <View style={styles.top}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={[styles.qualifier, highlighted && { fontFamily: fonts.bodySemiBold, color: colors.primaryText }]}>{qualifier}</Text>
+        <Text style={styles.label} maxFontSizeMultiplier={1.3}>{label}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={[styles.qualifier, highlighted && { fontFamily: fonts.bodySemiBold, color: colors.primaryText }]}>{qualifier}</Text>
       </View>
       {/* Two real segments, not one fill over a neutral track — the away side previously
           rendered as bare, undifferentiated track background (same color regardless of its
@@ -46,10 +46,10 @@ export default function FactorBar({ label, homePct, awayPct, homeName, awayName,
         <Animated.View style={[styles.fillAway, { width: `${awayPct}%`, transformOrigin: 'right' }, awayStyle]} />
       </View>
       <View style={styles.bottom}>
-        <Text style={styles.side}>
+        <Text style={styles.side} maxFontSizeMultiplier={1.3}>
           <Text style={styles.sideStrong}>{homePct}%</Text> {homeName}
         </Text>
-        <Text style={styles.side}>
+        <Text style={[styles.side, styles.sideEnd]} maxFontSizeMultiplier={1.3}>
           <Text style={styles.sideStrong}>{awayPct}%</Text> {awayName}
         </Text>
       </View>
@@ -58,9 +58,11 @@ export default function FactorBar({ label, homePct, awayPct, homeName, awayName,
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 },
-  label: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
-  qualifier: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
+  // Both texts may shrink and wrap (minWidth 0 + flexShrink): a long factor name plus a long
+  // "favours <club>" qualifier used to be one non-wrapping row wider than the card.
+  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
+  label: { flexShrink: 1, minWidth: 0, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  qualifier: { flexShrink: 1, minWidth: 0, textAlign: 'right', fontFamily: fonts.body, fontSize: 11, lineHeight: 16, color: colors.textFaint },
   track: { flexDirection: 'row', height: 9, borderRadius: 5, overflow: 'hidden' },
   // A thick seam (not just a color change) between the two segments — confirmed live
   // that the plain purple→slate boundary alone read as too subtle to register as "two
@@ -71,7 +73,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // reads as a genuine gap/cut rather than a random third color.
   fillHome: { height: '100%', backgroundColor: colors.primary, borderRightWidth: 3, borderRightColor: colors.surface },
   fillAway: { height: '100%', backgroundColor: colors.neutralSeries },
-  bottom: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
-  side: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
+  bottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginTop: 5 },
+  side: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
+  sideEnd: { textAlign: 'right' },
   sideStrong: { fontFamily: fonts.bodyBold, color: colors.textPrimary },
 });

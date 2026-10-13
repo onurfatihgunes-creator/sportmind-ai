@@ -18,12 +18,15 @@ type Props = {
   height?: number;
   style?: StyleProp<ViewStyle>;
   fontSize?: number;
+  /** Stretch to the parent's width with equal-width options and one-line labels that fit. For
+   *  narrow screens / large font scales, where natural-width options run past the screen edge. */
+  fill?: boolean;
 };
 
 /** A segmented control whose selection pill slides to the real measured position/width of
  * the active option (labels vary in length, so a fixed percentage can't be used) — mirrors
  * the design handoff's sport/league/tab/plan segments, which all share this exact mechanic. */
-export default function SegmentedControl({ options, value, onChange, height = 38, style, fontSize = 13 }: Props) {
+export default function SegmentedControl({ options, value, onChange, height = 38, style, fontSize = 13, fill = false }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [layouts, setLayouts] = useState<Record<string, { x: number; width: number }>>({});
@@ -55,7 +58,7 @@ export default function SegmentedControl({ options, value, onChange, height = 38
   };
 
   return (
-    <View style={[styles.track, { height, borderRadius: height * 0.32 }, style]}>
+    <View style={[styles.track, { height, borderRadius: height * 0.32 }, style, fill && styles.trackFill]}>
       <Animated.View
         pointerEvents="none"
         style={[styles.pill, { top: 4, bottom: 4, borderRadius: height * 0.24 }, animatedPill]}
@@ -65,11 +68,17 @@ export default function SegmentedControl({ options, value, onChange, height = 38
           key={`${layoutEpoch}:${opt.key}`}
           onLayout={handleLayout(opt.key)}
           onPress={() => onChange(opt.key)}
-          style={styles.option}
+          style={[styles.option, fill && styles.optionFill]}
           hitSlop={4}
         >
           {opt.icon}
-          <Text style={[styles.label, { fontSize, color: value === opt.key ? colors.textSecondary : colors.textSecondary }]}>
+          <Text
+            style={[styles.label, fill && styles.labelFill, { fontSize, color: value === opt.key ? colors.textSecondary : colors.textSecondary }]}
+            numberOfLines={fill ? 1 : undefined}
+            adjustsFontSizeToFit={fill}
+            minimumFontScale={0.8}
+            maxFontSizeMultiplier={fill ? 1.3 : undefined}
+          >
             {opt.label}
           </Text>
           {opt.badge}
@@ -97,6 +106,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
+  trackFill: { alignSelf: 'stretch' },
+  optionFill: { flex: 1, minWidth: 0, paddingHorizontal: 6 },
+  labelFill: { flexShrink: 1, textAlign: 'center' },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
