@@ -179,7 +179,7 @@
   },
   "matchAnalysis": {
     "title": "Spielanalyse",
-    "winProbabilityCaption": "Gewinnwahrscheinlichkeit",
+    "winProbabilityCaption": "Siegchance",
     "tabSummary": "Übersicht",
     "tabReasons": "Gründe",
     "tabChange": "Änderung",

@@ -42,6 +42,8 @@ const TEAM_NAME_LINE_HEIGHT = 16;
 /** Below this many "text-scale-1" dp of matchup-card width the three-column header and the
  *  full club names no longer fit, so the screen switches to the compact arrangement. */
 const TIGHT_CARD_WIDTH = 290;
+/** Below this the hero card stacks its ring above the headline (see stackHero). */
+const STACK_HERO_WIDTH = 240;
 /** Page gutter + card border, used only until the card has been measured. */
 const CARD_CHROME = 42;
 
@@ -89,6 +91,9 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
   const textScale = Math.min(Math.max(fontScale, 1), MAX_TEXT_SCALE);
   const availableWidth = cardWidth > 0 ? cardWidth : windowWidth - CARD_CHROME;
   const tight = availableWidth / textScale < TIGHT_CARD_WIDTH;
+  // Narrower still (320dp at 1.5x): the ring and the headline no longer fit side by side — the
+  // headline got a ~90dp column and broke words mid-way — so the ring sits above its text.
+  const stackHero = availableWidth / textScale < STACK_HERO_WIDTH;
   const shortName = (name: string) => (tight ? compactTeamName(name) : name);
   const onCardLayout = (e: LayoutChangeEvent) => {
     const w = Math.round(e.nativeEvent.layout.width);
@@ -175,7 +180,7 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
       </View>
 
       <View style={styles.hero}>
-        <View style={styles.heroTop}>
+        <View style={[styles.heroTop, stackHero && styles.heroTopStacked]}>
           <ConfidenceRing
             value={favourite.probability}
             size={tight ? 96 : 112}
@@ -229,9 +234,9 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
               {shortName(match.home.name)}
             </Text>
           </View>
-          {!isBasketball && (
-            <View style={styles.outcomeLegendDraw}>
-              <Text style={styles.outcomeLegendText} numberOfLines={1} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
+          {!isBasketball && !stackHero && (
+            <View style={stackHero ? styles.outcomeLegendDrawOwnLine : styles.outcomeLegendDraw}>
+              <Text style={styles.outcomeLegendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
                 {t('matchAnalysis.draw')}
               </Text>
             </View>
@@ -246,6 +251,13 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
             </Text>
           </View>
         </View>
+        {!isBasketball && stackHero && (
+            <View style={stackHero ? styles.outcomeLegendDrawOwnLine : styles.outcomeLegendDraw}>
+              <Text style={styles.outcomeLegendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_TEXT_SCALE}>
+                {t('matchAnalysis.draw')}
+              </Text>
+            </View>
+        )}
       </View>
     </>
   );
@@ -493,20 +505,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 18 },
+  heroTopStacked: { flexDirection: 'column', alignItems: 'flex-start', gap: 12 },
   heroInfo: { flex: 1, minWidth: 0 },
   heroLine: { fontFamily: fonts.headline, fontSize: 16, lineHeight: 21, letterSpacing: -0.3, color: colors.textPrimary, marginBottom: 6 },
   heroCaption: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.textTertiary, marginBottom: 10 },
-  stabilityBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 5, backgroundColor: colors.successMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
-  stabilityBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.successText },
-  limitedDataBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 5, backgroundColor: colors.warningMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
-  limitedDataBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.warningText },
+  stabilityBadge: { flexDirection: 'row', alignSelf: 'flex-start', maxWidth: '100%', alignItems: 'center', gap: 5, backgroundColor: colors.successMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
+  stabilityBadgeText: { flexShrink: 1, fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.successText },
+  limitedDataBadge: { flexDirection: 'row', alignSelf: 'flex-start', maxWidth: '100%', alignItems: 'center', gap: 5, backgroundColor: colors.warningMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
+  limitedDataBadgeText: { flexShrink: 1, fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.warningText },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
   // Three labels under the bar. They were one non-wrapping row with space-between, so two long
   // team names (plus "Draw") were wider than the card and ran off its edge at larger font
   // scales. Home/away now take equal shares and wrap to two lines; the draw label keeps its width.
   outcomeLegendRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 7 },
   outcomeLegendCell: { flex: 1, minWidth: 0 },
-  outcomeLegendDraw: { flexShrink: 0 },
+  // May give way to the club names: a long 'Draw' word (German 'Unentschieden') took the width the
+  // names needed and they broke mid-word. It shrinks to fit on one line instead.
+  outcomeLegendDraw: { flexShrink: 1, maxWidth: '30%' },
+  // Very narrow: the draw label gets its own centred line under the two names.
+  outcomeLegendDrawOwnLine: { alignSelf: 'center', marginTop: 4 },
   outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
   tabSegment: { marginTop: 18, marginBottom: 14, alignSelf: 'flex-start' },
   tabSegmentDual: { marginTop: 6 },
