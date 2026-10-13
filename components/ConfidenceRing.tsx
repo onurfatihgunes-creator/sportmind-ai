@@ -86,7 +86,10 @@ export default function ConfidenceRing({
       </Svg>
       {showLabel && (
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ fontFamily: fonts.headline, fontSize: labelFontSize ?? size * 0.27, letterSpacing: -0.6, color: colors.textPrimary }}>
+          <Text
+            allowFontScaling={false}
+            style={{ fontFamily: fonts.headline, fontSize: labelFontSize ?? size * 0.27, letterSpacing: -0.6, color: colors.textPrimary }}
+          >
             {value}
             <Text style={{ fontSize: (labelFontSize ?? size * 0.27) * 0.5, color: colors.textFaint }}>%</Text>
           </Text>
@@ -96,8 +99,15 @@ export default function ConfidenceRing({
             // confirmed live: it spilled outside the circle at the default size. Wrapping
             // to two lines within a width that fits inside the ring, rather than forcing
             // one line, keeps the caption legible without widening the ring itself.
+            // allowFontScaling off: the ring is a fixed-size graphic, and a scaled caption
+            // (WIN PROB / ABILITY at 1.3x) split mid-word and spilled past the stroke.
             <Text
               numberOfLines={2}
+              allowFontScaling={false}
+              // A very long single word (German "Gewinnwahrscheinlichkeit") is wider than the
+              // ring even on two lines; shrink to fit rather than truncating its end.
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
               style={{
                 fontFamily: fonts.bodyMedium,
                 fontSize: resolvedCaptionFontSize,

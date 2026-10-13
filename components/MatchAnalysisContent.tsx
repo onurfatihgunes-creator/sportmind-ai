@@ -24,6 +24,8 @@ import FactorBar from '@/components/FactorBar';
 import ChangeTimeline from '@/components/ChangeTimeline';
 import Disclaimer from '@/components/Disclaimer';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { isRTLLayout } from '@/hooks/useAdaptiveLayout';
+import TeamAvatar from '@/components/TeamAvatar';
 
 export type MatchAnalysisTab = 'summary' | 'reasons' | 'change';
 
@@ -89,10 +91,10 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
       <View style={styles.matchupCard}>
         <View style={styles.teamCol}>
           <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.home.id}`)}>
-            <View style={[styles.crest, { backgroundColor: match.home.bg }]}>
-              <Text style={[styles.crestText, { color: match.home.fg }]}>{match.home.code}</Text>
-            </View>
-            <Text style={styles.teamName} numberOfLines={2}>{match.home.name}</Text>
+            <TeamAvatar team={match.home} size={38} style={styles.crest} />
+            <Text style={styles.teamName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {match.home.name}
+            </Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
@@ -100,7 +102,9 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
             accessibilityRole="button"
             accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.home.name })}
           >
-            <Text style={styles.teamInsightsCtaText} numberOfLines={1}>{t('matchAnalysis.teamInsightsCta')}</Text>
+            <Text style={styles.teamInsightsCtaText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {t('matchAnalysis.teamInsightsCta')}
+            </Text>
             <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
           </Pressable>
         </View>
@@ -110,10 +114,10 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
         </View>
         <View style={styles.teamCol}>
           <Pressable style={styles.teamProfileTouchable} onPress={() => router.push(`/team/${match.away.id}`)}>
-            <View style={[styles.crest, { backgroundColor: match.away.bg }]}>
-              <Text style={[styles.crestText, { color: match.away.fg }]}>{match.away.code}</Text>
-            </View>
-            <Text style={styles.teamName} numberOfLines={2}>{match.away.name}</Text>
+            <TeamAvatar team={match.away} size={38} style={styles.crest} />
+            <Text style={styles.teamName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {match.away.name}
+            </Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.teamInsightsCta, pressed && styles.teamInsightsCtaPressed]}
@@ -121,7 +125,9 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
             accessibilityRole="button"
             accessibilityLabel={t('matchAnalysis.teamInsightsCtaLabel', { team: match.away.name })}
           >
-            <Text style={styles.teamInsightsCtaText} numberOfLines={1}>{t('matchAnalysis.teamInsightsCta')}</Text>
+            <Text style={styles.teamInsightsCtaText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {t('matchAnalysis.teamInsightsCta')}
+            </Text>
             <ArrowRightIcon size={11} weight="bold" color={colors.highlightText} />
           </Pressable>
         </View>
@@ -177,9 +183,19 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
         <Text style={styles.kicker}>{t('matchAnalysis.expectedOutcomeDistribution')}</Text>
         <StackedDistributionBar home={match.outcomes.home} draw={isBasketball ? 0 : match.outcomes.draw} away={match.outcomes.away} />
         <View style={styles.outcomeLegendRow}>
-          <Text style={styles.outcomeLegendText}>{match.home.name}</Text>
-          {!isBasketball && <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>}
-          <Text style={styles.outcomeLegendText}>{match.away.name}</Text>
+          <View style={[styles.outcomeLegendCell, { alignItems: 'flex-start' }]}>
+            <Text style={styles.outcomeLegendText} numberOfLines={2}>{match.home.name}</Text>
+          </View>
+          {!isBasketball && (
+            <View style={styles.outcomeLegendDraw}>
+              <Text style={styles.outcomeLegendText}>{t('matchAnalysis.draw')}</Text>
+            </View>
+          )}
+          <View style={[styles.outcomeLegendCell, { alignItems: 'flex-end' }]}>
+            <Text style={[styles.outcomeLegendText, { textAlign: isRTLLayout() ? 'left' : 'right' }]} numberOfLines={2}>
+              {match.away.name}
+            </Text>
+          </View>
         </View>
       </View>
     </>
@@ -385,8 +401,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   teamCol: { flex: 1, alignItems: 'center' },
   teamProfileTouchable: { alignItems: 'center' },
-  crest: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  crestText: { fontFamily: fonts.bodyBold, fontSize: 11 },
+  crest: { marginBottom: 6 },
   teamName: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textPrimary, textAlign: 'center' },
   teamInsightsCta: {
     flexDirection: 'row',
@@ -406,6 +421,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // label without touching the card's layout/columns.
   teamInsightsCtaText: {
     flexShrink: 1,
+    textAlign: 'center',
     fontFamily: fonts.bodySemiBold,
     fontSize: 10,
     letterSpacing: 0.15,
@@ -432,7 +448,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   limitedDataBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 5, backgroundColor: colors.warningMuted, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
   limitedDataBadgeText: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.warningText },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginBottom: 8 },
-  outcomeLegendRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
+  // Three labels under the bar. They were one non-wrapping row with space-between, so two long
+  // team names (plus "Draw") were wider than the card and ran off its edge at larger font
+  // scales. Home/away now take equal shares and wrap to two lines; the draw label keeps its width.
+  outcomeLegendRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 7 },
+  outcomeLegendCell: { flex: 1 },
+  outcomeLegendDraw: { flexShrink: 0 },
   outcomeLegendText: { fontFamily: fonts.body, fontSize: 11, color: colors.textTertiaryAlt },
   tabSegment: { marginTop: 18, marginBottom: 14, alignSelf: 'flex-start' },
   tabSegmentDual: { marginTop: 6 },

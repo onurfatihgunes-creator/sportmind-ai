@@ -95,7 +95,14 @@ export default function AppTabBar({ state, descriptors, navigation }: BottomTabB
         return (
           <Pressable key={route.key} onPress={onPress} style={[styles.tab, rail && styles.tabRail]} hitSlop={4}>
             <Icon size={21} weight="bold" color={isFocused ? colors.tabActive : colors.tabInactive} />
-            <Text style={[styles.label, { color: isFocused ? colors.tabActive : colors.tabInactive }]} numberOfLines={1}>
+            <Text
+              style={[styles.label, { color: isFocused ? colors.tabActive : colors.tabInactive }]}
+              numberOfLines={1}
+              // Longer translations ("AI Öngörüleri", "تحليلات الذكاء الاصطناعي") at larger font
+              // scales were cut to "AI Öngörüle…"; shrink to the tab's width instead.
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
               {label}
             </Text>
           </Pressable>

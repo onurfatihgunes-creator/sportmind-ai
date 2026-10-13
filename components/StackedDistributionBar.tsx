@@ -19,7 +19,9 @@ function Bar({ segment, delay }: { segment: Segment; delay: number }) {
   if (segment.pct <= 0) return null;
   return (
     <Animated.View style={[styles.segment, { flex: segment.pct, backgroundColor: segment.color, transformOrigin: 'left' }, style]}>
-      <Text style={[styles.segmentText, { color: segment.textColor }]}>{segment.pct}</Text>
+      <Text numberOfLines={1} allowFontScaling={false} style={[styles.segmentText, { color: segment.textColor }]}>
+        {segment.pct}
+      </Text>
     </Animated.View>
   );
 }
@@ -39,6 +41,10 @@ export default function StackedDistributionBar({ home, draw, away, height = 34 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 3, borderRadius: 10, overflow: 'hidden' },
-  segment: { alignItems: 'center', justifyContent: 'center' },
+  // minWidth: a segment's width is its share of the bar, so a small share (4%, 8%) was
+  // narrower than its own two-digit label and the row's overflow:hidden cut the number in
+  // half. 26dp holds a two-digit label at this font size; the larger segments just shrink
+  // by the few dp it takes, so proportions stay readable.
+  segment: { alignItems: 'center', justifyContent: 'center', minWidth: 26 },
   segmentText: { fontFamily: fonts.bodySemiBold, fontSize: 12 },
 });
