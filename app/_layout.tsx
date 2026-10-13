@@ -6,7 +6,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,7 +25,9 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
 import { EntitlementProvider } from '@/contexts/EntitlementContext';
 import { AppThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
-import { useWelcomeRedirect } from '@/hooks/useWelcomeRedirect';
+import OnboardingGate from '@/components/OnboardingGate';
+import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
+import { useAppData } from '@/contexts/DataContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -33,7 +35,10 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-const HAS_SEEN_WELCOME_KEY = 'sportmind_has_seen_welcome';
+// The native splash is held until the first screen the person will actually see is ready, then
+// released two frames later so that screen has painted. If the first fetch never settles it is
+// released anyway (DataGate then shows its spinner) rather than hanging on the logo forever.
+const SPLASH_MAX_HOLD_MS = 10_000;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,7 +55,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutInner() {
-  const { scheme, colors } = useAppTheme();
+  const { scheme, colors, loaded: themeLoaded } = useAppTheme();
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -74,14 +79,19 @@ function RootLayoutInner() {
     if (fontError) throw fontError;
   }, [fontError]);
 
-  const ready = fontsLoaded && i18nReady && hasSeenWelcome !== null;
+  // themeLoaded: the stored appearance has been read, so the first paint is already in the
+  // right colours (no default-then-switch flash).
+  const ready = fontsLoaded && i18nReady && hasSeenWelcome !== null && themeLoaded;
 
+  // Only the configuration-error branch below has no SplashRelease, so it releases here.
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (ready && isMissingProductionConfig) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  // The first-launch redirect to /welcome is rendered by <WelcomeRedirect> below,
-  // inside DataGate — see its comment and hooks/useWelcomeRedirect.ts.
+  const markWelcomeSeen = useCallback(async () => {
+    await AsyncStorage.setItem(HAS_SEEN_WELCOME_KEY, 'true');
+    setHasSeenWelcome(true);
+  }, []);
 
   // Recomputed whenever the resolved scheme/colors change — this is the ONE place
   // React Navigation's own chrome (header/tab-bar defaults, focused-route background)
@@ -130,8 +140,9 @@ function RootLayoutInner() {
           <FollowedTeamsProvider>
             <ProfileProvider>
               <EntitlementProvider>
+                <SplashRelease waitForData={hasSeenWelcome === true} />
+                <OnboardingGate hasSeenWelcome={hasSeenWelcome === true} onFinishWelcome={markWelcomeSeen}>
                 <DataGate colors={colors}>
-                  <WelcomeRedirect hasSeenWelcome={hasSeenWelcome} />
                   <Stack
                     screenOptions={{
                       headerShown: false,
@@ -152,6 +163,7 @@ function RootLayoutInner() {
                     <Stack.Screen name="appearance" />
                   </Stack>
                 </DataGate>
+                </OnboardingGate>
               </EntitlementProvider>
             </ProfileProvider>
           </FollowedTeamsProvider>
@@ -161,15 +173,35 @@ function RootLayoutInner() {
   );
 }
 
-// Lives INSIDE DataGate on purpose: DataGate renders a spinner instead of <Stack> until
-// the first fetch resolves, and calling router.replace() while <Stack> is not mounted
-// sends expo-router into an infinite remount loop on native Android/iOS too (verified on
-// an Android emulator: 89 replace calls and 89 DataProvider remounts in ~25s, app never
-// leaves the spinner). Mounting this only once DataGate lets its children through means
-// the navigator exists when the redirect fires.
-function WelcomeRedirect({ hasSeenWelcome }: { hasSeenWelcome: boolean | null }) {
-  const navigateToWelcome = useCallback(() => router.replace('/welcome'), []);
-  useWelcomeRedirect(true, hasSeenWelcome, navigateToWelcome);
+/**
+ * Releases the native splash once the first screen is ready: for a returning user that is after
+ * the first fetch has settled (DataGate lets Home through in that same commit, so there is no
+ * spinner phase between splash and Home); for a first launch it is immediately, because Welcome
+ * does not wait for data. Two animation frames later, so the screen has painted.
+ */
+function SplashRelease({ waitForData }: { waitForData: boolean }) {
+  const { loading } = useAppData();
+  const settled = !waitForData || !loading;
+
+  useEffect(() => {
+    if (!settled) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [settled]);
+
+  useEffect(() => {
+    const id = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), SPLASH_MAX_HOLD_MS);
+    return () => clearTimeout(id);
+  }, []);
+
   return null;
 }
 
