@@ -1,28 +1,25 @@
-import type { ReactNode } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import LoadingScreen from '@/components/LoadingScreen';
 import { useAppData } from '@/contexts/DataContext';
-import type { ThemeColors } from '@/constants/theme';
 
 /**
  * Blocks every real screen from mounting until DataContext's own initial fetch has
- * settled (live data loaded, or genuinely failed) — root fix for mock fixtures rendering
- * indistinguishably from real ones for the 2-6s that fetch takes (confirmed live: no
- * screen previously checked `loading`, only `isLive`, so mock content and a real
- * NotFoundState for a real deep-linked id/match could both render before the real
- * answer arrived). A plain spinner in the app's own background/primary colors — no
- * screen underneath ever sees `loading: true`, so none of them need their own copy of
- * this check. Once `loading` is false, DataContext.isLive tells the honest, unchanged
- * story: true is real data, false is the existing mock-fallback/"Demo data" behavior
- * for a genuine fetch failure (see lib/supabase.ts / app/(tabs)/index.tsx).
+ * settled — root fix for mock fixtures rendering indistinguishably from real ones for the
+ * 2-6s that fetch takes (confirmed live: no screen previously checked `loading`, only
+ * `isLive`, so mock content and a real NotFoundState for a real deep-linked id/match could
+ * both render before the real answer arrived). No screen underneath ever sees `loading: true`,
+ * so none of them need their own copy of this check.
+ *
+ * While the fetch is in flight the branded LoadingScreen stands in (indeterminate — nothing
+ * here knows a percentage). If the load fails, comes back empty or times out, the same screen
+ * turns into a plain error with Retry, and "Continue offline" lets the person on with exactly
+ * what the app already had for that case: DataContext.isLive stays false and Home's existing
+ * "Demo data" / empty states apply. A late answer still upgrades the data underneath.
  */
-export default function DataGate({ children, colors }: { children: ReactNode; colors: ThemeColors }) {
-  const { loading } = useAppData();
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-  return <>{children}</>;
+export default function DataGate({ children }: { children: ReactNode }) {
+  const { status, retry } = useAppData();
+  const [continued, setContinued] = useState(false);
+
+  if (status === 'ready' || continued) return <>{children}</>;
+  return <LoadingScreen state={status === 'failed' ? 'error' : 'loading'} onRetry={retry} onContinue={() => setContinued(true)} />;
 }

@@ -321,6 +321,14 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro ist aktiv",
+  "loading": {
+    "statusAnalyses": "Aktuelle Analysen werden geladen…",
+    "statusSlow": "Lädt noch – deine Verbindung scheint langsam…",
+    "errorTitle": "Aktuelle Analysen konnten nicht geladen werden",
+    "errorBody": "Prüfe deine Verbindung und versuche es erneut. Du kannst auch offline weitermachen und sehen, was verfügbar ist.",
+    "retry": "Erneut versuchen",
+    "continueOffline": "Offline fortfahren"
+  },
     "trialDaysLeft_one": "Noch {{count}} Tag in deiner Testphase",
     "trialDaysLeft_other": "Noch {{count}} Tage in deiner Testphase",
     "heading": "Keine Zeitgrenze, derselbe volle Zugriff",

@@ -321,6 +321,14 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro etkin",
+  "loading": {
+    "statusAnalyses": "En güncel analizler yükleniyor…",
+    "statusSlow": "Hâlâ yükleniyor — bağlantın yavaş görünüyor…",
+    "errorTitle": "En güncel analizler yüklenemedi",
+    "errorBody": "Bağlantını kontrol edip tekrar dene. İstersen çevrimdışı görebildiklerinle de devam edebilirsin.",
+    "retry": "Tekrar dene",
+    "continueOffline": "Çevrimdışı devam et"
+  },
     "trialDaysLeft_one": "Deneme sürende {{count}} gün kaldı",
     "trialDaysLeft_other": "Deneme sürende {{count}} gün kaldı",
     "heading": "Sınırsız süre, aynı tam erişim",

@@ -329,6 +329,14 @@
   "pro": {
     "title": "SportMind Pro",
     "active": "SportMind Pro مفعّل",
+  "loading": {
+    "statusAnalyses": "جارٍ تحميل أحدث التحليلات…",
+    "statusSlow": "لا يزال التحميل جاريًا — يبدو أن اتصالك بطيء…",
+    "errorTitle": "تعذّر تحميل أحدث التحليلات",
+    "errorBody": "تحقق من اتصالك وحاول مرة أخرى. يمكنك أيضًا المتابعة دون اتصال ومشاهدة المتاح.",
+    "retry": "حاول مرة أخرى",
+    "continueOffline": "المتابعة دون اتصال"
+  },
     "trialDaysLeft_zero": "لم يتبقَّ يوم في فترتك التجريبية",
     "trialDaysLeft_one": "تبقّى يوم واحد في فترتك التجريبية",
     "trialDaysLeft_two": "تبقّى يومان في فترتك التجريبية",

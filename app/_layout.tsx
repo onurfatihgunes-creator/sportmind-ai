@@ -27,18 +27,12 @@ import { EntitlementProvider } from '@/contexts/EntitlementContext';
 import { AppThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import OnboardingGate from '@/components/OnboardingGate';
 import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
-import { useAppData } from '@/contexts/DataContext';
 
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
-
-// The native splash is held until the first screen the person will actually see is ready, then
-// released two frames later so that screen has painted. If the first fetch never settles it is
-// released anyway (DataGate then shows its spinner) rather than hanging on the logo forever.
-const SPLASH_MAX_HOLD_MS = 10_000;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -140,9 +134,9 @@ function RootLayoutInner() {
           <FollowedTeamsProvider>
             <ProfileProvider>
               <EntitlementProvider>
-                <SplashRelease waitForData={hasSeenWelcome === true} />
+                <SplashRelease />
                 <OnboardingGate hasSeenWelcome={hasSeenWelcome === true} onFinishWelcome={markWelcomeSeen}>
-                <DataGate colors={colors}>
+                <DataGate>
                   <Stack
                     screenOptions={{
                       headerShown: false,
@@ -174,17 +168,12 @@ function RootLayoutInner() {
 }
 
 /**
- * Releases the native splash once the first screen is ready: for a returning user that is after
- * the first fetch has settled (DataGate lets Home through in that same commit, so there is no
- * spinner phase between splash and Home); for a first launch it is immediately, because Welcome
- * does not wait for data. Two animation frames later, so the screen has painted.
+ * Releases the native splash as soon as the first real screen has painted — LoadingScreen while
+ * the data loads, or Welcome on a first launch — two animation frames after it mounts. There is
+ * no waiting on the data here: the LoadingScreen owns that wait, with real status and a Retry.
  */
-function SplashRelease({ waitForData }: { waitForData: boolean }) {
-  const { loading } = useAppData();
-  const settled = !waitForData || !loading;
-
+function SplashRelease() {
   useEffect(() => {
-    if (!settled) return;
     let second = 0;
     const first = requestAnimationFrame(() => {
       second = requestAnimationFrame(() => {
@@ -195,11 +184,6 @@ function SplashRelease({ waitForData }: { waitForData: boolean }) {
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
     };
-  }, [settled]);
-
-  useEffect(() => {
-    const id = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), SPLASH_MAX_HOLD_MS);
-    return () => clearTimeout(id);
   }, []);
 
   return null;
