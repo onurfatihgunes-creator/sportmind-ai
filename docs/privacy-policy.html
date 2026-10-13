@@ -33,7 +33,7 @@
   <div class="wrap">
     <div class="brand"><span class="mark"></span><span class="brand-name">SportMind AI</span></div>
     <h1>Privacy Policy</h1>
-    <div class="updated">Last updated: September 2026</div>
+    <div class="updated">Last updated: October 2026</div>
 
     <p>SportMind AI ("the app") is a sports analysis app, developed by Onur Fatih Gunes, that
     shows AI-generated, statistics-based predictions for football and basketball matches. This
@@ -56,37 +56,43 @@
       about; the app does not currently send push notifications)</li>
       <li>Whether you've completed the app's first-run welcome screen</li>
     </ul>
-    <p>You can clear this data at any time from Profile → Clear My Data, or by uninstalling the
-    app.</p>
+    <p>Profile → Clear My Data removes your display name, watchlist, followed teams, language
+    choice and notification toggles. Your appearance setting and the first-run flag are removed
+    when you uninstall the app.</p>
 
-    <h2>Anonymous device identifier (trial &amp; Pro status only)</h2>
-    <p>To determine whether your device is in its free trial or has Pro access, the app requests a
-    randomly generated, anonymous session token from our backend (part of the OnurAI/Vera
-    platform that also powers our other apps) and stores it on your device. This token is not
-    linked to your name, email, or any other personal information — it identifies this app
-    installation only, for the sole purpose of reading your trial/Pro status. No profile data,
-    watchlist, or followed teams are sent along with it.</p>
+    <h2>No device identifier is sent</h2>
+    <p>The app does not create, read or send any device identifier, advertising ID or account
+    token. Earlier pre-release test builds of the app could store a randomly generated anonymous
+    token on the device; this version does not read that token or send it anywhere, and it is
+    removed when you uninstall the app.</p>
 
     <h2>Match and prediction data</h2>
-    <p>To show you matches and AI-generated analysis, the app reads (read-only) data from our own
-    backend, which sources fixtures, results, lineups, and statistics from third-party sports data
-    providers — football-data.org, balldontlie.io, RapidAPI Football, and BSD (Bzzoiro Sports
-    Data). Predictions and analysis are computed by our backend from public statistical and
-    historical match data; they are not generated from, or influenced by, any personal information
-    about you. These requests are anonymous — no personal information about you is sent as part of
-    them.</p>
+    <p>To show you matches and AI-generated analysis, the app reads data (read-only) from our own
+    database, which is hosted by Supabase. The requests carry no name, account or device
+    identifier. Like any internet service, the database host necessarily receives the technical
+    details of a request, such as the IP address and time. The data in that database — fixtures,
+    results, lineups and statistics — is gathered by our backend from third-party sports data
+    providers (football-data.org, balldontlie.io, RapidAPI Football and BSD / Bzzoiro Sports
+    Data). Those providers are contacted only by our backend, never by the app, and they receive
+    nothing about app users. Predictions and analysis are computed from public statistical and
+    historical match data; they are not generated from, or influenced by, any personal
+    information about you.</p>
 
-    <h2>Purchases and subscriptions</h2>
-    <p>SportMind Pro is planned as a paid tier, and the app may display informational pricing for
-    it, but no purchase can currently be completed — there is no billing integration active yet.
-    If and when SportMind Pro purchases become available through Google Play Billing, this policy
-    will be updated before that feature goes live to describe what purchase-related data is
-    processed and by whom.</p>
+    <h2>Links that open outside the app</h2>
+    <p>The Legal screen links to this policy and our Terms of Service, which are hosted on GitHub
+    Pages. Opening them uses your device's browser, and GitHub receives the request like any
+    website you visit. The app does not otherwise load content from third-party sites.</p>
+
+    <h2>Purchases</h2>
+    <p>SportMind AI is free to use. The app has no purchase, subscription or payment feature and
+    collects no payment or purchase information. If paid features are ever offered, this policy
+    will be updated before they become available to describe what is processed and by whom.</p>
 
     <h2>Data sharing</h2>
     <p>We do not sell your data, and we do not share it with advertisers or analytics companies —
-    we don't work with any. The only data that leaves your device is the anonymous session token
-    described above, sent solely to our own backend infrastructure to check trial/Pro status.</p>
+    we don't work with any. The app sends nothing about you to any party other than the
+    connection details that reaching our database and the policy pages necessarily involve, as
+    described above.</p>
 
     <h2>Security</h2>
     <p>Locally stored data is kept in your device's standard app storage. Requests between the app
@@ -95,8 +101,8 @@
     <h2>Data retention and deletion</h2>
     <p>Locally stored preferences remain on your device until you clear them (Profile → Clear My
     Data) or uninstall the app. Because SportMind AI has no accounts, there is no account to
-    delete — clearing local data and/or uninstalling the app removes everything associated with
-    your use of it.</p>
+    delete — clearing local data and uninstalling the app removes everything the app stores
+    about your use of it.</p>
 
     <h2>Children's privacy</h2>
     <p>SportMind AI is not directed at children under 13, and we don't knowingly collect data
