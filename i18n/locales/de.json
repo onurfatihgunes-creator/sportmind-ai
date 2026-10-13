@@ -52,6 +52,7 @@
     "tennis": "Tennis",
     "soon": "Bald",
     "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele.",
+    "noQualifiedMatches": "Noch keine Analysen mit ausreichender Datenbasis für eine Empfehlung.",
     "sortHighToLow": "Gewinnwahrscheinlichkeit: hoch zu niedrig",
     "sortLowToHigh": "Gewinnwahrscheinlichkeit: niedrig zu hoch"
   },

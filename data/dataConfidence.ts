@@ -40,3 +40,58 @@ export function matchFormDataLevel(homeForm: readonly unknown[], awayForm: reado
 export function hasTrustedFormSample(form: readonly unknown[]): boolean {
   return form.length >= MIN_TRUSTED_FORM_SAMPLE;
 }
+
+// ---------------------------------------------------------------------------
+// Home's "is this analysis fit to recommend" gate.
+//
+// Home surfaces matches as the day's recommendations, so a prediction percentage alone is not
+// enough: backend/src/computePredictions.ts (and the basketball twin) writes a valid-looking
+// 3-way split for EVERY match, falling back to a league-average baseline for a team with no
+// results. The same code is explicit about what is real evidence and what is not — when either
+// team has no recent results, `factors` carries ONLY the fixed home prior (see
+// `bothTeamsHaveForm` there). This gate reuses those existing definitions instead of adding a
+// threshold of its own: the backend's own evidence contract, plus this file's
+// MIN_TRUSTED_FORM_SAMPLE for "enough real recent matches".
+// ---------------------------------------------------------------------------
+
+/** The factor keys the backend emits when it has no team-specific evidence — fixed priors,
+ *  not signals about these two teams. */
+const PRIOR_ONLY_FACTOR_KEYS: ReadonlySet<string> = new Set(['homeAdvantage', 'homeCourtAdvantage']);
+
+type AnalysisFields = {
+  outcomes: { home: number; draw: number; away: number };
+  xgHome: number;
+  xgAway: number;
+  factors: readonly { key: string; home: number; away: number }[];
+  home: { form: readonly unknown[] };
+  away: { form: readonly unknown[] };
+};
+
+/** A usable 3-way split: finite whole-percent shares that account for the whole (draw is 0 for
+ *  basketball, so only the sum is constrained). Anything else is a malformed row. */
+export function hasValidOutcomes(outcomes: AnalysisFields['outcomes']): boolean {
+  const shares = [outcomes.home, outcomes.draw, outcomes.away];
+  return shares.every((n) => Number.isInteger(n) && n >= 0 && n <= 100) && shares[0] + shares[1] + shares[2] === 100;
+}
+
+/** At least one factor that is evidence about these two teams, not just the fixed prior. */
+export function hasTeamSpecificEvidence(factors: AnalysisFields['factors']): boolean {
+  if (!Array.isArray(factors) || factors.length === 0) return false;
+  const wellFormed = factors.every((f) => typeof f?.key === 'string' && Number.isFinite(f.home) && Number.isFinite(f.away));
+  return wellFormed && factors.some((f) => !PRIOR_ONLY_FACTOR_KEYS.has(f.key));
+}
+
+/**
+ * True only for an analysis built on real, sufficient data: a valid split, finite expected
+ * values, team-specific evidence in `factors`, and at least MIN_TRUSTED_FORM_SAMPLE real recent
+ * results for BOTH teams (the weaker side decides, as everywhere else in the app).
+ */
+export function hasSufficientAnalysis(match: AnalysisFields): boolean {
+  return (
+    hasValidOutcomes(match.outcomes) &&
+    Number.isFinite(match.xgHome) &&
+    Number.isFinite(match.xgAway) &&
+    hasTeamSpecificEvidence(match.factors) &&
+    matchFormDataLevel(match.home.form, match.away.form) === 'full'
+  );
+}

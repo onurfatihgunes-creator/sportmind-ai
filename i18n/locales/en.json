@@ -52,6 +52,7 @@
     "tennis": "Tennis",
     "soon": "Soon",
     "noMatchesForSport": "No analysed matches in this sport right now.",
+    "noQualifiedMatches": "No analyses with enough data to recommend yet.",
     "sortHighToLow": "Win probability: high to low",
     "sortLowToHigh": "Win probability: low to high"
   },

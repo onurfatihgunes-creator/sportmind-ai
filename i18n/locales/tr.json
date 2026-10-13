@@ -52,6 +52,7 @@
     "tennis": "Tenis",
     "soon": "Yakında",
     "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok.",
+    "noQualifiedMatches": "Önerecek kadar yeterli veriye sahip analiz henüz yok.",
     "sortHighToLow": "Kazanma olasılığı: yüksekten düşüğe",
     "sortLowToHigh": "Kazanma olasılığı: düşükten yükseğe"
   },

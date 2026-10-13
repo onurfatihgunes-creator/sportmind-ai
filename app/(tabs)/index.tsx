@@ -15,6 +15,7 @@ import {
 import { confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
+import { eligibleHomeMatches, selectHeroMatches, selectStandout } from '@/data/homeSelection';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -45,37 +46,11 @@ export default function HomeScreen() {
   const heroCardWidth = Math.min(360, layout.contentWidth - spacing.screenX - 56);
 
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
-  const heroMatches = useMemo(
-    () => [...sportMatches].sort((a, b) => favouredOutcome(b).probability - favouredOutcome(a).probability).slice(0, 6),
-    [sportMatches],
-  );
-
-  // "What stands out" — deterministic, and on a genuinely different axis from the
-  // Highlights carousel above (which ranks by raw prediction confidence): the single
-  // match whose strongest real factor has the largest magnitude (|factor.home - 50|),
-  // i.e. the analysis with the clearest single driver. Ties broken by confidence.
-  // Requires at least one real factor — a match with none can never be selected — and
-  // if nothing in the current sport qualifies, the section is hidden rather than
-  // guessing or falling back to a random/popular team.
-  const standout = useMemo(() => {
-    let bestMatch: Match | null = null;
-    let bestFactor: Match['factors'][number] | null = null;
-    let bestMagnitude = -1;
-    for (const m of sportMatches) {
-      if (m.factors.length === 0) continue;
-      const topFactor = [...m.factors].sort((a, b) => Math.abs(b.home - 50) - Math.abs(a.home - 50))[0];
-      const magnitude = Math.abs(topFactor.home - 50);
-      const better =
-        magnitude > bestMagnitude ||
-        (magnitude === bestMagnitude && bestMatch && favouredOutcome(m).probability > favouredOutcome(bestMatch).probability);
-      if (better) {
-        bestMatch = m;
-        bestFactor = topFactor;
-        bestMagnitude = magnitude;
-      }
-    }
-    return bestMatch && bestFactor ? { match: bestMatch, factor: bestFactor } : null;
-  }, [sportMatches]);
+  // Home only recommends analyses built on real, sufficient data — see data/homeSelection.ts.
+  // Following and Recent changes below deliberately keep the full sportMatches list.
+  const eligibleMatches = useMemo(() => eligibleHomeMatches(sportMatches), [sportMatches]);
+  const heroMatches = useMemo(() => selectHeroMatches(eligibleMatches), [eligibleMatches]);
+  const standout = useMemo(() => selectStandout(eligibleMatches), [eligibleMatches]);
 
   // Personalised, not a duplicate of Today's highlights above — this surfaces each
   // followed team's own next match. Scoped to the currently-selected sport, same as every
@@ -213,7 +188,9 @@ export default function HomeScreen() {
             })}
           </ScrollView>
         ) : (
-          <Text style={styles.emptySportText}>{t('home.noMatchesForSport')}</Text>
+          <Text style={styles.emptySportText}>
+            {sportMatches.length > 0 ? t('home.noQualifiedMatches') : t('home.noMatchesForSport')}
+          </Text>
         )}
 
         {/* Matches of the day above owns the full width — it is the one section that is
