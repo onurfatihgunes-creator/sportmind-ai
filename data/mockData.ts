@@ -14,6 +14,9 @@ export type Team = {
    * (goals_against trending down already counts as defence 'up'). */
   attackTrend?: 'up' | 'down' | 'neutral';
   defenceTrend?: 'up' | 'down' | 'neutral';
+  /** Date (YYYY-MM-DD) of the newest result behind `form`, when known — lets a screen tell a team
+   * that is playing now from one whose last recorded match is months old. */
+  lastResultAt?: string;
   sport: Sport;
 };
 

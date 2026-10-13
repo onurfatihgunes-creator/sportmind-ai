@@ -53,8 +53,9 @@
     "soon": "Bald",
     "noMatchesForSport": "Für diese Sportart gibt es gerade keine analysierten Spiele.",
     "noQualifiedMatches": "Noch keine Analysen mit ausreichender Datenbasis für eine Empfehlung.",
-    "sortHighToLow": "Gewinnwahrscheinlichkeit: hoch zu niedrig",
-    "sortLowToHigh": "Gewinnwahrscheinlichkeit: niedrig zu hoch"
+    "sortHighToLow": "Höchste Siegchance",
+    "sortLowToHigh": "Niedrigste Siegchance",
+    "noMatchesToday": "Für diese Sportart gibt es in den nächsten 24 Stunden keine Spiele."
   },
   "matchCard": {
     "favoured": "KI-Prognose: {{team}} favorisiert",
@@ -88,7 +89,7 @@
     "noTeamsMatch": "Keine Teams gefunden.",
     "chipSelectedLabel": "{{team}}, ausgewählt",
     "chipRemoveLabel": "{{team}} nicht mehr verfolgen",
-    "noUpcomingMatch": "Für {{team}} gibt es aktuell kein bevorstehendes Spiel zu analysieren.",
+    "noUpcomingMatch": "Für {{team}} gibt es in den von SportMind verfolgten Wettbewerben kein bevorstehendes Spiel.",
     "nextMatchTitle": "Nächstes Spiel",
     "sportMindViewTitle": "SportMind-Einschätzung",
     "trendPositive": "Positiver Trend",
@@ -142,7 +143,10 @@
     "signalLegendNeutral": "Keine klare Richtung",
     "signalLegendCaption": "Legende, keine Daten",
     "noSelectionTitle": "Kein Team ausgewählt",
-    "noSelectionBody": "Folge einem Team, um hier die aktuelle Einschätzung von SportMind zu sehen."
+    "noSelectionBody": "Folge einem Team, um hier die aktuelle Einschätzung von SportMind zu sehen.",
+    "analysisPreparing": "Die Analyse für das nächste Spiel von {{team}} wird vorbereitet.",
+    "trendNoActivity": "Keine aktuellen Spiele",
+    "teamViewNoCurrentMatches": "Für {{team}} gibt es in den von SportMind verfolgten Wettbewerben kein aktuelles oder bevorstehendes Spiel."
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -246,8 +250,11 @@
     "formD": "U",
     "formL": "N",
     "upcomingMatches": "Kommende Spiele",
-    "noUpcoming": "Noch keine analysierten kommenden Spiele.",
-    "vsPrefix": "gegen {{team}}"
+    "noUpcoming": "Kein bevorstehendes Spiel in den von SportMind verfolgten Wettbewerben gefunden.",
+    "vsPrefix": "gegen {{team}}",
+    "analysisPreparing": "Die Analyse wird vorbereitet.",
+    "formLimited": "Für dieses Team liegen nur begrenzte Spieldaten vor.",
+    "lastMatchOn": "Letztes erfasstes Spiel: {{date}}"
   },
   "whatChanged": {
     "title": "Was sich geändert hat",
@@ -314,13 +321,6 @@
     "routeBody": "Diesen Bildschirm gibt es nicht.",
     "goHome": "Zum Startbildschirm!"
   },
-  "configError": {
-    "title": "SportMind ist nicht korrekt konfiguriert",
-    "body": "Aufgrund eines Konfigurationsproblems können wir derzeit keine Verbindung herstellen. Bitte versuchen Sie es später erneut."
-  },
-  "pro": {
-    "title": "SportMind Pro",
-    "active": "SportMind Pro ist aktiv",
   "loading": {
     "statusAnalyses": "Aktuelle Analysen werden geladen…",
     "statusSlow": "Lädt noch – deine Verbindung scheint langsam…",
@@ -329,6 +329,13 @@
     "retry": "Erneut versuchen",
     "continueOffline": "Offline fortfahren"
   },
+  "configError": {
+    "title": "SportMind ist nicht korrekt konfiguriert",
+    "body": "Aufgrund eines Konfigurationsproblems können wir derzeit keine Verbindung herstellen. Bitte versuchen Sie es später erneut."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro ist aktiv",
     "trialDaysLeft_one": "Noch {{count}} Tag in deiner Testphase",
     "trialDaysLeft_other": "Noch {{count}} Tage in deiner Testphase",
     "heading": "Keine Zeitgrenze, derselbe volle Zugriff",

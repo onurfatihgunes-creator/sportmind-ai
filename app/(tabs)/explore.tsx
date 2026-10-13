@@ -51,7 +51,10 @@ function dayGroupFor(match: Match, t: (key: string) => string): { key: string; l
   const today = startOfDay(new Date());
   const target = startOfDay(kickoffDate);
   const dayDiff = Math.round((target.getTime() - today.getTime()) / 86_400_000);
-  const isoKey = target.toISOString().slice(0, 10);
+  // Local calendar date, not toISOString(): that converts local midnight to UTC and lands on the
+  // PREVIOUS date in any timezone ahead of UTC (Turkey, UTC+3).
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const isoKey = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
   if (dayDiff === 0) return { key: isoKey, label: t('explore.today') };
   if (dayDiff === 1) return { key: isoKey, label: t('explore.tomorrow') };
   return { key: isoKey, label: kickoffDate.toLocaleDateString(undefined, { weekday: 'long' }) };
@@ -204,7 +207,7 @@ export default function ExploreScreen() {
               {isToday && (
                 <Pressable style={styles.sortToggle} onPress={() => setSortAsc((prev) => !prev)}>
                   <SortDescendingIcon size={13} weight="bold" color={colors.primary} />
-                  <Text style={styles.sortToggleText}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
+                  <Text style={styles.sortToggleText} maxFontSizeMultiplier={1.3}>{sortAsc ? t('home.sortLowToHigh') : t('home.sortHighToLow')}</Text>
                 </Pressable>
               )}
             </View>
@@ -350,10 +353,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   competitionTriggerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary, marginRight: 8 },
   competitionTriggerPlaceholder: { color: colors.textFaint },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, marginBottom: spacing.md },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 9 },
-  kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
-  sortToggle: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 9, backgroundColor: colors.surface },
-  sortToggleText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textSecondaryAlt },
+  // flexWrap + gaps: the day label and the sort chip share one row, and in a longer language or at
+  // a larger font the chip is wider than what the label leaves — it now drops to its own line
+  // instead of drawing over the label.
+  sectionHeaderRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', columnGap: 10, rowGap: 8, marginTop: 6, marginBottom: 9 },
+  kicker: { flexShrink: 0, fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
+  sortToggle: { flexShrink: 1, maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 30, paddingVertical: 4, paddingHorizontal: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 9, backgroundColor: colors.surface },
+  sortToggleText: { flexShrink: 1, fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.textSecondaryAlt },
   matchList: { gap: 8, marginBottom: 12 },
   matchRow: {
     flexDirection: 'row',

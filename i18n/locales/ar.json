@@ -53,8 +53,9 @@
     "soon": "قريبًا",
     "noMatchesForSport": "لا توجد مباريات محللة لهذه الرياضة حاليًا.",
     "noQualifiedMatches": "لا توجد تحليلات ببيانات كافية للتوصية بها بعد.",
-    "sortHighToLow": "احتمالية الفوز: من الأعلى إلى الأدنى",
-    "sortLowToHigh": "احتمالية الفوز: من الأدنى إلى الأعلى"
+    "sortHighToLow": "الأعلى احتمالًا",
+    "sortLowToHigh": "الأقل احتمالًا",
+    "noMatchesToday": "لا توجد مباريات لهذه الرياضة خلال الـ 24 ساعة القادمة."
   },
   "matchCard": {
     "favoured": "توقع الذكاء الاصطناعي: {{team}} هو المرشح",
@@ -88,7 +89,7 @@
     "noTeamsMatch": "لا توجد فرق مطابقة لبحثك.",
     "chipSelectedLabel": "{{team}}، محدد",
     "chipRemoveLabel": "إلغاء متابعة {{team}}",
-    "noUpcomingMatch": "لا توجد مباراة قادمة لتحليلها لفريق {{team}} حاليًا.",
+    "noUpcomingMatch": "لا توجد مباراة قادمة لفريق {{team}} في البطولات التي يتابعها SportMind.",
     "nextMatchTitle": "المباراة القادمة",
     "sportMindViewTitle": "رأي SportMind",
     "trendPositive": "اتجاه إيجابي",
@@ -150,7 +151,10 @@
     "signalLegendNeutral": "لا اتجاه واضح",
     "signalLegendCaption": "مفتاح الألوان، ليست بيانات",
     "noSelectionTitle": "لم يتم اختيار فريق",
-    "noSelectionBody": "تابِع فريقًا لرؤية قراءة SportMind الحالية عنه هنا."
+    "noSelectionBody": "تابِع فريقًا لرؤية قراءة SportMind الحالية عنه هنا.",
+    "analysisPreparing": "يجري إعداد تحليل المباراة القادمة لفريق {{team}}.",
+    "trendNoActivity": "لا توجد مباريات حالية",
+    "teamViewNoCurrentMatches": "لا توجد مباراة حديثة أو قادمة لفريق {{team}} في البطولات التي يتابعها SportMind."
   },
   "notifications": {
     "title": "الإشعارات",
@@ -254,8 +258,11 @@
     "formD": "ت",
     "formL": "خ",
     "upcomingMatches": "المباريات القادمة",
-    "noUpcoming": "لا توجد مباريات قادمة تم تحليلها بعد.",
-    "vsPrefix": "ضد {{team}}"
+    "noUpcoming": "لم يتم العثور على مباراة قادمة في البطولات التي يتابعها SportMind.",
+    "vsPrefix": "ضد {{team}}",
+    "analysisPreparing": "جارٍ إعداد التحليل.",
+    "formLimited": "بيانات المباريات السابقة محدودة لهذا الفريق.",
+    "lastMatchOn": "آخر مباراة مسجلة: {{date}}"
   },
   "whatChanged": {
     "title": "ما الذي تغيّر",
@@ -322,13 +329,6 @@
     "routeBody": "هذه الشاشة غير موجودة.",
     "goHome": "الانتقال إلى الشاشة الرئيسية!"
   },
-  "configError": {
-    "title": "لم يتم تكوين SportMind بشكل صحيح",
-    "body": "لا يمكننا الاتصال حاليًا بسبب مشكلة في الإعداد. يرجى المحاولة مرة أخرى لاحقًا."
-  },
-  "pro": {
-    "title": "SportMind Pro",
-    "active": "SportMind Pro مفعّل",
   "loading": {
     "statusAnalyses": "جارٍ تحميل أحدث التحليلات…",
     "statusSlow": "لا يزال التحميل جاريًا — يبدو أن اتصالك بطيء…",
@@ -337,6 +337,13 @@
     "retry": "حاول مرة أخرى",
     "continueOffline": "المتابعة دون اتصال"
   },
+  "configError": {
+    "title": "لم يتم تكوين SportMind بشكل صحيح",
+    "body": "لا يمكننا الاتصال حاليًا بسبب مشكلة في الإعداد. يرجى المحاولة مرة أخرى لاحقًا."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro مفعّل",
     "trialDaysLeft_zero": "لم يتبقَّ يوم في فترتك التجريبية",
     "trialDaysLeft_one": "تبقّى يوم واحد في فترتك التجريبية",
     "trialDaysLeft_two": "تبقّى يومان في فترتك التجريبية",

@@ -9,6 +9,7 @@ import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout'
 import type { Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
+import { useTeamUpcoming } from '@/hooks/useTeamUpcoming';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import TeamIntelligence from '@/components/TeamIntelligence';
 import Disclaimer from '@/components/Disclaimer';
@@ -70,10 +71,12 @@ export default function TeamInsightsScreen() {
 
   const team = localTeam ?? fallbackTeam;
 
-  const nextMatch = useMemo(
-    () => (team ? matches.find((m) => m.home.id === team.id || m.away.id === team.id) ?? null : null),
+  const windowUpcoming = useMemo(
+    () => (team ? matches.filter((m) => m.home.id === team.id || m.away.id === team.id) : []),
     [matches, team],
   );
+  const { loading: upcomingLoading, matches: upcoming, awaitingAnalysis } = useTeamUpcoming(team?.id, windowUpcoming, isLive);
+  const nextMatch = upcoming[0] ?? null;
   const teamAnalysisChanges = useMemo(
     () => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []),
     [analysisChanges, nextMatch],
@@ -114,7 +117,7 @@ export default function TeamInsightsScreen() {
           <Text style={styles.teamName}>{team.name}</Text>
         </View>
 
-        <TeamIntelligence team={team} nextMatch={nextMatch} analysisChanges={teamAnalysisChanges} />
+        <TeamIntelligence team={team} nextMatch={nextMatch} analysisChanges={teamAnalysisChanges} upcomingLoading={upcomingLoading} awaitingAnalysis={awaitingAnalysis} />
 
         <Disclaimer style={{ marginTop: spacing.lg }} />
       </ScrollView>

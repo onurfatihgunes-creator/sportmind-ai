@@ -53,8 +53,9 @@
     "soon": "Yakında",
     "noMatchesForSport": "Bu spor için şu anda analiz edilen maç yok.",
     "noQualifiedMatches": "Önerecek kadar yeterli veriye sahip analiz henüz yok.",
-    "sortHighToLow": "Kazanma olasılığı: yüksekten düşüğe",
-    "sortLowToHigh": "Kazanma olasılığı: düşükten yükseğe"
+    "sortHighToLow": "En yüksek olasılık",
+    "sortLowToHigh": "En düşük olasılık",
+    "noMatchesToday": "Bu spor için önümüzdeki 24 saatte maç yok."
   },
   "matchCard": {
     "favoured": "AI öngörüsü: {{team}} favori",
@@ -88,7 +89,7 @@
     "noTeamsMatch": "Aramanla eşleşen takım yok.",
     "chipSelectedLabel": "{{team}}, seçili",
     "chipRemoveLabel": "{{team}} takibini bırak",
-    "noUpcomingMatch": "{{team}} için şu anda analiz edilecek bir maç yok.",
+    "noUpcomingMatch": "{{team}} için SportMind'ın takip ettiği liglerde yaklaşan maç bulunamadı.",
     "nextMatchTitle": "Sıradaki maç",
     "sportMindViewTitle": "SportMind Görüşü",
     "trendPositive": "Olumlu gidişat",
@@ -142,7 +143,10 @@
     "signalLegendNeutral": "Belirgin yön yok",
     "signalLegendCaption": "Renk anahtarı, veri değil",
     "noSelectionTitle": "Seçili takım yok",
-    "noSelectionBody": "SportMind’in güncel görüşünü burada görmek için bir takım takip et."
+    "noSelectionBody": "SportMind’in güncel görüşünü burada görmek için bir takım takip et.",
+    "analysisPreparing": "{{team}} için sıradaki maçın analizi hazırlanıyor.",
+    "trendNoActivity": "Güncel maç yok",
+    "teamViewNoCurrentMatches": "{{team}} için SportMind'ın takip ettiği liglerde yakın tarihli veya yaklaşan maç yok."
   },
   "notifications": {
     "title": "Bildirimler",
@@ -246,8 +250,11 @@
     "formD": "B",
     "formL": "M",
     "upcomingMatches": "Yaklaşan maçlar",
-    "noUpcoming": "Henüz analiz edilmiş yaklaşan maç yok.",
-    "vsPrefix": "{{team}} deplasmanda/evinde"
+    "noUpcoming": "SportMind'ın takip ettiği liglerde yaklaşan maç bulunamadı.",
+    "vsPrefix": "{{team}} deplasmanda/evinde",
+    "analysisPreparing": "Analiz hazırlanıyor.",
+    "formLimited": "Bu takım için geçmiş maç verileri sınırlı.",
+    "lastMatchOn": "Son kayıtlı maç: {{date}}"
   },
   "whatChanged": {
     "title": "Neler değişti",
@@ -314,13 +321,6 @@
     "routeBody": "Bu ekran mevcut değil.",
     "goHome": "Ana ekrana dön!"
   },
-  "configError": {
-    "title": "SportMind doğru yapılandırılmamış",
-    "body": "Bir yapılandırma sorunu nedeniyle şu anda bağlanamıyoruz. Lütfen daha sonra tekrar deneyin."
-  },
-  "pro": {
-    "title": "SportMind Pro",
-    "active": "SportMind Pro etkin",
   "loading": {
     "statusAnalyses": "En güncel analizler yükleniyor…",
     "statusSlow": "Hâlâ yükleniyor — bağlantın yavaş görünüyor…",
@@ -329,6 +329,13 @@
     "retry": "Tekrar dene",
     "continueOffline": "Çevrimdışı devam et"
   },
+  "configError": {
+    "title": "SportMind doğru yapılandırılmamış",
+    "body": "Bir yapılandırma sorunu nedeniyle şu anda bağlanamıyoruz. Lütfen daha sonra tekrar deneyin."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro etkin",
     "trialDaysLeft_one": "Deneme sürende {{count}} gün kaldı",
     "trialDaysLeft_other": "Deneme sürende {{count}} gün kaldı",
     "heading": "Sınırsız süre, aynı tam erişim",

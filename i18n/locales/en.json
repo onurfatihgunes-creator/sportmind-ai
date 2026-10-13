@@ -53,8 +53,9 @@
     "soon": "Soon",
     "noMatchesForSport": "No analysed matches in this sport right now.",
     "noQualifiedMatches": "No analyses with enough data to recommend yet.",
-    "sortHighToLow": "Win probability: high to low",
-    "sortLowToHigh": "Win probability: low to high"
+    "sortHighToLow": "Highest win %",
+    "sortLowToHigh": "Lowest win %",
+    "noMatchesToday": "No matches in the next 24 hours for this sport."
   },
   "matchCard": {
     "favoured": "AI prediction: {{team}} favoured",
@@ -88,7 +89,7 @@
     "noTeamsMatch": "No teams match your search.",
     "chipSelectedLabel": "{{team}}, selected",
     "chipRemoveLabel": "Remove {{team}} from following",
-    "noUpcomingMatch": "{{team}} has no upcoming match to analyze right now.",
+    "noUpcomingMatch": "{{team}} has no upcoming match in the competitions SportMind follows.",
     "nextMatchTitle": "Next match",
     "sportMindViewTitle": "SportMind View",
     "trendPositive": "Positive trend",
@@ -142,7 +143,10 @@
     "signalLegendNeutral": "No clear direction",
     "signalLegendCaption": "Legend, not data",
     "noSelectionTitle": "No team selected",
-    "noSelectionBody": "Follow a team to see SportMind’s current read of it here."
+    "noSelectionBody": "Follow a team to see SportMind’s current read of it here.",
+    "analysisPreparing": "The analysis for {{team}}'s next match is being prepared.",
+    "trendNoActivity": "No current matches",
+    "teamViewNoCurrentMatches": "{{team}} has no recent or upcoming match in the competitions SportMind follows."
   },
   "notifications": {
     "title": "Notifications",
@@ -246,8 +250,11 @@
     "formD": "D",
     "formL": "L",
     "upcomingMatches": "Upcoming matches",
-    "noUpcoming": "No upcoming analysed matches yet.",
-    "vsPrefix": "vs {{team}}"
+    "noUpcoming": "No upcoming match found in the competitions SportMind follows.",
+    "vsPrefix": "vs {{team}}",
+    "analysisPreparing": "The analysis is being prepared.",
+    "formLimited": "Past match data is limited for this team.",
+    "lastMatchOn": "Last recorded match: {{date}}"
   },
   "whatChanged": {
     "title": "What changed",
@@ -314,13 +321,6 @@
     "routeBody": "This screen doesn't exist.",
     "goHome": "Go to home screen!"
   },
-  "configError": {
-    "title": "SportMind isn't configured correctly",
-    "body": "We can't connect right now due to a configuration issue. Please try again later."
-  },
-  "pro": {
-    "title": "SportMind Pro",
-    "active": "SportMind Pro is active",
   "loading": {
     "statusAnalyses": "Loading the latest analyses…",
     "statusSlow": "Still loading — your connection seems slow…",
@@ -329,6 +329,13 @@
     "retry": "Try again",
     "continueOffline": "Continue offline"
   },
+  "configError": {
+    "title": "SportMind isn't configured correctly",
+    "body": "We can't connect right now due to a configuration issue. Please try again later."
+  },
+  "pro": {
+    "title": "SportMind Pro",
+    "active": "SportMind Pro is active",
     "trialDaysLeft_one": "{{count}} day left in your trial",
     "trialDaysLeft_other": "{{count}} days left in your trial",
     "heading": "No time limit, same full access",

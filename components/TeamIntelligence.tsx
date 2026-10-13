@@ -14,6 +14,7 @@ import { fonts, radius, toneMutedColor, toneTextColor, type ChangeTone, type The
 import type { AnalysisChangeEvent, LineupPlayer, Match, PlayerImpactEntry, Team } from '@/data/mockData';
 import { getLatestSquadSnapshot, type SquadSnapshot } from '@/data/liveData';
 import { hasTrustedFormSample } from '@/data/dataConfidence';
+import { isFormStale } from '@/data/teamForm';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import InfoToggle from '@/components/InfoToggle';
 import SkeletonBlock from '@/components/SkeletonBlock';
@@ -153,10 +154,16 @@ function PlayerImpactRow({ entry, first }: { entry: PlayerImpactEntry; first?: b
 export default function TeamIntelligence({
   team,
   nextMatch,
+  upcomingLoading = false,
+  awaitingAnalysis = 0,
   analysisChanges,
 }: {
   team: Team;
   nextMatch: Match | null;
+  /** The team's own fixture lookup is still running — say nothing about "no match" yet. */
+  upcomingLoading?: boolean;
+  /** Fixtures exist but have no stored prediction yet. */
+  awaitingAnalysis?: number;
   analysisChanges: AnalysisChangeEvent[];
 }) {
   const { t } = useTranslation();
@@ -195,11 +202,15 @@ export default function TeamIntelligence({
   // from a real before/after comparison of the team's own goals_for/goals_against
   // history (see data/liveData.ts's goalsTrend). Any signal without enough real history
   // is simply absent, never guessed.
-  const form = formDirection(team);
+  // A team with no upcoming fixture AND no recent result is not playing in any competition SportMind
+  // follows right now (relegated, or between seasons). Its stored results are real but old, so they
+  // are not read as a current trend — the screen says so instead of "not enough data".
+  const inactive = !nextMatch && !upcomingLoading && awaitingAnalysis === 0 && isFormStale(team.lastResultAt);
+  const form = inactive ? undefined : formDirection(team);
   const signals: { key: 'form' | 'attack' | 'defence'; dir: SignalDir }[] = [
     form ? { key: 'form' as const, dir: form } : null,
-    team.attackTrend ? { key: 'attack' as const, dir: team.attackTrend } : null,
-    team.defenceTrend ? { key: 'defence' as const, dir: team.defenceTrend } : null,
+    !inactive && team.attackTrend ? { key: 'attack' as const, dir: team.attackTrend } : null,
+    !inactive && team.defenceTrend ? { key: 'defence' as const, dir: team.defenceTrend } : null,
   ].filter((s): s is { key: 'form' | 'attack' | 'defence'; dir: SignalDir } => s !== null);
 
   const upSignals = signals.filter((s) => s.dir === 'up');
@@ -241,7 +252,9 @@ export default function TeamIntelligence({
   const signalPhrase = (key: 'form' | 'attack' | 'defence') => t(`insights.signalPhrase${key.charAt(0).toUpperCase()}${key.slice(1)}`);
 
   let synthesisBody: string;
-  if (overallTrend === 'unknown') {
+  if (inactive) {
+    synthesisBody = t('insights.teamViewNoCurrentMatches', { team: team.name });
+  } else if (overallTrend === 'unknown') {
     synthesisBody = t('insights.teamViewInsufficientData', { team: team.name });
   } else if (overallTrend === 'positive' && topPositiveKey) {
     synthesisBody = t('insights.teamViewPositive', { team: team.name, signal: signalPhrase(topPositiveKey) });
@@ -253,7 +266,7 @@ export default function TeamIntelligence({
     synthesisBody = t('insights.teamViewStable', { team: team.name });
   }
 
-  const trendHeadlineKey = { positive: 'insights.trendPositive', negative: 'insights.trendNegative', mixed: 'insights.trendMixed', stable: 'insights.trendStable', unknown: 'insights.trendUnknown' }[overallTrend];
+  const trendHeadlineKey = inactive ? 'insights.trendNoActivity' : { positive: 'insights.trendPositive', negative: 'insights.trendNegative', mixed: 'insights.trendMixed', stable: 'insights.trendStable', unknown: 'insights.trendUnknown' }[overallTrend];
 
   // Team-scoped Change Intelligence only: a player-named event (ruled out / available
   // again) is included only when it's resolved to this team's own side (see
@@ -415,7 +428,11 @@ export default function TeamIntelligence({
         </Pressable>
       ) : (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>{t('insights.noUpcomingMatch', { team: team.name })}</Text>
+          {!upcomingLoading && (
+            <Text style={styles.emptyText}>
+              {awaitingAnalysis > 0 ? t('insights.analysisPreparing', { team: team.name }) : t('insights.noUpcomingMatch', { team: team.name })}
+            </Text>
+          )}
         </View>
       )}
     </View>

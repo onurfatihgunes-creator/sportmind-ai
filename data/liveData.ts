@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { summarizeTeamForm } from './teamForm';
+import { MATCHES_MIN_PER_SPORT, MATCHES_WINDOW_CAP_PER_SPORT, MATCHES_WINDOW_DAYS } from './matchWindow';
 import type { AnalysisChangeEvent, ChangeEvent, LineupPlayer, Match, MatchFactor, MatchLineups, PlayerImpactEntry, Sport, Team, TrackRecordEntry } from './mockData';
 
 // Mirrors backend/src/analysisEngine.ts's derivePlayerImpact rule exactly (see that
@@ -142,30 +144,42 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
   try {
     const windowStart = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
 
-    // Fetched PER SPORT rather than one combined query: a single shared `.limit(30)`
-    // ordered by kickoff time silently starved basketball out entirely whenever football
-    // alone had 30+ upcoming fixtures in the window (confirmed live: 214 football rows vs
-    // 427 basketball rows, and every one of the first 30 chronologically was football —
-    // so `matches` never contained a single basketball row, regardless of how much real
-    // basketball data existed). Two scoped queries give each sport its own curation
-    // budget, so neither can push the other out.
-    const MATCHES_PER_SPORT_LIMIT = 30;
+    // Fetched PER SPORT rather than one combined query: a single shared limit ordered by kickoff
+    // time silently starved basketball out entirely whenever football alone had 30+ upcoming
+    // fixtures (confirmed live: every one of the first 30 chronologically was football). Each
+    // sport gets its own budget, so neither can push the other out.
+    //
+    // THE WINDOW IS TIME-BASED, NOT "THE NEXT 30": the old `.limit(30)` held only the next ~36
+    // hours — measured live on 2026-10-13, 30 football rows covered two days and two
+    // competitions (18 Champions League + 12 Championship) while 139 fixtures across ten leagues
+    // sat in the next 7 days, invisible to Explore and to every team screen. Now: everything
+    // kicking off in the next MATCHES_WINDOW_DAYS days (capped), and when a sport has fewer than
+    // MATCHES_MIN_PER_SPORT in that span (basketball between seasons: 0 in the next 7 days) it
+    // falls back to the next MATCHES_MIN_PER_SPORT upcoming so that sport is never empty.
     const matchSelect = 'id, competition, sport, home_team_id, away_team_id, kickoff_at, status';
+    const windowEnd = new Date(Date.now() + MATCHES_WINDOW_DAYS * 86_400_000).toISOString();
+    const fetchSportWindow = async (sport: 'football' | 'basketball') => {
+      const inWindow = await client
+        .from('matches')
+        .select(matchSelect)
+        .eq('sport', sport)
+        .gte('kickoff_at', windowStart)
+        .lt('kickoff_at', windowEnd)
+        .order('kickoff_at', { ascending: true })
+        .limit(MATCHES_WINDOW_CAP_PER_SPORT);
+      if (inWindow.error) return inWindow;
+      if ((inWindow.data?.length ?? 0) >= MATCHES_MIN_PER_SPORT) return inWindow;
+      return client
+        .from('matches')
+        .select(matchSelect)
+        .eq('sport', sport)
+        .gte('kickoff_at', windowStart)
+        .order('kickoff_at', { ascending: true })
+        .limit(MATCHES_MIN_PER_SPORT);
+    };
     const [{ data: footballRows, error: footballErr }, { data: basketballRows, error: basketballErr }] = await Promise.all([
-      supabase
-        .from('matches')
-        .select(matchSelect)
-        .eq('sport', 'football')
-        .gte('kickoff_at', windowStart)
-        .order('kickoff_at', { ascending: true })
-        .limit(MATCHES_PER_SPORT_LIMIT),
-      supabase
-        .from('matches')
-        .select(matchSelect)
-        .eq('sport', 'basketball')
-        .gte('kickoff_at', windowStart)
-        .order('kickoff_at', { ascending: true })
-        .limit(MATCHES_PER_SPORT_LIMIT),
+      fetchSportWindow('football'),
+      fetchSportWindow('basketball'),
     ]);
     if (footballErr || basketballErr) return null;
     const matchRows = [...(footballRows ?? []), ...(basketballRows ?? [])];
@@ -190,20 +204,26 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
     // request count (measured: 3 requests / ~1.9s vs 90 requests / ~3.3s for the same data,
     // verified against direct per-team fetches for every team including the one with the
     // most history). Scales with total row volume, not team count.
+    // PAGES ARE FETCHED IN PARALLEL: the first page also returns the exact row count, so the
+    // remaining pages are known up front and requested together. Walking them one after another
+    // made a week-wide window (≈100 teams, ~5 pages) cost several sequential round-trips.
     const fetchAllTeamForm = async (ids: string[]) => {
       const PAGE_SIZE = 1000;
-      const rows: { team_id: string; match_date: string; result: string; goals_for: number; goals_against: number }[] = [];
-      for (let from = 0; ; from += PAGE_SIZE) {
-        const { data, error } = await client
+      type FormRow = { team_id: string; match_date: string; result: string; goals_for: number; goals_against: number };
+      const page = (from: number, withCount = false) =>
+        client
           .from('team_form')
-          .select('team_id, match_date, result, goals_for, goals_against')
+          .select('team_id, match_date, result, goals_for, goals_against', withCount ? { count: 'exact' } : undefined)
           .in('team_id', ids)
           .order('match_date', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
-        if (error || !data) break;
-        rows.push(...data);
-        if (data.length < PAGE_SIZE) break;
-      }
+      const first = await page(0, true);
+      if (first.error || !first.data) return [] as FormRow[];
+      const rows: FormRow[] = [...first.data];
+      const total = first.count ?? first.data.length;
+      const rest: ReturnType<typeof page>[] = [];
+      for (let from = PAGE_SIZE; from < total; from += PAGE_SIZE) rest.push(page(from));
+      for (const res of await Promise.all(rest)) if (!res.error && res.data) rows.push(...res.data);
       return rows;
     };
 
@@ -215,46 +235,13 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
 
     if (!teamRows || teamRows.length === 0 || !predictionRows || predictionRows.length === 0) return null;
 
-    // Up to 10 real recent matches per team: the first 5 back `Team.form` (unchanged
-    // behaviour/shape), all up to 10 back AI Insights' team-level attack/defence trend
-    // (recent-5 vs previous-5 real goals averages).
+    // Up to 10 real recent matches per team: the first 5 back `Team.form`, all up to 10 back AI
+    // Insights' attack/defence trend. One shared summariser (data/teamForm.ts) so this load and
+    // the on-demand team lookups below can never disagree about a team's form.
     const rowsByTeam: Record<string, typeof teamFormRows> = {};
     for (const row of teamFormRows) (rowsByTeam[row.team_id] ??= []).push(row);
-    for (const rows of Object.values(rowsByTeam)) rows.sort((a, b) => b.match_date.localeCompare(a.match_date));
-
-    const formByTeam: Record<string, ('W' | 'D' | 'L')[]> = {};
-    const formHistoryByTeam: Record<string, { goalsFor: number; goalsAgainst: number }[]> = {};
-    teamIds.forEach((id) => {
-      const rows = (rowsByTeam[id] ?? []).slice(0, 10);
-      formByTeam[id] = rows.slice(0, 5).map((r) => r.result as 'W' | 'D' | 'L').reverse();
-      formHistoryByTeam[id] = rows.map((r) => ({ goalsFor: r.goals_for, goalsAgainst: r.goals_against }));
-    });
-
-    // Simple, deterministic before/after comparison over real historical goals —
-    // mirrors the same "small documented threshold, no ML/LLM" methodology already used
-    // for player-impact classification. Requires at least 3 real matches in BOTH the
-    // recent and prior window; a team with less history than that gets no trend rather
-    // than a guess from a too-small sample (rows are already ordered most-recent-first,
-    // so index 0-4 is "recent" and 5-9 is "prior").
-    const TREND_THRESHOLD = 0.4;
-    function goalsTrend(history: { goalsFor: number; goalsAgainst: number }[], key: 'goalsFor' | 'goalsAgainst'): 'up' | 'down' | 'neutral' | undefined {
-      const recent = history.slice(0, 5);
-      const prior = history.slice(5, 10);
-      if (recent.length < 3 || prior.length < 3) return undefined;
-      const avg = (rows: typeof history) => rows.reduce((sum, r) => sum + r[key], 0) / rows.length;
-      const delta = avg(recent) - avg(prior);
-      if (Math.abs(delta) < TREND_THRESHOLD) return 'neutral';
-      return delta > 0 ? 'up' : 'down';
-    }
-    const attackTrendByTeam: Record<string, 'up' | 'down' | 'neutral' | undefined> = {};
-    const defenceTrendByTeam: Record<string, 'up' | 'down' | 'neutral' | undefined> = {};
-    for (const teamId of Object.keys(formHistoryByTeam)) {
-      const history = formHistoryByTeam[teamId];
-      attackTrendByTeam[teamId] = goalsTrend(history, 'goalsFor');
-      // Lower goals-against is the improvement direction for defence — flip the raw delta.
-      const rawDefence = goalsTrend(history, 'goalsAgainst');
-      defenceTrendByTeam[teamId] = rawDefence === 'up' ? 'down' : rawDefence === 'down' ? 'up' : rawDefence;
-    }
+    const summaryByTeam: Record<string, ReturnType<typeof summarizeTeamForm>> = {};
+    for (const id of teamIds) summaryByTeam[id] = summarizeTeamForm(rowsByTeam[id] ?? []);
 
     const teams: Record<string, Team> = {};
     for (const row of teamRows) {
@@ -265,9 +252,7 @@ export async function fetchLiveData(): Promise<LiveDataBundle | null> {
         code: (row.short_code || row.name.slice(0, 3)).toUpperCase().slice(0, 3),
         bg: palette.bg,
         fg: palette.fg,
-        form: formByTeam[row.id] ?? [],
-        attackTrend: attackTrendByTeam[row.id],
-        defenceTrend: defenceTrendByTeam[row.id],
+        ...summaryByTeam[row.id],
         sport: (row.sport as Sport) ?? 'football',
       };
     }
@@ -593,20 +578,121 @@ export async function fetchAllTeams(): Promise<Record<string, Team>> {
   return teams;
 }
 
+/**
+ * Teams by id, WITH their real form — one `teams` query and one `team_form` query for the whole
+ * list, however many ids. This is the on-demand twin of what fetchLiveData builds for the match
+ * window, and it has to carry the same form/trend data: this used to return `form: []` ("not used
+ * by the picker"), so every team outside the loaded window — which is most of the 313 — showed
+ * "not enough data yet" and an empty form row even with a full history sitting in `team_form`
+ * (measured live: Antalyaspor, 17 stored results, rendered as having none).
+ */
+export async function resolveTeamsByIds(teamIds: readonly string[]): Promise<Record<string, Team>> {
+  const ids = Array.from(new Set(teamIds));
+  if (!supabase || ids.length === 0) return {};
+  const client = supabase;
+  // One tiny form query PER team (10 rows each) rather than one date-ordered query across all of
+  // them: a shared "newest first" limit would let busy teams crowd out a team whose rows are
+  // older (a team that has stopped playing) and hand it an empty form. The lists here are a
+  // handful of ids (a team + its next opponents), never the whole directory.
+  const [{ data: teamRows, error }, formResults] = await Promise.all([
+    client.from('teams').select('id, name, short_code, sport').in('id', ids),
+    Promise.all(
+      ids.map((id) =>
+        client
+          .from('team_form')
+          .select('team_id, match_date, result, goals_for, goals_against')
+          .eq('team_id', id)
+          .order('match_date', { ascending: false })
+          .limit(10),
+      ),
+    ),
+  ]);
+  if (error || !teamRows) return {};
+  const rowsByTeam: Record<string, { match_date: string; result: string; goals_for: number; goals_against: number }[]> = {};
+  for (const res of formResults) for (const r of res.data ?? []) (rowsByTeam[r.team_id] ??= []).push(r);
+  const out: Record<string, Team> = {};
+  for (const row of teamRows) {
+    const palette = colorFor(row.id);
+    out[row.id] = {
+      id: row.id,
+      name: row.name,
+      code: (row.short_code || row.name.slice(0, 3)).toUpperCase().slice(0, 3),
+      bg: palette.bg,
+      fg: palette.fg,
+      ...summarizeTeamForm(rowsByTeam[row.id] ?? []),
+      sport: (row.sport as Sport) ?? 'football',
+    };
+  }
+  return out;
+}
+
 export async function resolveTeamById(teamId: string): Promise<Team | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase.from('teams').select('id, name, short_code, sport').eq('id', teamId).maybeSingle();
-  if (error || !data) return null;
-  const palette = colorFor(data.id);
-  return {
-    id: data.id,
-    name: data.name,
-    code: (data.short_code || data.name.slice(0, 3)).toUpperCase().slice(0, 3),
-    bg: palette.bg,
-    fg: palette.fg,
-    form: [],
-    sport: (data.sport as Sport) ?? 'football',
-  };
+  return (await resolveTeamsByIds([teamId]))[teamId] ?? null;
+}
+
+export type TeamUpcoming = {
+  /** The team's next fixtures that have a stored prediction, soonest first. */
+  matches: Match[];
+  /** Fixtures that exist but have no prediction row yet — the one case where "analysis is being
+   * prepared" is literally true (the pipeline recomputes on its next run). */
+  awaitingAnalysis: number;
+};
+
+/**
+ * A team's own next fixtures, straight from the database — independent of the loaded match
+ * window. The team screens used to search only that window, so a team whose next match fell past
+ * it was reported as "no match to analyse" although the fixture and its prediction existed. An
+ * empty result here is a real "no fixture in any competition SportMind ingests".
+ */
+export async function fetchTeamUpcoming(teamId: string, limit = 5): Promise<TeamUpcoming> {
+  const empty: TeamUpcoming = { matches: [], awaitingAnalysis: 0 };
+  if (!supabase) return empty;
+  const since = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
+  const { data: rows, error } = await supabase
+    .from('matches')
+    .select('id, competition, sport, home_team_id, away_team_id, kickoff_at, status')
+    .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+    .gte('kickoff_at', since)
+    .order('kickoff_at', { ascending: true })
+    .limit(limit);
+  if (error || !rows || rows.length === 0) return empty;
+
+  const ids = rows.map((r) => r.id);
+  const [{ data: predRows }, teams] = await Promise.all([
+    supabase.from('predictions').select('*').in('match_id', ids),
+    resolveTeamsByIds(rows.flatMap((r) => [r.home_team_id, r.away_team_id])),
+  ]);
+  const predByMatch: Record<string, any> = {};
+  for (const p of predRows ?? []) predByMatch[p.match_id] = p;
+
+  const matches: Match[] = [];
+  let awaitingAnalysis = 0;
+  for (const m of rows) {
+    const pred = predByMatch[m.id];
+    const home = teams[m.home_team_id];
+    const away = teams[m.away_team_id];
+    if (!pred) {
+      awaitingAnalysis += 1;
+      continue;
+    }
+    if (!home || !away) continue;
+    matches.push({
+      id: m.id,
+      home,
+      away,
+      kickoff: formatKickoff(m.kickoff_at),
+      kickoffAt: m.kickoff_at,
+      competition: m.competition,
+      sport: (m.sport as Sport) ?? 'football',
+      outcomes: { home: pred.home_win_pct, draw: pred.draw_pct, away: pred.away_win_pct },
+      xgHome: Number(pred.xg_home),
+      xgAway: Number(pred.xg_away),
+      recentAvgGoalsHome: Number(pred.recent_avg_goals_home),
+      recentAvgGoalsAway: Number(pred.recent_avg_goals_away),
+      factors: (pred.factors as MatchFactor[]) ?? [],
+    });
+  }
+  return { matches, awaitingAnalysis };
 }
 
 /** On-demand, single-match lookup mirroring resolveTeamById's rationale, for a match id
@@ -630,12 +716,13 @@ export async function resolveMatchById(matchId: string): Promise<Match | null> {
     .maybeSingle();
   if (error || !m) return null;
 
-  const [{ data: predRows }, home, away] = await Promise.all([
+  const [{ data: predRows }, teams] = await Promise.all([
     supabase.from('predictions').select('*').eq('match_id', matchId).limit(1),
-    resolveTeamById(m.home_team_id),
-    resolveTeamById(m.away_team_id),
+    resolveTeamsByIds([m.home_team_id, m.away_team_id]),
   ]);
   const pred = predRows?.[0];
+  const home = teams[m.home_team_id];
+  const away = teams[m.away_team_id];
   if (!pred || !home || !away) return null;
 
   return {

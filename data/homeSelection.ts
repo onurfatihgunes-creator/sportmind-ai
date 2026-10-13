@@ -1,8 +1,30 @@
 import { hasSufficientAnalysis } from './dataConfidence';
 import { favouredOutcome, type Match } from './mockData';
+import { HOME_DAY_WINDOW_HOURS, HOME_POOL_PER_SPORT } from './matchWindow';
 
 /** How many of the day's matches Home's carousel shows. */
 export const HERO_MATCH_LIMIT = 6;
+
+/**
+ * The pool Home recommends from: matches of the (already sport-filtered) list that have not started
+ * yet and kick off within HOME_DAY_WINDOW_HOURS, soonest first. Anything already underway or past,
+ * and anything further out, is excluded — Explore keeps the whole week. A match without a kickoff
+ * instant (demo/mock data only) has no date to judge and is kept, so offline demo mode still works.
+ * Empty when nothing qualifies: Home then shows an honest empty state instead of reaching for
+ * far-away matches.
+ */
+export function homeCandidatePool(matches: readonly Match[], now: Date = new Date()): Match[] {
+  const from = now.getTime();
+  const until = from + HOME_DAY_WINDOW_HOURS * 3_600_000;
+  return matches
+    .filter((m) => {
+      if (!m.kickoffAt) return true;
+      const t = Date.parse(m.kickoffAt);
+      return Number.isFinite(t) && t >= from && t < until;
+    })
+    .sort((a, b) => (a.kickoffAt ?? '').localeCompare(b.kickoffAt ?? ''))
+    .slice(0, HOME_POOL_PER_SPORT);
+}
 
 /**
  * The matches Home is allowed to recommend: only those whose analysis is real and sufficient

@@ -12,13 +12,15 @@ import { useAppData } from '@/contexts/DataContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import TeamAvatar from '@/components/TeamAvatar';
 import TeamBadgePair from '@/components/TeamBadgePair';
+import { useTeamUpcoming } from '@/hooks/useTeamUpcoming';
+import { isFormStale } from '@/data/teamForm';
 import SplitPane from '@/components/SplitPane';
 import Disclaimer from '@/components/Disclaimer';
 import NotFoundState from '@/components/NotFoundState';
 import BackButton from '@/components/BackButton';
 
 export default function TeamProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { teams, matches, isLive } = useAppData();
   const layout = useAdaptiveLayout();
@@ -64,7 +66,11 @@ export default function TeamProfileScreen() {
   }, [localTeam, id, isLive]);
 
   const team = localTeam ?? fallbackTeam;
-  const upcoming = team ? matches.filter((m) => m.home.id === team.id || m.away.id === team.id) : [];
+  const windowUpcoming = useMemo(
+    () => (team ? matches.filter((m) => m.home.id === team.id || m.away.id === team.id) : []),
+    [matches, team],
+  );
+  const { loading: upcomingLoading, matches: upcoming, awaitingAnalysis } = useTeamUpcoming(team?.id, windowUpcoming, isLive);
 
   if (!team) {
     return (
@@ -115,6 +121,15 @@ export default function TeamProfileScreen() {
               </View>
             ))}
           </View>
+          {/* Only real states: no results at all is genuinely limited data; results whose newest
+              date is months old are real but not current, so the date is shown rather than the
+              form being passed off as recent. */}
+          {team.form.length === 0 && <Text style={styles.formNote}>{t('teamProfile.formLimited')}</Text>}
+          {team.form.length > 0 && team.lastResultAt && isFormStale(team.lastResultAt) && (
+            <Text style={styles.formNote}>
+              {t('teamProfile.lastMatchOn', { date: new Date(team.lastResultAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' }) })}
+            </Text>
+          )}
           </View>}
           secondary={<View>
           <Text style={styles.kicker}>{t('teamProfile.upcomingMatches')}</Text>
@@ -135,7 +150,9 @@ export default function TeamProfileScreen() {
               </Pressable>
             );
           })}
-          {upcoming.length === 0 && <Text style={styles.emptyText}>{t('teamProfile.noUpcoming')}</Text>}
+          {upcoming.length === 0 && !upcomingLoading && (
+            <Text style={styles.emptyText}>{awaitingAnalysis > 0 ? t('teamProfile.analysisPreparing') : t('teamProfile.noUpcoming')}</Text>
+          )}
           </View>}
         />
 
@@ -178,4 +195,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   matchTagPositive: { color: colors.successText },
   matchTagNeutral: { color: colors.textFaint },
   emptyText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
+  formNote: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: -12, marginBottom: spacing.xl },
 });

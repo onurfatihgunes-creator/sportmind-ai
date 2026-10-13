@@ -15,7 +15,7 @@ import {
 import { confidenceColor, fonts, radius, spacing, toneColor, toneMutedColor, toneTextColor, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { favouredOutcome, type Match, type Sport } from '@/data/mockData';
-import { eligibleHomeMatches, selectHeroMatches, selectStandout } from '@/data/homeSelection';
+import { eligibleHomeMatches, homeCandidatePool, selectHeroMatches, selectStandout } from '@/data/homeSelection';
 import { useAppData } from '@/contexts/DataContext';
 import { useFollowedTeams } from '@/contexts/FollowedTeamsContext';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -48,7 +48,8 @@ export default function HomeScreen() {
   const sportMatches = useMemo(() => matches.filter((m) => m.sport === selectedSport), [matches, selectedSport]);
   // Home only recommends analyses built on real, sufficient data — see data/homeSelection.ts.
   // Following and Recent changes below deliberately keep the full sportMatches list.
-  const eligibleMatches = useMemo(() => eligibleHomeMatches(sportMatches), [sportMatches]);
+  const dayPool = useMemo(() => homeCandidatePool(sportMatches), [sportMatches]);
+  const eligibleMatches = useMemo(() => eligibleHomeMatches(dayPool), [dayPool]);
   const heroMatches = useMemo(() => selectHeroMatches(eligibleMatches), [eligibleMatches]);
   const standout = useMemo(() => selectStandout(eligibleMatches), [eligibleMatches]);
 
@@ -189,7 +190,7 @@ export default function HomeScreen() {
           </ScrollView>
         ) : (
           <Text style={styles.emptySportText}>
-            {sportMatches.length > 0 ? t('home.noQualifiedMatches') : t('home.noMatchesForSport')}
+            {sportMatches.length === 0 ? t('home.noMatchesForSport') : dayPool.length === 0 ? t('home.noMatchesToday') : t('home.noQualifiedMatches')}
           </Text>
         )}
 

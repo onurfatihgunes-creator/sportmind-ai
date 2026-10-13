@@ -7,6 +7,7 @@ import { CheckIcon, PlusIcon, ShieldIcon, XIcon } from 'phosphor-react-native';
 import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAppData } from '@/contexts/DataContext';
+import { useTeamUpcoming } from '@/hooks/useTeamUpcoming';
 import { useFollowedTeams, MAX_FOLLOWED_TEAMS } from '@/contexts/FollowedTeamsContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import type { Team } from '@/data/mockData';
@@ -121,10 +122,12 @@ export default function InsightsScreen() {
   // as (a) the source for squad-status/lineup facts that genuinely are match-scoped in the
   // data model, and (b) a small contextual link to the existing Match Analysis screen —
   // never as the primary subject of this screen anymore.
-  const nextMatch = useMemo(() => {
-    if (!selectedTeam) return null;
-    return matches.find((m) => m.home.id === selectedTeam.id || m.away.id === selectedTeam.id) ?? null;
-  }, [matches, selectedTeam]);
+  const windowUpcoming = useMemo(
+    () => (selectedTeam ? matches.filter((m) => m.home.id === selectedTeam.id || m.away.id === selectedTeam.id) : []),
+    [matches, selectedTeam],
+  );
+  const { loading: upcomingLoading, matches: upcoming, awaitingAnalysis } = useTeamUpcoming(selectedTeam?.id, windowUpcoming, isLive);
+  const nextMatch = upcoming[0] ?? null;
 
   const matchAnalysisChanges = useMemo(() => (nextMatch ? analysisChanges.filter((e) => e.matchId === nextMatch.id) : []), [analysisChanges, nextMatch]);
 
@@ -258,7 +261,7 @@ export default function InsightsScreen() {
           secondary={<View>
           {selectedTeam ? (
             <View style={[styles.contentWrap, dual && styles.contentWrapInPane]}>
-              <TeamIntelligence team={selectedTeam} nextMatch={nextMatch} analysisChanges={matchAnalysisChanges} />
+              <TeamIntelligence team={selectedTeam} nextMatch={nextMatch} analysisChanges={matchAnalysisChanges} upcomingLoading={upcomingLoading} awaitingAnalysis={awaitingAnalysis} />
             </View>
           ) : (
             dual && (
