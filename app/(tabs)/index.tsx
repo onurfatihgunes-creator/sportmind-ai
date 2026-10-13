@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { kickoffText } from '@/data/kickoffLabel';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -28,7 +29,7 @@ import StackedDistributionBar from '@/components/StackedDistributionBar';
 import SplitPane from '@/components/SplitPane';
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { matches, changeEvents, isLive, loading } = useAppData();
   const { teamIds: followedTeamIds } = useFollowedTeams();
   const { name } = useProfile();
@@ -116,7 +117,7 @@ export default function HomeScreen() {
         />
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.kicker}>{t('home.matchOfTheDay')}</Text>
+          <Text style={styles.kicker} maxFontSizeMultiplier={1.3}>{t('home.matchOfTheDay')}</Text>
           <View style={styles.sectionHeaderRight}>
             {!loading && !isLive && (
               <View style={styles.liveRow}>
@@ -125,7 +126,7 @@ export default function HomeScreen() {
               </View>
             )}
             <Pressable style={styles.viewAllLink} onPress={() => router.push('/(tabs)/explore')}>
-              <Text style={styles.viewAllLinkText}>{t('common.viewAll')}</Text>
+              <Text style={styles.viewAllLinkText} maxFontSizeMultiplier={1.3}>{t('common.viewAll')}</Text>
               <ArrowRightIcon size={11} weight="bold" color={colors.primaryLink} />
             </Pressable>
           </View>
@@ -152,7 +153,7 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/match/${match.id}`)}
                 >
                   <Text style={styles.heroCompetition}>{match.competition}</Text>
-                  <Text style={styles.heroSubtitle}>{match.kickoff}</Text>
+                  <Text style={styles.heroSubtitle}>{kickoffText(match, t, i18n.language)}</Text>
                   <View style={styles.heroRow}>
                     <View style={styles.heroInfo}>
                       <TeamBadgePair home={match.home} away={match.away} size={30} />
@@ -258,7 +259,7 @@ export default function HomeScreen() {
                           {myTeam.name}
                         </Text>
                         <Text style={styles.matchRowSubtitle} numberOfLines={1}>
-                          {t('home.followingNextMatch', { opponent: opponent.name, kickoff: match.kickoff })}
+                          {t('home.followingNextMatch', { opponent: opponent.name, kickoff: kickoffText(match, t, i18n.language) })}
                         </Text>
                       </View>
                       <View style={styles.matchRowChip}>
@@ -358,8 +359,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   premiumButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primaryLink },
   sportSegment: { marginBottom: spacing.lg },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 },
-  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // wrap: at a larger font / narrower screen the label and 'View all' no longer share one line
+  sectionHeaderRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', columnGap: 10, rowGap: 6, marginBottom: 9 },
+  sectionHeaderRight: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   sectionSpacer: { marginTop: spacing.xl, marginBottom: 9 },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint },
   matchListGroup: { gap: 8, marginBottom: spacing.xxl },

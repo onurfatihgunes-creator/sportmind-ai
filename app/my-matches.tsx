@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { kickoffText } from '@/data/kickoffLabel';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRightIcon, BookmarkSimpleIcon } from 'phosphor-react-native';
@@ -17,7 +18,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 
 export default function MyMatchesScreen() {
   const layout = useAdaptiveLayout();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { matches } = useAppData();
   const { matchIds, toggle } = useWatchlist();
   const { colors } = useAppTheme();
@@ -58,7 +59,7 @@ export default function MyMatchesScreen() {
               <Text style={styles.matchTitleVs}>{t('common.vs')}</Text>
               <Text style={styles.matchTitle}>{m.away.name}</Text>
               <Text style={styles.matchSubtitle}>
-                {m.kickoff} · {m.competition} ·{' '}
+                {kickoffText(m, t, i18n.language)} · {m.competition} ·{' '}
                 {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}
               </Text>
               <View style={styles.viewLink}>

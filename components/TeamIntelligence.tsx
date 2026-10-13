@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { kickoffText } from '@/data/kickoffLabel';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -166,7 +167,7 @@ export default function TeamIntelligence({
   awaitingAnalysis?: number;
   analysisChanges: AnalysisChangeEvent[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [squadExpanded, setSquadExpanded] = useState(false);
@@ -416,7 +417,7 @@ export default function TeamIntelligence({
                 {nextMatch.home.name} <Text style={styles.changeVs}>{t('common.vs')}</Text> {nextMatch.away.name}
               </Text>
               <Text style={styles.nextMatchSubtitle} numberOfLines={1}>
-                {nextMatch.kickoff}
+                {kickoffText(nextMatch, t, i18n.language)}
               </Text>
             </View>
             <CaretRightIcon size={16} color={colors.textFainter} />

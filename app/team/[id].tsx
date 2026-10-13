@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { kickoffText } from '@/data/kickoffLabel';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ShieldIcon } from 'phosphor-react-native';
@@ -142,7 +143,7 @@ export default function TeamProfileScreen() {
                 <TeamBadgePair home={m.home.id === team.id ? team : opponent} away={m.home.id === team.id ? opponent : team} size={28} />
                 <View style={styles.matchInfo}>
                   <Text style={styles.matchTitle}>{t('teamProfile.vsPrefix', { team: opponent.name })}</Text>
-                  <Text style={styles.matchSubtitle}>{m.kickoff}</Text>
+                  <Text style={styles.matchSubtitle}>{kickoffText(m, t, i18n.language)}</Text>
                 </View>
                 <Text style={[styles.matchTag, favoursThisTeam ? styles.matchTagPositive : styles.matchTagNeutral]}>
                   {favourite.team ? t('matchCard.favoured', { team: favourite.team.name }) : t('matchCard.drawLikely')}

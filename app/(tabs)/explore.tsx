@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { kickoffParts, localeFor } from '@/data/kickoffLabel';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -41,7 +42,7 @@ function startOfDay(d: Date) {
  * bucket) and labelled with a real weekday name beyond tomorrow. Falls back to the old
  * heuristic only when `kickoffAt` is missing (mock data has no real dates).
  */
-function dayGroupFor(match: Match, t: (key: string) => string): { key: string; label: string } {
+function dayGroupFor(match: Match, t: (key: string) => string, language: string): { key: string; label: string } {
   if (!match.kickoffAt) {
     if (match.kickoff.startsWith('Today')) return { key: '0000-today', label: t('explore.today') };
     if (match.kickoff.startsWith('Tomorrow')) return { key: '0001-tomorrow', label: t('explore.tomorrow') };
@@ -57,11 +58,16 @@ function dayGroupFor(match: Match, t: (key: string) => string): { key: string; l
   const isoKey = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
   if (dayDiff === 0) return { key: isoKey, label: t('explore.today') };
   if (dayDiff === 1) return { key: isoKey, label: t('explore.tomorrow') };
-  return { key: isoKey, label: kickoffDate.toLocaleDateString(undefined, { weekday: 'long' }) };
+  return { key: isoKey, label: kickoffDate.toLocaleDateString(localeFor(language), { weekday: 'long' }) };
 }
 
 export default function ExploreScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // Narrow screen and/or large font: the row's text column is too small for a long single word
+  // ("Middlesbrough", "Wolverhampton") beside the badges, percentage chip and bookmark, so the
+  // chip moves under the title. Measured from the window and the (capped) font scale.
+  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const compactRow = windowWidth / Math.min(Math.max(fontScale, 1), 1.3) < 270;
   const params = useLocalSearchParams<{ league?: string }>();
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
@@ -121,12 +127,12 @@ export default function ExploreScreen() {
   const groupedByDay = useMemo(() => {
     const groups = new Map<string, DayGroup>();
     for (const m of filteredMatches) {
-      const { key, label } = dayGroupFor(m, t);
+      const { key, label } = dayGroupFor(m, t, i18n.language);
       if (!groups.has(key)) groups.set(key, { key, label, matches: [] });
       groups.get(key)!.matches.push(m);
     }
     return Array.from(groups.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [filteredMatches, t]);
+  }, [filteredMatches, t, i18n.language]);
 
   // Resolved against the CURRENT filter result, never against a remembered copy of the
   // match — so a selection that a sport switch, a league filter or a search has just
@@ -147,6 +153,14 @@ export default function ExploreScreen() {
     }
     router.push(`/match/${id}`);
   };
+
+  const pctChip = (m: Match, favourite: ReturnType<typeof favouredOutcome>) => (
+    <View style={[styles.pctChip, { backgroundColor: colors.divider }, favourite.probability >= 55 && { backgroundColor: colors.primaryTintStrong }]}>
+      <Text style={[styles.pctChipText, { color: colors.textSecondaryAlt }, favourite.probability >= 55 && { color: colors.primaryText }]}>
+        {favourite.probability}%
+      </Text>
+    </View>
+  );
 
   const listContent = (
     <>
@@ -233,18 +247,15 @@ export default function ExploreScreen() {
                   >
                     <TeamBadgePair home={m.home} away={m.away} />
                     <View style={styles.matchInfo}>
-                      <Text style={styles.matchTitle}>
+                      <Text style={styles.matchTitle} maxFontSizeMultiplier={1.3}>
                         {m.home.name} — {m.away.name}
                       </Text>
-                      <Text style={styles.matchSubtitle}>
-                        {m.kickoff.replace(/^(Today|Tomorrow),\s*/, '')} · {m.competition}
+                      <Text style={styles.matchSubtitle} maxFontSizeMultiplier={1.3}>
+                        {kickoffParts(m, t, i18n.language).time} · {m.competition}
                       </Text>
+                      {compactRow && <View style={{ alignSelf: 'flex-start', marginTop: 6 }}>{pctChip(m, favourite)}</View>}
                     </View>
-                    <View style={[styles.pctChip, { backgroundColor: colors.divider }, favourite.probability >= 55 && { backgroundColor: colors.primaryTintStrong }]}>
-                      <Text style={[styles.pctChipText, { color: colors.textSecondaryAlt }, favourite.probability >= 55 && { color: colors.primaryText }]}>
-                        {favourite.probability}%
-                      </Text>
-                    </View>
+                    {!compactRow && pctChip(m, favourite)}
                     <Pressable
                       hitSlop={10}
                       style={styles.favButton}

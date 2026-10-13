@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { kickoffParts } from '@/data/kickoffLabel';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +79,8 @@ type Props = {
  * other — so both are on screen at once instead of one scrolling the other away.
  */
 export default function MatchAnalysisContent({ match, tab, onTabChange, columns }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const kickoff = kickoffParts(match, t, i18n.language);
   const { changeEvents } = useAppData();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -163,16 +165,16 @@ export default function MatchAnalysisContent({ match, tab, onTabChange, columns 
       <View style={styles.matchupCard} onLayout={onCardLayout}>
         {tight && (
           <View style={styles.kickoffRowTight}>
-            <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[0]}</Text>
-            <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[1]?.trim()}</Text>
+            <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{kickoff.day}</Text>
+            <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{kickoff.time}</Text>
           </View>
         )}
         <View style={styles.matchupRow}>
           {renderTeam(match.home)}
           {!tight && (
             <View style={styles.kickoffCol}>
-              <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[0]}</Text>
-              <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{match.kickoff.split(',')[1]?.trim()}</Text>
+              <Text style={styles.kickoffDay} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{kickoff.day}</Text>
+              <Text style={styles.kickoffTime} maxFontSizeMultiplier={MAX_TEXT_SCALE}>{kickoff.time}</Text>
             </View>
           )}
           {renderTeam(match.away)}
