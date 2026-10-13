@@ -15,18 +15,33 @@ export type ColorScheme = 'light' | 'dark';
  *  every other stored preference so clearing one never disturbs another. */
 export const APPEARANCE_STORAGE_KEY = 'sportmind_appearance_mode';
 
-export const DEFAULT_APPEARANCE_MODE: AppearanceMode = 'system';
+/** What a brand-new install gets. */
+export const DEFAULT_APPEARANCE_MODE: AppearanceMode = 'dark';
+
+/** What an install that predates the Dark default keeps: before it existed, never having
+ *  chosen an appearance meant following the device, and that must not silently change. */
+export const LEGACY_APPEARANCE_MODE: AppearanceMode = 'system';
 
 /**
- * What was read back from storage, made safe. Anything that isn't one of the three real
- * modes — a value from a future version, a half-written string, a key some other feature
- * happened to collide with — falls back to the default rather than leaving the app in an
- * appearance it cannot name.
+ * Which mode to start in, from what storage held and whether this install has already been
+ * through Welcome.
+ *
+ *  - A stored Light/Dark/System choice always wins and is never rewritten.
+ *  - Nothing (or something unreadable) stored on a brand-new install: Dark, and `persist`
+ *    says to write it down — otherwise the very next launch, once Welcome has been seen,
+ *    would look like an existing install and flip to System.
+ *  - Nothing stored on an install that has already seen Welcome: it predates the Dark
+ *    default and never chose, so it keeps following the device and nothing is written.
  */
-export function parseStoredMode(stored: string | null | undefined): AppearanceMode {
-  return (APPEARANCE_MODES as readonly string[]).includes(stored ?? '')
-    ? (stored as AppearanceMode)
-    : DEFAULT_APPEARANCE_MODE;
+export function resolveInitialAppearance(
+  stored: string | null | undefined,
+  hasSeenWelcome: boolean,
+): { mode: AppearanceMode; persist: boolean } {
+  if ((APPEARANCE_MODES as readonly string[]).includes(stored ?? '')) {
+    return { mode: stored as AppearanceMode, persist: false };
+  }
+  if (hasSeenWelcome) return { mode: LEGACY_APPEARANCE_MODE, persist: false };
+  return { mode: DEFAULT_APPEARANCE_MODE, persist: true };
 }
 
 /**

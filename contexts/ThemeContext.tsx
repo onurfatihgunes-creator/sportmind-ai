@@ -4,11 +4,12 @@ import { useColorScheme } from 'react-native';
 import {
   APPEARANCE_STORAGE_KEY,
   DEFAULT_APPEARANCE_MODE,
-  parseStoredMode,
+  resolveInitialAppearance,
   resolveScheme,
   type AppearanceMode,
   type ColorScheme,
 } from '@/constants/appearance';
+import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
 import { palettes, type ThemeColors } from '@/constants/theme';
 
 /** What the user picked. Re-exported under the name the screens already import. */
@@ -23,6 +24,10 @@ type AppThemeState = {
   scheme: ColorScheme;
   colors: ThemeColors;
   setMode: (mode: ThemeMode) => void;
+  /** False until the stored preference has been read. Nothing should paint before then:
+   *  painting the default first and switching a moment later is a visible wrong-colour flash
+   *  for anyone whose saved choice differs from it. */
+  loaded: boolean;
 };
 
 /**
@@ -38,21 +43,30 @@ const AppThemeContext = createContext<AppThemeState>({
   scheme: 'light',
   colors: palettes.light,
   setMode: () => {},
+  loaded: true,
 });
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const [mode, setModeState] = useState<ThemeMode>(DEFAULT_APPEARANCE_MODE);
+  const [loaded, setLoaded] = useState(false);
 
-  // Read once at mount. A stored value that is not one of the three real modes is
-  // discarded by parseStoredMode rather than trusted — see its own note.
+  // Read once at mount. A saved Light/Dark/System choice always wins; with none saved, a
+  // brand-new install starts Dark and an install that predates that default keeps following
+  // the device — see resolveInitialAppearance. Unreadable storage just keeps the default.
   useEffect(() => {
     let cancelled = false;
-    AsyncStorage.getItem(APPEARANCE_STORAGE_KEY).then((stored) => {
-      if (cancelled) return;
-      const parsed = parseStoredMode(stored);
-      if (parsed !== DEFAULT_APPEARANCE_MODE) setModeState(parsed);
-    });
+    Promise.all([AsyncStorage.getItem(APPEARANCE_STORAGE_KEY), AsyncStorage.getItem(HAS_SEEN_WELCOME_KEY)])
+      .then(([stored, seenWelcome]) => {
+        if (cancelled) return;
+        const initial = resolveInitialAppearance(stored, seenWelcome === 'true');
+        setModeState(initial.mode);
+        if (initial.persist) AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, initial.mode).catch(() => {});
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -71,8 +85,8 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   // createStyles/useThemedStyles caches on, so a re-render that changes neither must not
   // hand out a new object and quietly rebuild every StyleSheet in the app.
   const value = useMemo<AppThemeState>(
-    () => ({ mode, scheme, colors: palettes[scheme], setMode }),
-    [mode, scheme, setMode],
+    () => ({ mode, scheme, colors: palettes[scheme], setMode, loaded }),
+    [mode, scheme, setMode, loaded],
   );
 
   return <AppThemeContext.Provider value={value}>{children}</AppThemeContext.Provider>;

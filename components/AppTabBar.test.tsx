@@ -62,6 +62,7 @@ afterEach(async () => {
 
 test('Android: opaque surface background, no BlurView — content cannot show through the bar', async () => {
   jest.replaceProperty(Platform, 'OS', 'android');
+  await AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, 'light');
   const renderer = await render();
   expect(rootBackground(renderer)).toBe(lightColors.surface);
   expect(renderer.root.findAllByType(BlurView)).toHaveLength(0);
