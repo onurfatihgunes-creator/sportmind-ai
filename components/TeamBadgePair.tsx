@@ -1,37 +1,28 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { fonts } from '@/constants/theme';
+import { StyleSheet, View } from 'react-native';
+import TeamAvatar from '@/components/TeamAvatar';
 import type { Team } from '@/data/mockData';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
 type Props = { home: Team; away: Team; size?: number };
 
-/** The overlapping two-crest cluster used throughout the redesign (match rows, hero cards,
- * headers). Real logos are intentionally not used — see design handoff README's Assets
- * section — a colored initials badge stands in, sized/overlapped per spec (-size*0.3). */
+/** The overlapping two-avatar cluster used throughout the redesign (match rows, hero cards,
+ * headers). Each avatar is a TeamAvatar: the real crest when the team has one, else a coloured
+ * code badge. The overlap is a share of the size (not a fixed 8dp) so the covered avatar's
+ * letters stay clear of the one on top at every size. */
 export default function TeamBadgePair({ home, away, size = 26 }: Props) {
   const { colors } = useAppTheme();
-  const fontSize = Math.round(size * 0.36);
   return (
     <View style={styles.row}>
-      <View style={[styles.badge, { width: size, height: size, borderRadius: size / 2, backgroundColor: home.bg }]}>
-        <Text style={[styles.code, { fontSize, color: home.fg }]}>{home.code}</Text>
-      </View>
-      <View
-        style={[
-          styles.badge,
-          styles.overlap,
-          { width: size, height: size, borderRadius: size / 2, backgroundColor: away.bg, borderColor: colors.surface },
-        ]}
-      >
-        <Text style={[styles.code, { fontSize, color: away.fg }]}>{away.code}</Text>
-      </View>
+      <TeamAvatar team={home} size={size} />
+      <TeamAvatar
+        team={away}
+        size={size}
+        style={{ marginLeft: -Math.round(size * 0.18), borderWidth: 2, borderColor: colors.surface }}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
-  badge: { alignItems: 'center', justifyContent: 'center' },
-  overlap: { marginLeft: -8, borderWidth: 2 },
-  code: { fontFamily: fonts.bodyBold },
 });

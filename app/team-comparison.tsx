@@ -14,6 +14,7 @@ import BackButton from '@/components/BackButton';
 import RadarChart, { type RadarAxis } from '@/components/RadarChart';
 import SplitPane from '@/components/SplitPane';
 import NotFoundState from '@/components/NotFoundState';
+import TeamAvatar from '@/components/TeamAvatar';
 import { hasTrustedFormSample } from '@/data/dataConfidence';
 
 /** Real per-team stats derived client-side from whatever matches involving this team are
@@ -166,9 +167,7 @@ export default function TeamComparisonScreen() {
           primary={<View>
           <View style={styles.teamsRow}>
             <View style={styles.teamCol}>
-              <View style={[styles.crest, { backgroundColor: teamA.bg }]}>
-                <Text style={[styles.crestText, { color: teamA.fg }]}>{teamA.code}</Text>
-              </View>
+              <TeamAvatar team={teamA} size={34} />
               <Text style={styles.teamName} numberOfLines={1}>
                 {teamA.name}
               </Text>
@@ -178,9 +177,7 @@ export default function TeamComparisonScreen() {
               <Text style={[styles.teamName, styles.teamNameEnd]} numberOfLines={1}>
                 {teamB.name}
               </Text>
-              <View style={[styles.crest, styles.crestFixed, { backgroundColor: teamB.bg }]}>
-                <Text style={[styles.crestText, { color: teamB.fg }]}>{teamB.code}</Text>
-              </View>
+              <TeamAvatar team={teamB} size={34} />
             </View>
           </View>
 
@@ -251,12 +248,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // the card's right edge exactly as symmetrically as the home crest hugs the left,
   // regardless of how much (or little) space the team name text actually needs.
   teamColEnd: { justifyContent: 'flex-end' },
-  crest: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   // flexShrink: 0 — a real bug found live: without it, a long away-team name could shrink
   // this flex row's LAST child (the crest) instead of the text, squashing the crest into
   // an oval and/or pushing it partially outside the card's own border.
-  crestFixed: { flexShrink: 0 },
-  crestText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   // flexShrink: 1 lets a too-long name truncate (numberOfLines={1} + ellipsis) instead of
   // forcing the row wider than its container — the actual root cause of the reported
   // avatar-overflow bug (the crest wasn't broken, the name text next to it was unbounded).

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ActivityIndicator, Modal, Pressable, SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
+import TeamAvatar from '@/components/TeamAvatar';
 import { singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import type { Match, Team } from '@/data/mockData';
 import { getCompetitionInfo } from '@/data/competitions';
@@ -122,9 +123,7 @@ export default function TeamPicker({ visible, onClose, onSelect, teams, matches,
                 accessibilityRole="button"
                 accessibilityLabel={item.subtitle ? `${item.team.name}, ${item.subtitle}` : item.team.name}
               >
-                <View style={[styles.badge, { backgroundColor: item.team.bg }]}>
-                  <Text style={[styles.badgeText, { color: item.team.fg }]}>{item.team.code}</Text>
-                </View>
+                <TeamAvatar team={item.team} size={30} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.teamName}>{item.team.name}</Text>
                   {item.subtitle.length > 0 && <Text style={styles.teamSubtitle}>{item.subtitle}</Text>}
@@ -158,8 +157,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: 6,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, minHeight: 48 },
-  badge: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { fontFamily: fonts.bodyBold, fontSize: 10 },
   teamName: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
   teamSubtitle: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint, marginTop: 1 },
 });

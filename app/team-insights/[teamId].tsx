@@ -13,6 +13,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import TeamIntelligence from '@/components/TeamIntelligence';
 import Disclaimer from '@/components/Disclaimer';
 import NotFoundState from '@/components/NotFoundState';
+import TeamAvatar from '@/components/TeamAvatar';
 import BackButton from '@/components/BackButton';
 
 /** Contextual Team Insights — reached only from Match Analysis's per-team "AI Insights"
@@ -109,9 +110,7 @@ export default function TeamInsightsScreen() {
 
       <ScrollView contentContainerStyle={[styles.content, singleColumnStyle(layout)]} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}>
-          <View style={[styles.crest, { backgroundColor: team.bg }]}>
-            <Text style={[styles.crestText, { color: team.fg }]}>{team.code}</Text>
-          </View>
+          <TeamAvatar team={team} size={52} />
           <Text style={styles.teamName}>{team.name}</Text>
         </View>
 
@@ -130,7 +129,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   headerTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSecondaryAlt },
   content: { paddingHorizontal: spacing.screenX, paddingTop: 10, paddingBottom: 60 },
   heroWrap: { alignItems: 'center', marginBottom: spacing.xl },
-  crest: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  crestText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   teamName: { fontFamily: fonts.headline, fontSize: 18, letterSpacing: -0.3, color: colors.textPrimary, marginTop: spacing.sm, textAlign: 'center' },
 });

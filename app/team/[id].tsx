@@ -10,6 +10,7 @@ import { favouredOutcome, type Team } from '@/data/mockData';
 import { resolveTeamById } from '@/data/liveData';
 import { useAppData } from '@/contexts/DataContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import TeamAvatar from '@/components/TeamAvatar';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import SplitPane from '@/components/SplitPane';
 import Disclaimer from '@/components/Disclaimer';
@@ -102,9 +103,7 @@ export default function TeamProfileScreen() {
           secondaryFlex={1.5}
           primary={<View style={dual ? styles.identityInPane : undefined}>
           <View style={styles.heroWrap}>
-            <View style={[styles.crest, { backgroundColor: team.bg }]}>
-              <Text style={[styles.crestText, { color: team.fg }]}>{team.code}</Text>
-            </View>
+            <TeamAvatar team={team} size={52} />
             <Text style={styles.teamName}>{team.name}</Text>
           </View>
 
@@ -156,8 +155,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // Side by side the identity column reads as a panel beside the fixtures rather than a
   // centred banner above them — the crest, name and form align with the list's first row.
   identityInPane: { alignItems: 'flex-start' },
-  crest: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  crestText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   teamName: { fontFamily: fonts.headline, fontSize: 18, letterSpacing: -0.3, color: colors.textPrimary, marginTop: spacing.sm },
   kicker: { fontFamily: fonts.bodyMedium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.textFaint, marginBottom: spacing.md },
   formRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.xl },
