@@ -2,6 +2,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, u
 import { AppState } from 'react-native';
 import { readEntitlement, type Entitlement } from '@/services/entitlement';
 import { hasActiveRevenueCatEntitlement } from '@/services/revenueCat';
+import { PURCHASES_ENABLED } from '@/constants/featureFlags';
 
 /**
  * The one authoritative subscription state for the whole app (Stylist's
@@ -22,6 +23,13 @@ export type EntitlementStatus = 'loading' | Entitlement;
 interface EntitlementContextValue {
   status: EntitlementStatus;
   trialEndsAt: number | null;
+  /** Whether this device may open the analyses. Always true while PURCHASES_ENABLED is false
+   * (everything is free); otherwise false only once the trial has ended without Pro. Unknown
+   * ('loading') is allowed, provisionally — see the header. */
+  hasAccess: boolean;
+  /** Whether any purchase / Premium / trial UI may be shown at all. The one switch every such
+   * surface reads, so none of them decides this on its own. */
+  purchasesVisible: boolean;
   /** Re-read the entitlement source. Called after a purchase/restore
    * attempt and on returning to the foreground — never polled on a timer,
    * since nothing here needs to be that fresh and a timer would just be
@@ -32,6 +40,8 @@ interface EntitlementContextValue {
 const EntitlementContext = createContext<EntitlementContextValue>({
   status: 'loading',
   trialEndsAt: null,
+  hasAccess: true,
+  purchasesVisible: PURCHASES_ENABLED,
   refresh: async () => {},
 });
 
@@ -51,12 +61,24 @@ export function resolveDisplayedEntitlement(veraEntitlement: Entitlement, revenu
   return veraEntitlement === 'expired' && revenueCatActive ? 'pro' : veraEntitlement;
 }
 
+/**
+ * Access to the analyses. With purchases switched off nobody is ever gated, whatever the stored
+ * trial / Pro state says (it is neither read nor changed); with them on, only a finished trial
+ * without Pro is. Pure, so the three user populations (new, expired, former Pro) are directly
+ * testable.
+ */
+export function resolveAccess(status: EntitlementStatus, purchasesEnabled: boolean): boolean {
+  return !purchasesEnabled || status !== 'expired';
+}
+
 export function EntitlementProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<EntitlementStatus>('loading');
   const [trialEndsAt, setTrialEndsAt] = useState<number | null>(null);
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
+    // Purchases off: nothing to ask. No Vera session, no RevenueCat, no background traffic.
+    if (!PURCHASES_ENABLED) return;
     const state = await readEntitlement();
     // Only asked when Vera has already said the trial is over — during the
     // trial itself, Vera's own answer decides everything and this call
@@ -69,6 +91,7 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mounted.current = true;
+    if (!PURCHASES_ENABLED) return;
     void refresh();
     // Re-check on returning to the foreground — the case that matters most
     // is coming back from the App/Play Store's own purchase sheet, which
@@ -85,7 +108,17 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   return (
-    <EntitlementContext.Provider value={{ status, trialEndsAt, refresh }}>{children}</EntitlementContext.Provider>
+    <EntitlementContext.Provider
+      value={{
+        status,
+        trialEndsAt,
+        hasAccess: resolveAccess(status, PURCHASES_ENABLED),
+        purchasesVisible: PURCHASES_ENABLED,
+        refresh,
+      }}
+    >
+      {children}
+    </EntitlementContext.Provider>
   );
 }
 

@@ -36,6 +36,7 @@
 
 import { onuraiApi, ApiError } from '@/services/onuraiClient';
 import { legacyTrialWasAlreadyUsedUp } from '@/services/legacyTrialMigration';
+import { PURCHASES_ENABLED } from '@/constants/featureFlags';
 
 /** The three states the backend reports. A closed set, never derived here. */
 export type Entitlement = 'pro' | 'trial' | 'expired';
@@ -70,6 +71,10 @@ const STATES: ReadonlySet<string> = new Set(['pro', 'trial', 'expired']);
  * error.
  */
 export async function readEntitlement(): Promise<EntitlementState> {
+  // Purchases switched off: do not mint an anonymous session or call the entitlement endpoint.
+  // The answer is the same neutral one an unreadable server gives — and nothing is gated on it
+  // while the flag is off (see EntitlementContext's resolveAccess).
+  if (!PURCHASES_ENABLED) return { entitlement: 'trial', plan: 'free', trialEndsAt: null };
   try {
     const wire = await onuraiApi<WireEntitlement>('/v1/entitlement?application=sportmind');
     let state = typeof wire.entitlement === 'string' && STATES.has(wire.entitlement)

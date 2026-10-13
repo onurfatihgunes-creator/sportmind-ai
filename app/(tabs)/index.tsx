@@ -32,7 +32,7 @@ export default function HomeScreen() {
   const { matches, changeEvents, isLive, loading } = useAppData();
   const { teamIds: followedTeamIds } = useFollowedTeams();
   const { name } = useProfile();
-  const { status: entitlementStatus } = useEntitlement();
+  const { status: entitlementStatus, purchasesVisible } = useEntitlement();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedSport, setSelectedSport] = useState<Sport>('football');
@@ -96,7 +96,7 @@ export default function HomeScreen() {
           </View>
           {/* Hidden once Pro is actually active — offering what somebody already has is
               noise, the same rule Stylist's own Profile row follows. */}
-          {(entitlementStatus === 'trial' || entitlementStatus === 'expired') && (
+          {purchasesVisible && (entitlementStatus === 'trial' || entitlementStatus === 'expired') && (
             <Pressable style={styles.premiumButton} onPress={() => router.push('/(tabs)/premium')}>
               <SparkleIcon size={14} weight="bold" color={colors.primaryLink} />
               <Text style={styles.premiumButtonText}>{t('tabs.premium')}</Text>

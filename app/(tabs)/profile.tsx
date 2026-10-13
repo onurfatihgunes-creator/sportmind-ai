@@ -30,7 +30,10 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { name, setName } = useProfile();
   const { matchIds } = useWatchlist();
-  const { status } = useEntitlement();
+  const { status: entitlementStatus, purchasesVisible } = useEntitlement();
+  // Purchases switched off: no plan label, no upsell, no 'Pro active' row — as if the entitlement
+  // were still unknown, which already renders none of them.
+  const status = purchasesVisible ? entitlementStatus : 'loading';
   const { colors, mode } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [editing, setEditing] = useState(false);

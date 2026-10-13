@@ -1,6 +1,7 @@
 import { readEntitlement, type EntitlementState } from '@/services/entitlement';
 import { getMonthlyPackage, isRevenueCatConfigured as isRevenueCatReady } from '@/services/revenueCat';
 import Purchases from 'react-native-purchases';
+import { PURCHASES_ENABLED } from '@/constants/featureFlags';
 
 /**
  * Buying SportMind Pro: the seam. Purchases now really flow through
@@ -39,7 +40,7 @@ import Purchases from 'react-native-purchases';
  * button that opens nothing never exists.
  */
 export function isPurchaseConfigured(): boolean {
-  return isRevenueCatReady();
+  return PURCHASES_ENABLED && isRevenueCatReady();
 }
 
 /** How a purchase attempt ended. `cancelled` is not a failure — the person

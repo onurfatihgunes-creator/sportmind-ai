@@ -1,3 +1,6 @@
+// The switch is off in the app; these tests cover the purchase system as it behaves once it is turned back on.
+jest.mock('@/constants/featureFlags', () => ({ PURCHASES_ENABLED: true }));
+
 import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 import {

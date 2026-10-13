@@ -62,7 +62,7 @@ export default function ExploreScreen() {
   const params = useLocalSearchParams<{ league?: string }>();
   const { matches } = useAppData();
   const { isWatched, toggle: toggleWatch } = useWatchlist();
-  const { status: entitlementStatus } = useEntitlement();
+  const { hasAccess } = useEntitlement();
   const { toastState, showToast } = useToast();
   const layout = useAdaptiveLayout();
   const { colors } = useAppTheme();
@@ -287,7 +287,7 @@ export default function ExploreScreen() {
               showsVerticalScrollIndicator={false}
               accessibilityLabel={t('matchAnalysis.title')}
             >
-              {entitlementStatus === 'expired' ? (
+              {!hasAccess ? (
                 // Exactly the boundary the /match/[id] route enforces — a wider window is
                 // not a way around the Pro gate.
                 <NotFoundState

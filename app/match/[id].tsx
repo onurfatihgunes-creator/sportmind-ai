@@ -24,7 +24,7 @@ export default function MatchAnalysisScreen() {
   const { matches, isLive } = useAppData();
   const { isWatched, toggle } = useWatchlist();
   const { toastState, showToast } = useToast();
-  const { status: entitlementStatus } = useEntitlement();
+  const { hasAccess } = useEntitlement();
   const layout = useAdaptiveLayout();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -106,7 +106,7 @@ export default function MatchAnalysisScreen() {
             onPressCta={() => router.back()}
           />
         )
-      ) : entitlementStatus === 'expired' ? (
+      ) : !hasAccess ? (
         // The gated "Pro deneyimi" boundary: SportMind's own core value is this AI
         // analysis, the same product boundary Stylist gates its one protected action
         // at. 'loading' deliberately falls through to the real content below rather

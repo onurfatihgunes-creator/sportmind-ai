@@ -1,3 +1,6 @@
+// The switch is off in the app; these tests cover the purchase system as it behaves once it is turned back on.
+jest.mock('@/constants/featureFlags', () => ({ PURCHASES_ENABLED: true }));
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { __resetInMemoryCacheForTests as resetClientCache } from './onuraiClient';
 import { LEGACY_TRIAL_STARTED_AT_KEY, __resetInMemoryCacheForTests as resetMigrationCache } from './legacyTrialMigration';

@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, ClockCountdownIcon, SparkleIcon, XIcon } from 'phosphor-react-native';
 import { fonts, radius, spacing, type ThemeColors } from '@/constants/theme';
 import { railInsetStyle, singleColumnStyle, useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useEntitlement } from '@/contexts/EntitlementContext';
+import { PURCHASES_ENABLED } from '@/constants/featureFlags';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { completePurchase, isPurchaseConfigured, restorePurchases, startPurchase } from '@/services/purchase';
 import Toast, { useToast } from '@/components/Toast';
@@ -39,7 +40,17 @@ import Toast, { useToast } from '@/components/Toast';
  */
 type Stage = 'idle' | 'purchasing' | 'refreshing' | 'confirmed';
 
-export default function PremiumScreen() {
+/**
+ * The route entry. With purchases switched off a deep link / saved URL / stale navigation to
+ * /premium lands on Home instead of a paywall; the screen below (and every hook in it — purchase,
+ * restore, entitlement) is not even mounted. Switching the flag back on restores it untouched.
+ */
+export default function PremiumRoute() {
+  if (!PURCHASES_ENABLED) return <Redirect href="/(tabs)" />;
+  return <PremiumScreen />;
+}
+
+function PremiumScreen() {
   const layout = useAdaptiveLayout();
   const { t } = useTranslation();
   const { status, trialEndsAt, refresh } = useEntitlement();

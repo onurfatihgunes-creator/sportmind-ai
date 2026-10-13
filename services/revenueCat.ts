@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 import { ownerToken } from '@/services/onuraiClient';
+import { PURCHASES_ENABLED } from '@/constants/featureFlags';
 
 /**
  * RevenueCat — Android only, for Google Play Billing.
@@ -57,6 +58,9 @@ export const ENTITLEMENT_IDENTIFIER = 'sportmind_pro';
 /** True only once a real Android key is present AND this is Android — see
  * this file's own header for why both must hold. */
 export function isRevenueCatConfigured(): boolean {
+  // Purchases switched off (constants/featureFlags.ts): never configure the SDK, never open an
+  // offering, never read customer info — whatever key the build happens to carry.
+  if (!PURCHASES_ENABLED) return false;
   const key = androidApiKey();
   return Platform.OS === 'android' && Boolean(key && key.trim().length > 0);
 }
