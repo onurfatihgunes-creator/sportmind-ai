@@ -24,6 +24,8 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useEntitlement } from '@/contexts/EntitlementContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { APPEARANCE_STORAGE_KEY } from '@/constants/appearance';
+import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
 
 export default function ProfileScreen() {
   const layout = useAdaptiveLayout();
@@ -66,6 +68,11 @@ export default function ProfileScreen() {
             'sportmind_followed_team_ids',
             'sportmind-ai-language',
             'sportmind_notification_prefs',
+            // Appearance and the first-run flag too, so "Clear my data" really returns the app to a fresh
+            // install. The anonymous-session / legacy-trial keys are deliberately NOT touched: stored
+            // Pro/trial information is never reset (see constants/featureFlags.ts).
+            APPEARANCE_STORAGE_KEY,
+            HAS_SEEN_WELCOME_KEY,
           ]);
           if (Platform.OS === 'web') {
             window.location.reload();

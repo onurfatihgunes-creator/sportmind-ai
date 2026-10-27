@@ -166,7 +166,7 @@
     "exportData": "Verilerimi indir",
     "clearData": "Verilerimi sil",
     "clearDataTitle": "Verilerimi temizle",
-    "clearDataBody": "Bu işlem adını, dil tercihini ve kaydedilen maçlarını bu cihazdan siler. Geri alınamaz.",
+    "clearDataBody": "Bu işlem adını, dil ve görünüm tercihlerini ve kaydedilen maçlarını bu cihazdan siler. Geri alınamaz.",
     "clearDataConfirm": "Temizle",
     "restartNotice": "Tamamlandı. Değişiklikleri görmek için uygulamayı yeniden başlat.",
     "language": "Dil",
@@ -251,7 +251,7 @@
     "formL": "M",
     "upcomingMatches": "Yaklaşan maçlar",
     "noUpcoming": "SportMind'ın takip ettiği liglerde yaklaşan maç bulunamadı.",
-    "vsPrefix": "{{team}} deplasmanda/evinde",
+    "vsPrefix": "Rakip: {{team}}",
     "analysisPreparing": "Analiz hazırlanıyor.",
     "formLimited": "Bu takım için geçmiş maç verileri sınırlı.",
     "lastMatchOn": "Son kayıtlı maç: {{date}}"

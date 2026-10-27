@@ -166,7 +166,7 @@
     "exportData": "Export my data",
     "clearData": "Clear my data",
     "clearDataTitle": "Clear my data",
-    "clearDataBody": "This removes your name, language, and saved matches from this device. It can't be undone.",
+    "clearDataBody": "This removes your name, language, appearance and saved matches from this device. It can't be undone.",
     "clearDataConfirm": "Clear",
     "restartNotice": "Done. Restart the app to see the changes.",
     "language": "Language",

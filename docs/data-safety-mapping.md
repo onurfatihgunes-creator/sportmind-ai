@@ -72,8 +72,8 @@ RapidAPI Football, BSD) are called only by our GitHub Actions backend (`backend/
 | `sportmind_followed_team_ids` | Followed teams | Yes |
 | `sportmind-ai-language` | Language | Yes |
 | `sportmind_notification_prefs` | Toggle states (no push delivery exists) | Yes |
-| `sportmind_appearance_mode` | Light/Dark/System | No (uninstall) |
-| `sportmind_has_seen_welcome` | First-run flag | No (uninstall) |
+| `sportmind_appearance_mode` | Light/Dark/System | Yes |
+| `sportmind_has_seen_welcome` | First-run flag | Yes |
 | `sportmind.onurai.anonymous_session`, `sportmind_device_id`, `sportmind_local_trial_started_at`, `sportmind_legacy_trial_migration_v1` | Only present on devices that ran earlier test builds; not read or sent by this version | No (uninstall) |
 
 ## Account deletion requirement
