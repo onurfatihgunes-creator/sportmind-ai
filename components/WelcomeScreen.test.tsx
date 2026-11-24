@@ -5,7 +5,7 @@
  */
 import { ScrollView } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
-import WelcomeScreen from './WelcomeScreen';
+import WelcomeScreen, { welcomeHeroHeight } from './WelcomeScreen';
 
 jest.mock('react-native-reanimated', () => ({
   ...jest.requireActual<object>('react-native-reanimated/mock'),
@@ -53,6 +53,28 @@ test('the Get started button is not inside the scrolling content', () => {
 test('the hero and copy still scroll', () => {
   const r = render(() => {});
   expect(r.root.findAll((n) => isScrollView(n.type))).not.toHaveLength(0);
+});
+
+describe('welcomeHeroHeight (copy must not be cut off on short screens)', () => {
+  test('before the copy and footer are measured it keeps the normal height', () => {
+    expect(welcomeHeroHeight(700, 0, 0)).toBe(406);
+    expect(welcomeHeroHeight(700, 330, 0)).toBe(406);
+  });
+
+  test('a tall screen keeps the normal height when the copy fits under it', () => {
+    // 1000 * 0.58 = 580; copy 330 + footer 84 leaves 586, so nothing shrinks.
+    expect(welcomeHeroHeight(1000, 330, 84)).toBe(580);
+  });
+
+  test('a short screen shrinks the hero to the space the copy leaves', () => {
+    expect(welcomeHeroHeight(740, 330, 84)).toBe(326);
+    expect(welcomeHeroHeight(657, 330, 84)).toBe(280); // would be 243; clamped to the minimum
+  });
+
+  test('never below the compact minimum, and never above the normal height', () => {
+    expect(welcomeHeroHeight(500, 400, 84)).toBe(280);
+    expect(welcomeHeroHeight(1400, 100, 84)).toBe(812);
+  });
 });
 
 test('tapping Get started finishes once, even on a double tap', () => {

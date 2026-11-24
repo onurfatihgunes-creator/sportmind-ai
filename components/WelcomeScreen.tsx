@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,9 +17,29 @@ import Animated, {
 import OnboardingHero from '@/components/OnboardingHero';
 
 const DATA_POINTS = 1244;
-// The hero artwork is laid out for at least this height; shorter screens scroll rather than crush it.
+// The hero artwork is laid out for at least this height when there is room for it.
 const HERO_MIN_HEIGHT = 400;
 const HERO_SHARE = 0.58;
+// On a short screen the hero gives up height (down to this) so the title, body and the pinned
+// button all fit without the copy being cut off at the fold. Below this the page scrolls.
+const HERO_COMPACT_MIN_HEIGHT = 280;
+// Below this safe-area height (dp) the hero alone cannot make room: the title and body also
+// use slightly smaller type and tighter spacing. Decided from the window, not from the measured
+// copy, so the two cannot feed back into each other.
+const TIGHT_SAFE_HEIGHT = 780;
+
+/**
+ * Height of the hero block. Normally HERO_SHARE of the safe area (never under HERO_MIN_HEIGHT).
+ * Once the copy and footer have been measured and would not fit under that, the hero shrinks to
+ * the space that is left, but never below HERO_COMPACT_MIN_HEIGHT. Before they are measured
+ * (copyHeight/footerHeight 0) it returns the normal height, so the first frame is unchanged.
+ */
+export function welcomeHeroHeight(safeHeight: number, copyHeight: number, footerHeight: number): number {
+  const normal = Math.max(HERO_MIN_HEIGHT, Math.round(safeHeight * HERO_SHARE));
+  if (!copyHeight || !footerHeight) return normal;
+  const room = Math.floor(safeHeight - copyHeight - footerHeight);
+  return Math.min(normal, Math.max(HERO_COMPACT_MIN_HEIGHT, room));
+}
 
 // Exact palette from design_handoff_sportmind_onboarding/README.md — this
 // screen's own "Nocturne on light" hero treatment, kept local rather than
@@ -116,7 +136,11 @@ export default function WelcomeScreen({ onFinish }: { onFinish: () => void | Pro
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const dataPointsCount = DATA_POINTS.toLocaleString(i18n.language);
-  const heroHeight = Math.max(HERO_MIN_HEIGHT, Math.round((windowHeight - insets.top - insets.bottom) * HERO_SHARE));
+  const [copyHeight, setCopyHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(0);
+  const safeHeight = windowHeight - insets.top - insets.bottom;
+  const tight = safeHeight < TIGHT_SAFE_HEIGHT;
+  const heroHeight = welcomeHeroHeight(safeHeight, copyHeight, footerHeight);
 
   const finishing = useRef(false);
   const finish = () => {
@@ -177,16 +201,22 @@ export default function WelcomeScreen({ onFinish }: { onFinish: () => void | Pro
       {/* The copy block is capped and centred on a wide window — a 26pt-padded
           paragraph stretched across an unfolded display is unreadable, and there is
           nothing real to put beside it. */}
-      <View style={[styles.copy, singleColumnStyle(layout)]}>
+      <View
+        style={[styles.copy, tight && styles.copyTight, singleColumnStyle(layout)]}
+        onLayout={(e) => setCopyHeight(Math.round(e.nativeEvent.layout.height))}
+      >
         <View>
           <Text style={styles.badge}>{t('welcome.kicker').toUpperCase()}</Text>
         </View>
-        <Text style={styles.title}>{t('welcome.title')}</Text>
-        <Text style={styles.body}>{t('welcome.body')}</Text>
+        <Text style={[styles.title, tight && styles.titleTight]}>{t('welcome.title')}</Text>
+        <Text style={[styles.body, tight && styles.bodyTight]}>{t('welcome.body')}</Text>
       </View>
       </ScrollView>
 
-      <View style={[styles.footer, singleColumnStyle(layout)]}>
+      <View
+        style={[styles.footer, singleColumnStyle(layout)]}
+        onLayout={(e) => setFooterHeight(Math.round(e.nativeEvent.layout.height))}
+      >
         <Pressable
           style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
           onPress={finish}
@@ -207,6 +237,7 @@ const styles = StyleSheet.create({
   // HERO_MIN_HEIGHT) — see WelcomeScreen.
   heroBlock: { position: 'relative' },
   copy: { paddingHorizontal: 26, paddingTop: 20, paddingBottom: 16, gap: 16 },
+  copyTight: { paddingTop: 14, paddingBottom: 12, gap: 12 },
   // The CTA is outside the scroll view, so it is always on screen; the page colour keeps copy
   // that scrolls underneath it from showing through.
   footer: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 12, backgroundColor: hero.page },
@@ -273,7 +304,9 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   title: { fontSize: 36, lineHeight: 39.6, letterSpacing: -1.08, fontWeight: '800', color: hero.ink },
+  titleTight: { fontSize: 31, lineHeight: 34, letterSpacing: -0.93 },
   body: { fontSize: 16, lineHeight: 24, color: hero.body, maxWidth: 300 },
+  bodyTight: { fontSize: 15, lineHeight: 22 },
   primaryButton: {
     width: '100%',
     paddingVertical: 18,
