@@ -27,9 +27,9 @@ Status key: ✅ done and verified · 🟡 drafted, needs approval · ⛔ blocked
 | Target API 36 | ✅ | New apps/updates must target API 36 from 31 Aug 2026; the app does. |
 | 16 KB page-size alignment | ✅ | Checked on the RC APK: `zipalign -P 16` passes; 20 arm64-v8a `.so` files with PT_LOAD alignment ≥ 16 KB. **Re-check on the final AAB.** |
 | Permissions | ✅ | `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` only; BILLING, storage and overlay permissions blocked in `app.json` (`docs/release-permissions.md`). **Re-run `aapt2 dump permissions` on the final artefact.** |
-| Upload format | 🟡 | Play requires an **AAB**. EAS profile `production` builds an app-bundle with `autoIncrement: true`. |
+| Upload format | ✅ | AAB built: `.build-artifacts/sportmind-ai-prod-85b6756-vc10.aab` (60 MB, git-ignored). Package, versionName 1.0.0, target SDK 36, permissions (INTERNET, VIBRATE, ACCESS_NETWORK_STATE only) and 16 KB alignment (40 arm64-v8a/x86_64 libs in the AAB, `zipalign -P 16` on the APK) re-checked on the final artefacts. |
 | `distribution: "internal"` on the `production` profile | 🟡 | EAS marks the build as internal distribution; it does not stop the AAB being uploaded to Play. Optional tidy-up: remove it or leave it — the owner decides; changing `eas.json` needs a commit. |
-| versionCode | ⛔ | `appVersionSource: remote`. The last remote versionCode is 9 (RC APK), so the first production AAB should be **10**. Confirm in the EAS dashboard before building. Play rejects a versionCode it has already seen. |
+| versionCode | ✅ | `appVersionSource: remote`. Production AAB built as **versionCode 10** (EAS build `79dad4fb-6053-4e6c-9054-a4da88adfcb3`, commit `85b6756`); the smoke-test APK (`0961e420-24fd-43de-b886-8cbf4767ec7e`) has the same code. The next production build will be 11. Play rejects a versionCode it has already seen. |
 | App signing | ⛔ OWNER | Use **Play App Signing** (default). EAS holds the upload keystore ("Build Credentials sKxcGA1wIc", remote managed). Keep that credential: download or note it in EAS only if the owner chooses to — **no backup is made by the assistant**. Losing the upload key is recoverable through Play support, but slow. |
 | Build approval | ⛔ OWNER | No AAB or APK is built without an explicit request for that specific build. |
 
@@ -40,7 +40,7 @@ Status key: ✅ done and verified · 🟡 drafted, needs approval · ⛔ blocked
 | App name, short and full description, release notes — EN / TR / DE / AR | 🟡 | `docs/store-listing.md` (lengths checked: short ≤ 76/80, full ≤ 1891/4000) |
 | App icon 512×512 | ✅ | `docs/store-assets/icon-512.png` |
 | Feature graphic 1024×500 (EN, TR) | 🟡 draft | `docs/store-assets/feature-graphic-{en,tr}.png` — **OWNER must approve** |
-| Phone screenshots (2–8 per language) | ⛔ | Must be retaken from the final build: the current set was taken from the old RC and shows the German casing bug and the missing Arabic active-tab pill (both fixed in source, not yet in any build). Target 1080×1920. |
+| Phone screenshots (2–8 per language) | 🟡 | Retaken from the final versionCode-10 APK: 6 per language × EN/TR/DE/AR, all 1080×1920, in `docs/store-assets/screenshots/{en,tr,de,ar}/`. German casing and the Arabic active-tab pill are verified fixed on the final build. Owner to look through them. |
 | Category | 🟡 | **Sports** |
 | Contact email | ⛔ OWNER | Shown publicly. The policy and support page currently use `onurfatihgunes@gmail.com`. Use one address everywhere. |
 | Contact website | 🟡 | `https://onurfatihgunes-creator.github.io/sportmind-ai/support.html` |
