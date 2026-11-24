@@ -1,4 +1,4 @@
-import { kickoffParts, kickoffText } from './kickoffLabel';
+import { factorInSentence, kickoffParts, kickoffText } from './kickoffLabel';
 
 const dict: Record<string, Record<string, string>> = {
   en: { 'explore.today': 'Today', 'explore.tomorrow': 'Tomorrow' },
@@ -33,5 +33,17 @@ describe('kickoffParts', () => {
 
   it('falls back to the stored string for demo data without an instant', () => {
     expect(kickoffParts({ kickoff: 'Saturday, 18:30' }, tFor('tr'), 'tr', NOW)).toEqual({ day: 'Saturday', time: '18:30' });
+  });
+});
+
+describe('factorInSentence', () => {
+  it('keeps German nouns capitalised and lower-cases the other languages', () => {
+    expect(factorInSentence('Erwartete Tore', 'de')).toBe('Erwartete Tore');
+    expect(factorInSentence('Expected goals', 'en')).toBe('expected goals');
+    expect(factorInSentence('Aktuelle Form', 'de')).toBe('Aktuelle Form');
+  });
+  it('uses Turkish casing rules', () => {
+    expect(factorInSentence('Işık', 'tr')).toBe('ışık');
+    expect(factorInSentence('İlk', 'tr')).toBe('ilk');
   });
 });

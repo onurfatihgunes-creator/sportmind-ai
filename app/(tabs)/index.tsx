@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { kickoffText } from '@/data/kickoffLabel';
+import { factorInSentence, kickoffText } from '@/data/kickoffLabel';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -179,7 +179,7 @@ export default function HomeScreen() {
                       <Text style={styles.heroReasonText}>
                         {t('home.heroReason', {
                           team: topFactor.home >= topFactor.away ? match.home.name : match.away.name,
-                          factor: t(`factors.${topFactor.key}`).toLowerCase(),
+                          factor: factorInSentence(t(`factors.${topFactor.key}`), i18n.language),
                         })}
                       </Text>
                       <ArrowRightIcon size={14} weight="bold" color={colors.primary} />
@@ -225,7 +225,7 @@ export default function HomeScreen() {
                       <Text style={styles.standoutSubtitle} numberOfLines={2}>
                         {t('home.standoutExplanation', {
                           team: standout.factor.home >= standout.factor.away ? standout.match.home.name : standout.match.away.name,
-                          factor: t(`factors.${standout.factor.key}`).toLowerCase(),
+                          factor: factorInSentence(t(`factors.${standout.factor.key}`), i18n.language),
                         })}
                       </Text>
                     </View>

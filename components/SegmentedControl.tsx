@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, StyleProp, Text, View, ViewSt
 import Animated, { useAnimatedStyle, useReducedMotion, withTiming } from 'react-native-reanimated';
 import { fonts, radius, type ThemeColors } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { isRTLLayout } from '@/hooks/useAdaptiveLayout';
 
 export type SegmentOption = {
   key: string;
@@ -31,6 +32,10 @@ export default function SegmentedControl({ options, value, onChange, height = 38
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [layouts, setLayouts] = useState<Record<string, { x: number; width: number }>>({});
   const reduceMotion = useReducedMotion();
+  // RTL: the sliding pill is positioned with a physical translateX from a start-anchored box, and in Arabic it ended up
+  // off the screen's edge (no visible active tab). There the active option paints its own pill instead: same look, no slide,
+  // and nothing that depends on which edge `left` means.
+  const rtl = isRTLLayout();
 
   // Forces every option to remount (and re-report a fresh onLayout) whenever the SET or
   // ORDER of keys changes — e.g. Explore's league list reordering once live Supabase data
@@ -59,16 +64,18 @@ export default function SegmentedControl({ options, value, onChange, height = 38
 
   return (
     <View style={[styles.track, { height, borderRadius: height * 0.32 }, style, fill && styles.trackFill]}>
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.pill, { top: 4, bottom: 4, borderRadius: height * 0.24 }, animatedPill]}
-      />
+      {!rtl && (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.pill, { top: 4, bottom: 4, borderRadius: height * 0.24 }, animatedPill]}
+        />
+      )}
       {options.map((opt) => (
         <Pressable
           key={`${layoutEpoch}:${opt.key}`}
           onLayout={handleLayout(opt.key)}
           onPress={() => onChange(opt.key)}
-          style={[styles.option, fill && styles.optionFill]}
+          style={[styles.option, fill && styles.optionFill, rtl && value === opt.key && [styles.optionActiveRtl, { borderRadius: height * 0.24 }]]}
           hitSlop={4}
         >
           {opt.icon}
@@ -100,6 +107,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     backgroundColor: colors.surface,
     borderRadius: radius.sm,
+    shadowColor: '#292b31',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  optionActiveRtl: {
+    backgroundColor: colors.surface,
     shadowColor: '#292b31',
     shadowOpacity: 0.1,
     shadowRadius: 3,

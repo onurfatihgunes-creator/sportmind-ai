@@ -37,3 +37,13 @@ export function kickoffText(match: Pick<Match, 'kickoff' | 'kickoffAt'>, t: T, l
   const { day, time } = kickoffParts(match, t, language, now);
   return time ? `${day}, ${time}` : day;
 }
+
+/**
+ * A factor's display name ("Expected goals") for the middle of a sentence ("... the most decisive factor is
+ * expected goals."). Lower-cased in the languages that do it; German keeps its capital because every German noun
+ * does ("erwartete tore" was wrong), and Turkish uses its own i / ı casing rules.
+ */
+export function factorInSentence(label: string, language: string): string {
+  if (language.startsWith('de')) return label;
+  return label.toLocaleLowerCase(language.startsWith('ar') ? 'ar' : language);
+}
