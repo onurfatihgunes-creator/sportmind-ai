@@ -16,9 +16,11 @@ Status key: ✅ done and verified · 🟡 drafted, needs approval · ⛔ blocked
 |---|---|---|
 | 0.1 | **Account type — OWNER** | Personal developer accounts created after 13 Nov 2023 must run a **closed test with at least 12 opted-in testers for 14 continuous days** before they can apply for production access. Organisation accounts are reportedly exempt. Check *Play Console → Account details* for the account type. If it is personal, the launch date is at least ~14 days after the closed test starts. Rules change; re-read the current Play Help page before relying on this. |
 | 0.2 | **Physical-device test (Galaxy A13) — OWNER** | Pending since Phase 3. Automated and emulator checks do not replace it. |
-| 0.3 | **Privacy policy must be live before the Data safety form** | The updated `docs/privacy-policy.html` is committed locally but not pushed; the live page still has the September text. Pushing `docs/` to `main` publishes it. Needs explicit owner approval. |
+| 0.3 | **Privacy policy must be live before the Data safety form** | The October 2026 text is live and says there are no ads. The version that describes Google AdMob (November 2026) must be pushed **before** an ads build is released or the Data safety form is submitted. Pushing `docs/` to `main` publishes it. Needs explicit owner approval. |
 | 0.4 | **Supabase IP/log retention decision — OWNER** | Needed to answer one Data safety question honestly (section 5). |
 | 0.5 | **Developer verification** | Play may ask the owner for identity/address verification. Cannot be done from the repo. |
+| 0.6 | **AdMob account and real ad units — OWNER** | The build uses Google's test App ID and test ad units until the owner creates the AdMob app and three ad units. A build with test ads must **never** be uploaded. Full list in `docs/admob-setup.md`. |
+| 0.7 | **Betting/gambling ads — OWNER** | The listing says "not betting". Block the *Gambling & games* sensitive category (and betting advertisers) in AdMob → Blocking controls before release. |
 
 ## 1. Build and signing
 
@@ -26,7 +28,7 @@ Status key: ✅ done and verified · 🟡 drafted, needs approval · ⛔ blocked
 |---|---|---|
 | Target API 36 | ✅ | New apps/updates must target API 36 from 31 Aug 2026; the app does. |
 | 16 KB page-size alignment | ✅ | Checked on the RC APK: `zipalign -P 16` passes; 20 arm64-v8a `.so` files with PT_LOAD alignment ≥ 16 KB. **Re-check on the final AAB.** |
-| Permissions | ✅ | `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` only; BILLING, storage and overlay permissions blocked in `app.json` (`docs/release-permissions.md`). **Re-run `aapt2 dump permissions` on the final artefact.** |
+| Permissions | 🟡 | Before ads: `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` only. The ads build adds `AD_ID` (and the SDK's `WAKE_LOCK` / ad-services permissions); BILLING, storage and overlay stay blocked in `app.json` (`docs/release-permissions.md`). **Re-run `aapt2 dump permissions` on the final artefact.** |
 | Upload format | ✅ | AAB built: `.build-artifacts/sportmind-ai-prod-85b6756-vc10.aab` (60 MB, git-ignored). Package, versionName 1.0.0, target SDK 36, permissions (INTERNET, VIBRATE, ACCESS_NETWORK_STATE only) and 16 KB alignment (40 arm64-v8a/x86_64 libs in the AAB, `zipalign -P 16` on the APK) re-checked on the final artefacts. |
 | `distribution: "internal"` on the `production` profile | 🟡 | EAS marks the build as internal distribution; it does not stop the AAB being uploaded to Play. Optional tidy-up: remove it or leave it — the owner decides; changing `eas.json` needs a commit. |
 | versionCode | ✅ | `appVersionSource: remote`. Production AAB built as **versionCode 10** (EAS build `79dad4fb-6053-4e6c-9054-a4da88adfcb3`, commit `85b6756`); the smoke-test APK (`0961e420-24fd-43de-b886-8cbf4767ec7e`) has the same code. The next production build will be 11. Play rejects a versionCode it has already seen. |
@@ -52,13 +54,13 @@ Status key: ✅ done and verified · 🟡 drafted, needs approval · ⛔ blocked
 | Declaration | Proposed answer | Basis |
 |---|---|---|
 | **App access** | All functionality available without sign-in or special access | No accounts in the app. |
-| **Ads** | No, the app contains no ads | No ad SDK in `package.json`. |
+| **Ads** | **Yes, the app contains ads** | Google AdMob (`react-native-google-mobile-ads`): banners on Home and Match Analysis, an interstitial after closing a Match Analysis. Not optional: the *Contains ads* label must match. |
 | **Content rating (IARC)** | See 3.1 | |
 | **Target audience and content** | **Not designed for children.** Choose 13+ or 18+ only; recommended **18+** (see 3.2) | Avoids the Families policy; the content is close to gambling-adjacent subject matter even though the app is not gambling. **OWNER decides.** |
 | **News apps** | Not a news app | |
 | **COVID-19 / government / health / financial features** | No / No / No / No | None of these exist in the app. |
 | **Data safety** | See `docs/data-safety-mapping.md` and section 5 | |
-| **Advertising ID** | App does **not** use the advertising ID | No analytics/ads SDK. **VERIFY** the merged manifest of the AAB has no `AD_ID` permission (it is not in the RC's permission list). |
+| **Advertising ID** | **Yes**, the app uses the advertising ID, for advertising | The Google Mobile Ads SDK adds `com.google.android.gms.permission.AD_ID`. **VERIFY** it appears in the merged manifest of the final AAB and that the console declaration matches it. |
 | **Gambling** | Not a gambling app; no real-money gambling, no odds, no wagering | The listing says so in plain words. |
 | **Account deletion** | Not applicable (no accounts) | `docs/data-safety-mapping.md` |
 
@@ -71,7 +73,8 @@ The questionnaire is answered by a person in the console; this is only the draft
 
 ### 3.2 Target audience
 Recommended: **18+**. If the owner prefers 13+, no further declarations are needed beyond the above, but
-the Families policy is avoided only if no age group under 13 is selected.
+the Families policy is avoided only if no age group under 13 is selected. The app now shows ads, so it
+must never be listed as child-directed (AdMob would then also need child-directed treatment).
 
 ## 4. Closed testing → production (only if the account is personal)
 

@@ -1,8 +1,9 @@
 # Store listing copy — SportMind AI
 
 Draft text for Google Play Console (and App Store Connect later). Edit before submitting. Written
-against the app as it ships (purchases hidden and disabled): every claim below is something the app
-does today. **Nothing here is submitted automatically** — a person pastes it into Play Console.
+against the app as it ships (purchases hidden and disabled, **Google AdMob ads on**): every claim below
+is something the app does today. The listing no longer says "no ads" or "no tracking"; Play adds the
+"Contains ads" label itself once the *Ads* declaration says Yes. **Nothing here is submitted automatically** — a person pastes it into Play Console.
 
 Languages: English (default), Türkçe, Deutsch, العربية — the same four the app ships. Add them in Play
 Console under *Store presence → Main store listing → Manage translations*. Arabic is right-to-left;
@@ -53,7 +54,7 @@ WHAT YOU GET
 HONEST ABOUT ITS LIMITS
 When a team has too little recent data, the app says so instead of guessing, and matches without enough data are not recommended on the home screen. You can always see which factors drove an estimate. Outcomes remain unpredictable.
 
-SportMind AI is free to use. It has no accounts, no ads and no tracking.
+SportMind AI is free to use and supported by ads (Google AdMob). It has no accounts, and everything you save stays on your device.
 
 ### Release notes (what's new, max 500)
 First release. Match analysis for football and the NBA with win probabilities, reasons, recent form, team pages and team comparison — in English, Turkish, German and Arabic.
@@ -82,7 +83,7 @@ NELER SUNAR
 SINIRLARI KONUSUNDA DÜRÜST
 Bir takımın yakın dönem verisi yetersizse uygulama tahmin yürütmek yerine bunu söyler; yeterli verisi olmayan maçlar ana sayfada önerilmez. Bir tahmini hangi etkenlerin belirlediğini her zaman görebilirsiniz. Sonuçlar öngörülemez kalır.
 
-SportMind AI ücretsizdir. Hesap, reklam ve takip yoktur.
+SportMind AI ücretsizdir ve reklamlarla desteklenir (Google AdMob). Hesap gerektirmez; kaydettiğiniz her şey cihazınızda kalır.
 
 ### Sürüm notları
 İlk sürüm. Futbol ve NBA için kazanma olasılıkları, nedenler, son form, takım sayfaları ve takım karşılaştırması içeren maç analizi — İngilizce, Türkçe, Almanca ve Arapça.
@@ -111,7 +112,7 @@ DAS BIETET DIE APP
 EHRLICH ÜBER DIE GRENZEN
 Liegen zu einem Team zu wenige aktuelle Daten vor, sagt die App das, statt zu raten, und Spiele ohne ausreichende Datenbasis werden auf dem Startbildschirm nicht empfohlen. Sie sehen immer, welche Faktoren eine Einschätzung bestimmt haben. Ergebnisse bleiben unvorhersehbar.
 
-SportMind AI ist kostenlos. Es gibt keine Konten, keine Werbung und kein Tracking.
+SportMind AI ist kostenlos und wird durch Werbung (Google AdMob) finanziert. Es gibt keine Konten; alles, was Sie speichern, bleibt auf Ihrem Gerät.
 
 ### Versionshinweise
 Erste Version. Spielanalyse für Fußball und NBA mit Siegwahrscheinlichkeiten, Gründen, aktueller Form, Teamseiten und Teamvergleich – auf Englisch, Türkisch, Deutsch und Arabisch.
@@ -140,7 +141,7 @@ Erste Version. Spielanalyse für Fußball und NBA mit Siegwahrscheinlichkeiten, 
 صريح بشأن حدوده
 عندما تكون بيانات الفريق الحديثة قليلة جدًا، يوضح التطبيق ذلك بدلًا من التخمين، ولا يوصي بمباريات لا تتوفر لها بيانات كافية في الصفحة الرئيسية. يمكنك دائمًا معرفة العوامل التي حدّدت التقدير. تبقى النتائج غير متوقعة.
 
-SportMind AI مجاني الاستخدام. لا حسابات ولا إعلانات ولا تتبّع.
+SportMind AI مجاني الاستخدام ويعتمد على الإعلانات (Google AdMob). لا حسابات، وكل ما تحفظه يبقى على جهازك.
 
 ### ملاحظات الإصدار
 الإصدار الأول. تحليل مباريات كرة القدم وNBA مع احتمالات الفوز والأسباب والأداء الأخير وصفحات الفرق ومقارنة الفرق — بالإنجليزية والتركية والألمانية والعربية.

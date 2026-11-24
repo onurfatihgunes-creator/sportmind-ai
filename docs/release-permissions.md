@@ -9,6 +9,8 @@ with `aapt2 dump permissions <apk>` (not by reading config).
 | `android.permission.INTERNET` | Reads match data from Supabase. |
 | `android.permission.ACCESS_NETWORK_STATE` | Added by React Native networking. |
 | `android.permission.VIBRATE` | Added by React Native (`Vibration`/haptics APIs). |
+| `com.google.android.gms.permission.AD_ID` | Google Mobile Ads SDK (AdMob). Lets the SDK read the Android advertising ID. Declared in Play Console as *Advertising ID: Yes*. |
+| `android.permission.WAKE_LOCK` and the SDK's ad-services permissions (`ACCESS_ADSERVICES_*`) | Merged in by the Google Mobile Ads SDK / `react-native-google-mobile-ads`. **VERIFY** the exact list with `aapt2 dump permissions` on the final build and update this table; none of them is requested from the user at runtime. |
 
 ## Blocked on purpose (removed from the merged manifest)
 | Permission | Origin | Why it is not needed |

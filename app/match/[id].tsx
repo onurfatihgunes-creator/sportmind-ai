@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { BookmarkSimpleIcon, SoccerBallIcon, SparkleIcon } from 'phosphor-react-native';
 import { fonts, spacing, type ThemeColors } from '@/constants/theme';
@@ -17,6 +17,8 @@ import MatchAnalysisContent, { type MatchAnalysisTab } from '@/components/MatchA
 import NotFoundState from '@/components/NotFoundState';
 import Toast, { useToast } from '@/components/Toast';
 import BackButton from '@/components/BackButton';
+import AdBanner from '@/components/AdBanner';
+import { onMatchAnalysisClosed } from '@/services/ads/adsRuntime';
 
 export default function MatchAnalysisScreen() {
   const { t } = useTranslation();
@@ -71,6 +73,20 @@ export default function MatchAnalysisScreen() {
   );
 
   const watched = match ? isWatched(match.id) : false;
+
+  // A full-screen ad may follow only when the person leaves a real analysis (back / close), the
+  // natural pause — never while reading, never on opening. The pacing rules live in
+  // services/ads/interstitialPolicy.ts; this only reports "an analysis was closed".
+  const navigation = useNavigation();
+  const analysisShown = useRef(false);
+  analysisShown.current = !!match && hasAccess;
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', () => {
+        if (analysisShown.current) onMatchAnalysisClosed();
+      }),
+    [navigation],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -130,6 +146,7 @@ export default function MatchAnalysisScreen() {
             // same question about its own, much narrower width and gets 'single'.
             columns={panesForWidth(layout.contentWidth)}
           />
+          <AdBanner placement="matchBanner" />
         </ScrollView>
       )}
     </SafeAreaView>

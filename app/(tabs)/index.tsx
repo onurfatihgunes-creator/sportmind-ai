@@ -27,6 +27,7 @@ import SegmentedControl from '@/components/SegmentedControl';
 import TeamBadgePair from '@/components/TeamBadgePair';
 import StackedDistributionBar from '@/components/StackedDistributionBar';
 import SplitPane from '@/components/SplitPane';
+import AdBanner from '@/components/AdBanner';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -331,6 +332,7 @@ export default function HomeScreen() {
             </View>
           }
         />
+        <AdBanner placement="homeBanner" />
       </ScrollView>
       </View>
     </SafeAreaView>

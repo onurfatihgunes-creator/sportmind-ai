@@ -14,6 +14,7 @@ import {
   CircleHalfIcon,
   CpuIcon,
   GlobeIcon,
+  MegaphoneIcon,
   PencilSimpleIcon,
   ShieldCheckIcon,
   SparkleIcon,
@@ -26,10 +27,12 @@ import { useEntitlement } from '@/contexts/EntitlementContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { APPEARANCE_STORAGE_KEY } from '@/constants/appearance';
 import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
+import { showAdPrivacyOptions, usePrivacyOptionsRequired } from '@/services/ads/adsRuntime';
 
 export default function ProfileScreen() {
   const layout = useAdaptiveLayout();
   const { t, i18n } = useTranslation();
+  const privacyOptionsRequired = usePrivacyOptionsRequired();
   const { name, setName } = useProfile();
   const { matchIds } = useWatchlist();
   const { status: entitlementStatus, purchasesVisible } = useEntitlement();
@@ -91,6 +94,10 @@ export default function ProfileScreen() {
     { Icon: BellIcon, label: t('profile.notifications'), onPress: () => router.push('/notifications') },
     { Icon: CpuIcon, label: t('profile.howModelWorks'), onPress: () => router.push('/legal/methodology') },
     { Icon: ShieldCheckIcon, label: t('profile.legalAndTransparency'), onPress: () => router.push('/legal') },
+    // Only where the law requires a way to revisit the ad consent choice (EEA/UK); never otherwise.
+    ...(privacyOptionsRequired
+      ? [{ Icon: MegaphoneIcon, label: t('profile.adPrivacyOptions'), onPress: () => void showAdPrivacyOptions() }]
+      : []),
   ];
 
   return (

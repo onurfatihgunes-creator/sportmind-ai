@@ -18,6 +18,7 @@ import { fonts, spacing } from '@/constants/theme';
 import { initI18n } from '@/i18n';
 import { isMissingProductionConfig } from '@/lib/supabase';
 import { ensureRevenueCatConfigured } from '@/services/revenueCat';
+import { startAds } from '@/services/ads/adsRuntime';
 import { DataProvider } from '@/contexts/DataContext';
 import DataGate from '@/components/DataGate';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
@@ -72,6 +73,13 @@ function RootLayoutInner() {
   useEffect(() => {
     if (fontError) throw fontError;
   }, [fontError]);
+
+  // Ads start only once the welcome screen has been seen, so the consent form (EEA/UK) is never
+  // drawn over it, and never in the configuration-error state. No-op on web and when ADS_ENABLED
+  // is false. See services/ads/adsRuntime.ts.
+  useEffect(() => {
+    if (hasSeenWelcome === true && !isMissingProductionConfig) void startAds();
+  }, [hasSeenWelcome]);
 
   // themeLoaded: the stored appearance has been read, so the first paint is already in the
   // right colours (no default-then-switch flash).
