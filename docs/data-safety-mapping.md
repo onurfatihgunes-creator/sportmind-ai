@@ -6,7 +6,7 @@ by a person in Play Console, and the live policy page is published separately.
 
 Package `com.onurfatihgunes.sportmindai`. Audited against commit `23d9e6c` (October 2026) with
 `PURCHASES_ENABLED = false`, then **updated in November 2026 for Google AdMob** (`ADS_ENABLED = true`,
-`react-native-google-mobile-ads` 16.5.0): the earlier "no ads, nothing collected" answers no longer
+`react-native-google-mobile-ads` 16.0.0): the earlier "no ads, nothing collected" answers no longer
 hold, and the rows below say what changed. Each row names the code or test that backs it and says how it can be
 re-checked. Play's category names change; treat the "Play data type" column as the closest current
 match and re-read it against the live form.

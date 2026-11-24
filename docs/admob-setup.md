@@ -1,6 +1,6 @@
 # Google AdMob — setup and release checklist
 
-SportMind AI shows ads through Google AdMob (`react-native-google-mobile-ads` 16.5.0, Google Mobile
+SportMind AI shows ads through Google AdMob (`react-native-google-mobile-ads` 16.0.0, Google Mobile
 Ads SDK + UMP consent SDK). The code is finished and uses **Google's test IDs** until the owner supplies
 real ones. Nothing here is done in AdMob or Play Console automatically.
 
@@ -61,6 +61,9 @@ in a temporary local change; do not commit it.
 ## Notes
 - Google marks the legacy Google Mobile Ads SDK as being in maintenance mode in favour of the GMA
   Next-Gen SDK. `react-native-google-mobile-ads` 17.x moves forward but requires React Native ≥ 0.86;
-  this project is on 0.81 / Expo SDK 54, so 16.5.0 is the newest compatible release. Revisit when the
+  this project is on 0.81 / Expo SDK 54. Releases 16.1.0 and later pull `play-services-ads` 25.x, whose
+  classes carry Kotlin 2.3 metadata, and the Kotlin 2.1.20 of RN 0.81 cannot compile against them (EAS
+  build `7af177cd` failed with "Module was compiled with an incompatible version of Kotlin"). 16.0.0 pins
+  `play-services-ads` 24.6.0 and is therefore the version to stay on. Revisit when the
   project upgrades Expo.
 - AdMob adds data collection that the app did not have before. See `docs/data-safety-mapping.md`.
