@@ -10,7 +10,8 @@ with `aapt2 dump permissions <apk>` (not by reading config).
 | `android.permission.ACCESS_NETWORK_STATE` | Added by React Native networking. |
 | `android.permission.VIBRATE` | Added by React Native (`Vibration`/haptics APIs). |
 | `com.google.android.gms.permission.AD_ID` | Google Mobile Ads SDK (AdMob). Lets the SDK read the Android advertising ID. Declared in Play Console as *Advertising ID: Yes*. |
-| `android.permission.WAKE_LOCK` and the SDK's ad-services permissions (`ACCESS_ADSERVICES_*`) | Merged in by the Google Mobile Ads SDK / `react-native-google-mobile-ads`. **VERIFY** the exact list with `aapt2 dump permissions` on the final build and update this table; none of them is requested from the user at runtime. |
+| `android.permission.ACCESS_ADSERVICES_AD_ID`, `ACCESS_ADSERVICES_ATTRIBUTION`, `ACCESS_ADSERVICES_TOPICS` | Google Mobile Ads SDK (Android Privacy Sandbox ad services). Verified with `aapt2 dump permissions` on build versionCode 13. |
+| `android.permission.WAKE_LOCK`, `android.permission.FOREGROUND_SERVICE` | Merged in by the ads SDK's dependencies (background work). None of the permissions here is requested from the user at runtime. **VERIFY** in Play Console's *Foreground service permissions* declaration whether the generic `FOREGROUND_SERVICE` needs an answer (the app starts no foreground service of its own); if it does and the answer is "none", the permission can be blocked in `app.json` instead. |
 
 ## Blocked on purpose (removed from the merged manifest)
 | Permission | Origin | Why it is not needed |

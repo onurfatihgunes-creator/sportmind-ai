@@ -22,13 +22,17 @@ PG in code. `ADS_ENABLED` in `constants/ads.ts` switches every entrance off with
    first upload so Google can verify ownership.
 2. **Create three ad units** in AdMob: *Banner* (Home), *Banner* (Match Analysis), *Interstitial*.
 3. **App ID:** put the real Android App ID (`ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX`) in `app.json` →
-   `plugins` → `react-native-google-mobile-ads` → `androidAppId` (today Google's sample ID
-   `ca-app-pub-3940256099942544~3347511713`). It is a manifest value, so it needs a new build.
+   `plugins` → `react-native-google-mobile-ads` → `androidAppId`. **Done (Nov 2026):**
+   `ca-app-pub-7375166678641193~3124915148`. It is a manifest value, so it needs a new build.
+   (`iosAppId` is still Google's sample ID; replace it before any iOS release.)
 4. **Ad unit IDs:** set these EAS environment variables for the *production* environment (they are
    public identifiers, not secrets):
    - `EXPO_PUBLIC_ADMOB_BANNER_HOME`
    - `EXPO_PUBLIC_ADMOB_BANNER_MATCH`
    - `EXPO_PUBLIC_ADMOB_INTERSTITIAL`
+
+   **Done (Nov 2026)** in EAS *production*: Home `…/4905861135`, Match `…/1811833477`,
+   Interstitial `…/5559506795` (publisher `ca-app-pub-7375166678641193`).
 
    Each looks like `ca-app-pub-1234567890123456/1234567890`. If one is missing or malformed the app
    falls back to Google's **test** unit for that placement (`usingTestAds()` in `constants/ads.ts`).
