@@ -1,6 +1,15 @@
 import { MATERIALITY_THRESHOLD_PCT } from './config.js';
 import { supabase } from './supabaseClient.js';
-import { staleCutoffIso } from './evaluation.js';
+import {
+  POISSON_LOOKBACK_DAYS,
+  POISSON_MIN_TRAINING_MATCHES,
+  defenceRating,
+  expectedGoals as modelExpectedGoals,
+  fitPoisson,
+  outcomeProbabilities,
+  type PoissonFit,
+  type TrainingMatch,
+} from './poissonModel.js';
 
 // `matchesCount` is the whole point of Intelligence 6.1: it's the one thing that tells a
 // caller whether `pointsPerGame`/`avgGoalsFor`/`avgGoalsAgainst` are real, team-specific
@@ -14,13 +23,66 @@ type FormStats = { pointsPerGame: number; avgGoalsFor: number; avgGoalsAgainst: 
 // jsonb shape consumed by both the mobile app and Vera's service/analysis.ts, so embedding a
 // version marker inside that column would be a breaking contract change; this constant is
 // the deliberately lightweight alternative (the real audit trail is git history).
-export const ENGINE_VERSION = 'v1';
+// v2 (Nov 2026): the goal model in poissonModel.ts. v1 (the formula in buildPrediction) stays
+// as the fallback when there are too few finished matches to fit v2 on.
+export const ENGINE_VERSION = 'v2';
 
 const RECENT_FORM_MATCHES = 5;
 // Historical baseline split for top-division matches before any team-specific adjustment.
 const BASE_HOME = 45;
 const BASE_DRAW = 27;
 const BASE_AWAY = 28;
+
+// The draw prior is measured, not assumed. The read-only evaluation (npm run evaluate, Nov
+// 2026: 563 finished, pre-kickoff-predicted matches) showed the fixed 27% draw share
+// over-predicting draws by ~6 points (actual 21.1%) on every single match. The prior is now
+// the real draw rate of recently finished football matches, used only once the sample is
+// large enough; below that the old 27% stays. Home and away keep their 45:28 ratio and share
+// what the draw prior leaves, so nothing else in the formula changes meaning.
+const DRAW_RATE_LOOKBACK_DAYS = 365;
+const DRAW_RATE_MIN_SAMPLE = 200;
+
+export type BasePriors = { home: number; draw: number; away: number };
+export const DEFAULT_PRIORS: BasePriors = { home: BASE_HOME, draw: BASE_DRAW, away: BASE_AWAY };
+
+/** Pure: base priors from finished-match scores. Falls back to DEFAULT_PRIORS on a small sample. */
+export function priorsFromResults(results: { home_score: number | null; away_score: number | null }[]): BasePriors {
+  const scored = results.filter((r) => r.home_score !== null && r.away_score !== null);
+  if (scored.length < DRAW_RATE_MIN_SAMPLE) return DEFAULT_PRIORS;
+  const draw = (scored.filter((r) => r.home_score === r.away_score).length / scored.length) * 100;
+  const rest = 100 - draw;
+  return { home: (rest * BASE_HOME) / (BASE_HOME + BASE_AWAY), draw, away: (rest * BASE_AWAY) / (BASE_HOME + BASE_AWAY) };
+}
+
+type History = { priors: BasePriors; fit: PoissonFit | null };
+
+/** Finished football matches of the last POISSON_LOOKBACK_DAYS: the v2 fit and the v1 draw prior. */
+async function loadHistory(now: number): Promise<History> {
+  const since = new Date(now - Math.max(POISSON_LOOKBACK_DAYS, DRAW_RATE_LOOKBACK_DAYS) * 86_400_000).toISOString();
+  const rows: { home_team_id: string; away_team_id: string; home_score: number | null; away_score: number | null; kickoff_at: string }[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('matches')
+      .select('home_team_id, away_team_id, home_score, away_score, kickoff_at')
+      .eq('sport', 'football')
+      .eq('status', 'finished')
+      .gte('kickoff_at', since)
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) break;
+  }
+  const training: TrainingMatch[] = rows
+    .filter((r) => r.home_score !== null && r.away_score !== null)
+    .map((r) => ({ home_team_id: r.home_team_id, away_team_id: r.away_team_id, home_score: r.home_score!, away_score: r.away_score!, t: new Date(r.kickoff_at).getTime() }))
+    .filter((r) => r.t < now);
+  const drawSince = now - DRAW_RATE_LOOKBACK_DAYS * 86_400_000;
+  const priors = priorsFromResults(rows.filter((r) => new Date(r.kickoff_at).getTime() >= drawSince));
+  const fit = fitPoisson(training, now);
+  return { priors, fit: fit.n >= POISSON_MIN_TRAINING_MATCHES ? fit : null };
+}
 
 async function getFormStats(teamId: string): Promise<FormStats> {
   const { data, error } = await supabase
@@ -109,7 +171,7 @@ export function normalizeOutcomes(home: number, draw: number, away: number) {
  * probability math is UNCHANGED from before that fix — see the comment on
  * `bothTeamsHaveForm` for exactly what changed and, just as importantly, what didn't.
  */
-export function buildPrediction(home: FormStats, away: FormStats) {
+export function buildPrediction(home: FormStats, away: FormStats, priors: BasePriors = DEFAULT_PRIORS) {
   const xgHome = Number(((home.avgGoalsFor + away.avgGoalsAgainst) / 2).toFixed(1));
   const xgAway = Number(((away.avgGoalsFor + home.avgGoalsAgainst) / 2).toFixed(1));
 
@@ -123,7 +185,7 @@ export function buildPrediction(home: FormStats, away: FormStats) {
   // team would be a prediction-algorithm change — this sprint's own stop condition,
   // deferred to a real product decision rather than made unilaterally (see the final
   // report's "Decision" section for the full reasoning and measured before/after impact).
-  const outcomes = normalizeOutcomes(BASE_HOME + formDelta + xgDelta, BASE_DRAW, BASE_AWAY - formDelta - xgDelta);
+  const outcomes = normalizeOutcomes(priors.home + formDelta + xgDelta, priors.draw, priors.away - formDelta - xgDelta);
 
   const recentForm = clampSplit(50 + (home.pointsPerGame - away.pointsPerGame) * 12);
   const expectedGoals = clampSplit(50 + (xgHome - xgAway) * 10);
@@ -159,38 +221,80 @@ export function buildPrediction(home: FormStats, away: FormStats) {
   };
 }
 
-async function computeForMatch(homeTeamId: string, awayTeamId: string) {
-  const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
-  return buildPrediction(home, away);
+/**
+ * v2: probabilities and expected goals from the goal model; the factor bars keep the same four
+ * keys (so the app and Vera's service need no change) but now carry model evidence:
+ *   recentForm            unchanged — points per game over the last 5 results (descriptive)
+ *   expectedGoals         the model's expected goals for each side (opponent-adjusted)
+ *   defensivePerformance  goals each side would concede against an average attack (lower = better)
+ *   homeAdvantage         the measured home goal multiplier instead of the fixed 62/38
+ * Same evidence rule as v1: with no real recent results for either side only homeAdvantage is
+ * shown, since the model then knows that team only as "average".
+ */
+export function buildPredictionV2(home: FormStats, away: FormStats, fit: PoissonFit, homeTeamId: string, awayTeamId: string) {
+  const lambda = modelExpectedGoals(fit, homeTeamId, awayTeamId);
+  const p = outcomeProbabilities(lambda.home, lambda.away);
+  const outcomes = normalizeOutcomes(p.home * 100, p.draw * 100, p.away * 100);
+  const xgHome = Number(lambda.home.toFixed(1)); // predictions.xg_* is numeric(5,1)
+  const xgAway = Number(lambda.away.toFixed(1));
+
+  const recentForm = clampSplit(50 + (home.pointsPerGame - away.pointsPerGame) * 12);
+  const expectedGoalsSplit = clampSplit(50 + (lambda.home - lambda.away) * 10);
+  const defensivePerformance = clampSplit(50 + (defenceRating(fit, awayTeamId) - defenceRating(fit, homeTeamId)) * 10);
+  const homeAdvantage = clampSplit((100 * fit.home) / (1 + fit.home));
+
+  const bothTeamsHaveForm = home.matchesCount > 0 && away.matchesCount > 0;
+  const factors = bothTeamsHaveForm
+    ? [
+        { key: 'recentForm', home: recentForm.home, away: recentForm.away },
+        { key: 'expectedGoals', home: expectedGoalsSplit.home, away: expectedGoalsSplit.away },
+        { key: 'defensivePerformance', home: defensivePerformance.home, away: defensivePerformance.away },
+        { key: 'homeAdvantage', home: homeAdvantage.home, away: homeAdvantage.away },
+      ]
+    : [{ key: 'homeAdvantage', home: homeAdvantage.home, away: homeAdvantage.away }];
+
+  return {
+    outcomes,
+    xgHome,
+    xgAway,
+    recentAvgGoalsHome: Number(home.avgGoalsFor.toFixed(1)),
+    recentAvgGoalsAway: Number(away.avgGoalsFor.toFixed(1)),
+    factors,
+  };
 }
 
-// A real, measured data-hygiene gap, found via a live backtest audit: a small tail of
-// matches stay `status: 'scheduled'` in this DB well past their real-world kickoff — the
-// provider's own status for them never resolves to finished/postponed on a later sync (or
-// resolves so late it's effectively stuck), yet this function keeps recomputing a "fresh"
-// prediction for them every 6-hour run, with `computed_at` drifting further and further
-// past `kickoff_at` each time (one confirmed live: 113 days late). That's not a
-// probability-calculation bug — the formula itself is unaffected — but it wastes a
-// compute+DB round trip forever on a match that will never usefully update again, and
-// makes `computed_at` a misleading "this is a fresh pre-match prediction" signal for
-// something that stopped being pre-match a long time ago. A match that's still genuinely
-// upcoming is never affected by this: `ACTIVE_WINDOW_DAYS`/`FORM_LOOKBACK_DAYS` already
-// bound what fetchFixtures.ts ever ingests as 'scheduled' in the first place, so a real
-// near-term fixture's kickoff is always well within this margin.
-const STALE_SCHEDULED_GRACE_DAYS = 3;
+async function computeForMatch(homeTeamId: string, awayTeamId: string, history: History) {
+  const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
+  return history.fit ? buildPredictionV2(home, away, history.fit, homeTeamId, awayTeamId) : buildPrediction(home, away, history.priors);
+}
 
+// A prediction is computed only while the match has not started. Before Nov 2026 a match
+// was recomputed until 3 days after kickoff when the provider's status lagged at
+// 'scheduled'; the evaluation found 683 of 2,579 stored predictions (26%) overwritten after
+// kickoff that way, which destroyed the genuine pre-match number (unevaluable) and let a user
+// see the probability move during or after the match. A match stuck at 'scheduled' now keeps
+// its last pre-kickoff prediction frozen; a rescheduled match (new future kickoff_at) is
+// picked up again automatically.
 export async function computePredictions() {
-  const staleCutoff = staleCutoffIso(STALE_SCHEDULED_GRACE_DAYS);
+  const now = Date.now();
+  const notStartedAfter = new Date(now).toISOString();
+  const history = await loadHistory(now);
+  const { priors, fit } = history;
+  console.log(
+    fit
+      ? `Engine v2: goal model fitted on ${fit.n} matches (home multiplier ${fit.home.toFixed(3)}, base rate ${fit.c.toFixed(3)})`
+      : `Engine v1 fallback (too few finished matches for v2). Base priors: home ${priors.home.toFixed(1)} / draw ${priors.draw.toFixed(1)} / away ${priors.away.toFixed(1)}`,
+  );
   const { data: matches, error } = await supabase
     .from('matches')
     .select('id, home_team_id, away_team_id')
     .eq('status', 'scheduled')
     .eq('sport', 'football')
-    .gte('kickoff_at', staleCutoff);
+    .gt('kickoff_at', notStartedAfter);
   if (error) throw error;
 
   for (const match of matches ?? []) {
-    const result = await computeForMatch(match.home_team_id, match.away_team_id);
+    const result = await computeForMatch(match.home_team_id, match.away_team_id, history);
 
     const { data: existing } = await supabase
       .from('predictions')

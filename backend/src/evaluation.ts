@@ -82,10 +82,11 @@ export function classifyCandidate(
  * kickoff. Equal timestamps are treated as invalid too (no real gap to have been a
  * genuine pre-match prediction). This is the one and only leakage gate — every metric
  * below assumes its input already passed this check. */
-/** §31 regression coverage for the 4.0 "zombie match" fix: computePredictions.ts and
- * computeBasketballPredictions.ts both query for `status = 'scheduled' AND kickoff_at >=
- * staleCutoffIso(graceDays)` so a match stuck at 'scheduled' long past its real kickoff
- * (found live: 113 days) stops being recomputed forever. The cutoff arithmetic itself is
+/** §31 regression coverage for the 4.0 "zombie match" fix. Since Nov 2026 the predictors no
+ * longer use a grace window at all — they only compute `kickoff_at > now` (a grace window let
+ * 26% of predictions be overwritten after kickoff); this helper is kept for evaluation-side
+ * cutoffs. Original note: a match stuck at 'scheduled' long past its real kickoff
+ * (found live: 113 days) must stop being recomputed forever. The cutoff arithmetic itself is
  * the one part worth unit-testing directly — a sign error here (e.g. `+` instead of `-`)
  * would silently exclude every genuinely-upcoming match instead of just stale ones, which
  * a Supabase-querying integration test wouldn't catch as cheaply as this pure check does. */

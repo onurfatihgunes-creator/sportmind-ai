@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeOutcomes, buildPrediction, ENGINE_VERSION } from './computePredictions.js';
+import { normalizeOutcomes, buildPrediction, buildPredictionV2, priorsFromResults, DEFAULT_PRIORS, ENGINE_VERSION } from './computePredictions.js';
+import { fitPoisson, outcomeProbabilities, expectedGoals, type TrainingMatch } from './poissonModel.js';
 import { isDeterministic } from './evaluation.js';
 
 // Regression coverage for a real bug found during the Match Analysis data audit: three
@@ -185,7 +186,104 @@ test('PROBABILITY INVARIANT: outcomes always sum to exactly 100 and no share is 
   }
 });
 
-test('ENGINE VERSION: a code-level version proxy is documented and stable (v1) — no schema column exists for it', () => {
-  assert.equal(ENGINE_VERSION, 'v1');
+test('ENGINE VERSION: a code-level version proxy is documented and stable (v2) — no schema column exists for it', () => {
+  assert.equal(ENGINE_VERSION, 'v2');
   assert.equal(typeof ENGINE_VERSION, 'string');
+});
+
+// ---- Nov 2026: measured draw prior (v1 fallback) -------------------------------------------
+
+test('draw prior: a small sample keeps the default 45/27/28 priors', () => {
+  const few = Array.from({ length: 50 }, () => ({ home_score: 1, away_score: 1 }));
+  assert.equal(priorsFromResults(few), DEFAULT_PRIORS);
+});
+
+test('draw prior: a large sample uses the measured draw rate and keeps the 45:28 home:away ratio', () => {
+  const rows = [
+    ...Array.from({ length: 21 }, () => ({ home_score: 1, away_score: 1 })),
+    ...Array.from({ length: 79 }, () => ({ home_score: 2, away_score: 1 })),
+  ];
+  const big = [...rows, ...rows, ...rows]; // 300 matches, 21% draws
+  const p = priorsFromResults(big);
+  assert.ok(Math.abs(p.draw - 21) < 1e-9);
+  assert.ok(Math.abs(p.home + p.draw + p.away - 100) < 1e-9);
+  assert.ok(Math.abs(p.home / p.away - 45 / 28) < 1e-9);
+});
+
+test('draw prior: unscored rows are ignored', () => {
+  const rows = Array.from({ length: 500 }, (_, i) => (i % 2 ? { home_score: null, away_score: null } : { home_score: 0, away_score: 0 }));
+  assert.equal(priorsFromResults(rows).draw, 100); // 250 scored rows (above the 200 minimum), all draws
+});
+
+// ---- engine v2: goal model ------------------------------------------------------------------
+
+const DAY = 86_400_000;
+const NOW = Date.UTC(2026, 10, 26);
+
+/** A round-robin league where 'strong' beats everyone 3-0 and the rest draw 1-1. */
+function syntheticLeague(): TrainingMatch[] {
+  const teams = ['strong', 'a', 'b', 'c', 'd', 'e'];
+  const out: TrainingMatch[] = [];
+  let day = 1;
+  for (let round = 0; round < 6; round++) {
+    for (const h of teams) for (const a of teams) {
+      if (h === a) continue;
+      const strongHome = h === 'strong';
+      const strongAway = a === 'strong';
+      out.push({ home_team_id: h, away_team_id: a, home_score: strongHome ? 3 : strongAway ? 0 : 1, away_score: strongAway ? 3 : strongHome ? 0 : 1, t: NOW - day++ * DAY });
+    }
+  }
+  return out;
+}
+
+test('goal model: probabilities from any expected-goals pair are valid and sum to 1', () => {
+  for (const [lh, la] of [[0.2, 0.2], [1.4, 1.1], [3.5, 0.3], [0.1, 4]]) {
+    const p = outcomeProbabilities(lh, la);
+    assert.ok(Math.abs(p.home + p.draw + p.away - 1) < 1e-9);
+    for (const v of [p.home, p.draw, p.away]) assert.ok(v > 0 && v < 1);
+  }
+});
+
+test('goal model: equal expected goals give equal home/away chances; more expected goals favour that side', () => {
+  const even = outcomeProbabilities(1.3, 1.3);
+  assert.ok(Math.abs(even.home - even.away) < 1e-9);
+  const tilted = outcomeProbabilities(2.0, 1.0);
+  assert.ok(tilted.home > tilted.away);
+});
+
+test('goal model: the dominant team gets a higher attack, better defence and is favoured home and away', () => {
+  const fit = fitPoisson(syntheticLeague(), NOW);
+  assert.ok(fit.att.get('strong')! > fit.att.get('a')!);
+  assert.ok(fit.def.get('strong')! < fit.def.get('a')!);
+  const home = outcomeProbabilities(expectedGoals(fit, 'strong', 'a').home, expectedGoals(fit, 'strong', 'a').away);
+  const away = outcomeProbabilities(expectedGoals(fit, 'b', 'strong').home, expectedGoals(fit, 'b', 'strong').away);
+  assert.ok(home.home > 0.5);
+  assert.ok(away.away > away.home);
+});
+
+test('goal model: matches at or after the fit time are never used (no future leakage)', () => {
+  const past = syntheticLeague();
+  const future: TrainingMatch[] = [{ home_team_id: 'a', away_team_id: 'strong', home_score: 9, away_score: 0, t: NOW + DAY }];
+  const a = fitPoisson(past, NOW);
+  const b = fitPoisson([...past, ...future], NOW);
+  assert.equal(a.n, b.n);
+  assert.equal(a.att.get('a'), b.att.get('a'));
+});
+
+test('goal model: an unknown team is treated as average, not as strong or weak', () => {
+  const fit = fitPoisson(syntheticLeague(), NOW);
+  const l = expectedGoals(fit, 'unknown-1', 'unknown-2');
+  assert.ok(Math.abs(l.home - fit.c * fit.home) < 1e-9);
+  assert.ok(Math.abs(l.away - fit.c) < 1e-9);
+});
+
+test('v2: outcomes sum to 100, factor keys unchanged, and zero-form still shows only homeAdvantage', () => {
+  const fit = fitPoisson(syntheticLeague(), NOW);
+  const full = buildPredictionV2(TRUSTED_HOME, TRUSTED_AWAY, fit, 'strong', 'a');
+  assert.equal(full.outcomes.home + full.outcomes.draw + full.outcomes.away, 100);
+  assert.deepEqual(full.factors.map((f) => f.key).sort(), ['defensivePerformance', 'expectedGoals', 'homeAdvantage', 'recentForm'].sort());
+  for (const f of full.factors) assert.equal(f.home + f.away, 100);
+  const thin = buildPredictionV2(TRUSTED_HOME, ZERO_FORM, fit, 'strong', 'a');
+  assert.deepEqual(thin.factors.map((f) => f.key), ['homeAdvantage']);
+  assert.equal(isDeterministic(() => buildPredictionV2(TRUSTED_HOME, TRUSTED_AWAY, fit, 'strong', 'a')), true);
 });

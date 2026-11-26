@@ -1,6 +1,5 @@
 import { MATERIALITY_THRESHOLD_PCT } from './config.js';
 import { supabase } from './supabaseClient.js';
-import { staleCutoffIso } from './evaluation.js';
 
 // `matchesCount` distinguishes real, team-specific evidence from the neutral-baseline
 // placeholder below — same fix and same reasoning as computePredictions.ts's football
@@ -105,19 +104,18 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
   return buildPrediction(home, away);
 }
 
-// Same real, measured gap as computePredictions.ts's football equivalent — a small tail
-// of matches stays `status: 'scheduled'` well past their real kickoff, and without this
-// this function would keep recomputing a "fresh" prediction for them forever.
-const STALE_SCHEDULED_GRACE_DAYS = 3;
-
+// Same rule as computePredictions.ts's football equivalent: a prediction is computed only
+// while the game has not started. A game that stays `status: 'scheduled'` past its kickoff
+// (the provider's status lags or never resolves) keeps its last pre-game prediction frozen,
+// so the stored number is always a genuine pre-game one and stays evaluable.
 export async function computeBasketballPredictions() {
-  const staleCutoff = staleCutoffIso(STALE_SCHEDULED_GRACE_DAYS);
+  const notStartedAfter = new Date().toISOString();
   const { data: matches, error } = await supabase
     .from('matches')
     .select('id, home_team_id, away_team_id')
     .eq('status', 'scheduled')
     .eq('sport', 'basketball')
-    .gte('kickoff_at', staleCutoff);
+    .gt('kickoff_at', notStartedAfter);
   if (error) throw error;
 
   for (const match of matches ?? []) {
