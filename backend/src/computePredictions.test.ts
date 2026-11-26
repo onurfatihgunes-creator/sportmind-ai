@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeOutcomes, buildPrediction, buildPredictionV2, priorsFromResults, DEFAULT_PRIORS, ENGINE_VERSION } from './computePredictions.js';
+import { normalizeOutcomes, buildPrediction, buildPredictionV2, isEngineSwitch, priorsFromResults, DEFAULT_PRIORS, ENGINE_VERSION } from './computePredictions.js';
 import { fitPoisson, outcomeProbabilities, expectedGoals, type TrainingMatch } from './poissonModel.js';
 import { isDeterministic } from './evaluation.js';
 
@@ -286,4 +286,15 @@ test('v2: outcomes sum to 100, factor keys unchanged, and zero-form still shows 
   const thin = buildPredictionV2(TRUSTED_HOME, ZERO_FORM, fit, 'strong', 'a');
   assert.deepEqual(thin.factors.map((f) => f.key), ['homeAdvantage']);
   assert.equal(isDeterministic(() => buildPredictionV2(TRUSTED_HOME, TRUSTED_AWAY, fit, 'strong', 'a')), true);
+});
+
+test('engine switch: a v1 -> v2 recomputation is recognised (never logged as "recent results updated")', () => {
+  const fit = fitPoisson(syntheticLeague(), NOW);
+  const v1 = buildPrediction(TRUSTED_HOME, TRUSTED_AWAY).factors;
+  const v2 = buildPredictionV2(TRUSTED_HOME, TRUSTED_AWAY, fit, 'strong', 'a').factors;
+  assert.equal(isEngineSwitch(v1, v2), true);
+  assert.equal(isEngineSwitch(v2, v1), true);
+  assert.equal(isEngineSwitch(v2, v2), false);
+  assert.equal(isEngineSwitch(v1, v1), false);
+  assert.equal(isEngineSwitch(null, v2), false); // no stored factors: nothing to compare, not a switch
 });

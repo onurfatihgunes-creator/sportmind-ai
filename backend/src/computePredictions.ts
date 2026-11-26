@@ -263,6 +263,20 @@ export function buildPredictionV2(home: FormStats, away: FormStats, fit: Poisson
   };
 }
 
+/**
+ * v1 (and the v1 fallback) always stores the fixed homeAdvantage prior 62/38; v2 stores the
+ * measured one (~56/44; it would only read 62/38 at a home multiplier of ~1.63, far outside
+ * real football). When a stored prediction and its recomputation sit on different sides of
+ * that marker, the probability moved because the ENGINE changed, not because new results
+ * arrived, so it must not be logged as "recent results updated" — otherwise the first run
+ * after the v2 deploy would flood the app's Recent changes with false reasons.
+ */
+export function isEngineSwitch(existingFactors: unknown, newFactors: readonly { key: string; home: number; away: number }[]): boolean {
+  const isV1Prior = (factors: unknown) =>
+    Array.isArray(factors) && factors.some((f) => f?.key === 'homeAdvantage' && f.home === 62 && f.away === 38);
+  return isV1Prior(existingFactors) !== isV1Prior(newFactors);
+}
+
 async function computeForMatch(homeTeamId: string, awayTeamId: string, history: History) {
   const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
   return history.fit ? buildPredictionV2(home, away, history.fit, homeTeamId, awayTeamId) : buildPrediction(home, away, history.priors);
@@ -298,7 +312,7 @@ export async function computePredictions() {
 
     const { data: existing } = await supabase
       .from('predictions')
-      .select('home_win_pct')
+      .select('home_win_pct, factors')
       .eq('match_id', match.id)
       .maybeSingle();
 
@@ -316,7 +330,11 @@ export async function computePredictions() {
     });
     if (upsertError) throw upsertError;
 
-    if (existing && Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT) {
+    if (
+      existing &&
+      !isEngineSwitch(existing.factors, result.factors) &&
+      Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT
+    ) {
       // The only inputs that can move home_win_pct between runs are new results landing in
       // team_form (recent form + goal averages) — there's no separate injury/lineup/weather
       // signal in the free data tier, so this is the one honest reason to log.
