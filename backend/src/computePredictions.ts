@@ -10,6 +10,7 @@ import {
   type PoissonFit,
   type TrainingMatch,
 } from './poissonModel.js';
+import { appendPredictionHistory, detectHistorySchema, historyRowFrom, isModelSwitch, modelVersion } from './predictionHistory.js';
 
 // `matchesCount` is the whole point of Intelligence 6.1: it's the one thing that tells a
 // caller whether `pointsPerGame`/`avgGoalsFor`/`avgGoalsAgainst` are real, team-specific
@@ -54,7 +55,8 @@ export function priorsFromResults(results: { home_score: number | null; away_sco
   return { home: (rest * BASE_HOME) / (BASE_HOME + BASE_AWAY), draw, away: (rest * BASE_AWAY) / (BASE_HOME + BASE_AWAY) };
 }
 
-type History = { priors: BasePriors; fit: PoissonFit | null };
+/** `latestInputAt`: kickoff of the newest finished match the model could see (input_data_timestamp). */
+type History = { priors: BasePriors; fit: PoissonFit | null; latestInputAt: string | null };
 
 /** Finished football matches of the last POISSON_LOOKBACK_DAYS: the v2 fit and the v1 draw prior. */
 async function loadHistory(now: number): Promise<History> {
@@ -81,7 +83,8 @@ async function loadHistory(now: number): Promise<History> {
   const drawSince = now - DRAW_RATE_LOOKBACK_DAYS * 86_400_000;
   const priors = priorsFromResults(rows.filter((r) => new Date(r.kickoff_at).getTime() >= drawSince));
   const fit = fitPoisson(training, now);
-  return { priors, fit: fit.n >= POISSON_MIN_TRAINING_MATCHES ? fit : null };
+  const latest = training.reduce((max, r) => Math.max(max, r.t), 0);
+  return { priors, fit: fit.n >= POISSON_MIN_TRAINING_MATCHES ? fit : null, latestInputAt: latest > 0 ? new Date(latest).toISOString() : null };
 }
 
 async function getFormStats(teamId: string): Promise<FormStats> {
@@ -299,9 +302,13 @@ export async function computePredictions() {
       ? `Engine v2: goal model fitted on ${fit.n} matches (home multiplier ${fit.home.toFixed(3)}, base rate ${fit.c.toFixed(3)})`
       : `Engine v1 fallback (too few finished matches for v2). Base priors: home ${priors.home.toFixed(1)} / draw ${priors.draw.toFixed(1)} / away ${priors.away.toFixed(1)}`,
   );
+  // V3 A1/A2: the engine that actually produced each number is recorded ('football-v1-fallback'
+  // is the v1 formula with the measured draw prior, used only below 200 training matches).
+  const version = modelVersion('football', fit ? ENGINE_VERSION : 'v1-fallback');
+  const schema = await detectHistorySchema();
   const { data: matches, error } = await supabase
     .from('matches')
-    .select('id, home_team_id, away_team_id')
+    .select('id, home_team_id, away_team_id, kickoff_at')
     .eq('status', 'scheduled')
     .eq('sport', 'football')
     .gt('kickoff_at', notStartedAfter);
@@ -309,14 +316,16 @@ export async function computePredictions() {
 
   for (const match of matches ?? []) {
     const result = await computeForMatch(match.home_team_id, match.away_team_id, history);
+    const calculatedAt = new Date().toISOString();
 
     const { data: existing } = await supabase
       .from('predictions')
-      .select('home_win_pct, factors')
+      .select(schema.predictionsVersioned ? 'home_win_pct, factors, model_version' : 'home_win_pct, factors')
       .eq('match_id', match.id)
-      .maybeSingle();
+      .maybeSingle<{ home_win_pct: number; factors: unknown; model_version?: string | null }>();
 
     const { error: upsertError } = await supabase.from('predictions').upsert({
+      ...(schema.predictionsVersioned ? { model_version: version, input_data_timestamp: history.latestInputAt } : {}),
       match_id: match.id,
       home_win_pct: result.outcomes.home,
       draw_pct: result.outcomes.draw,
@@ -326,13 +335,31 @@ export async function computePredictions() {
       recent_avg_goals_home: result.recentAvgGoalsHome,
       recent_avg_goals_away: result.recentAvgGoalsAway,
       factors: result.factors,
-      computed_at: new Date().toISOString(),
+      computed_at: calculatedAt,
     });
     if (upsertError) throw upsertError;
 
+    if (schema.historyTable) {
+      await appendPredictionHistory(
+        historyRowFrom({
+          matchId: match.id,
+          sport: 'football',
+          modelVersion: version,
+          status: 'published',
+          calculatedAt,
+          kickoffAt: match.kickoff_at,
+          outcomesPct: result.outcomes,
+          expectedHome: result.xgHome,
+          expectedAway: result.xgAway,
+          inputDataTimestamp: history.latestInputAt,
+          factors: result.factors,
+        }),
+      );
+    }
+
     if (
       existing &&
-      !isEngineSwitch(existing.factors, result.factors) &&
+      !isModelSwitch(existing.model_version, version, isEngineSwitch(existing.factors, result.factors)) &&
       Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT
     ) {
       // The only inputs that can move home_win_pct between runs are new results landing in

@@ -28,6 +28,15 @@ required at this scale.
    12. `sql/widen_predictions_xg_precision.sql` — fixes a real production crash (basketball
        point totals overflow the football-sized `xg_home`/`xg_away` columns; see that
        file's own comment for the exact incident).
+   13. `sql/add_prediction_history.sql` — V3 A1/A2: `model_version` on `predictions` and the
+       append-only `prediction_history` (copies today's predictions in as `legacy_snapshot`).
+   14. `sql/add_match_squad_snapshots.sql` — V3 A3: append-only, pre-kickoff lineup/injury
+       snapshots (no backfill: history starts when this is applied).
+   15. `sql/rls_read_only_prediction_history_and_snapshots.sql`
+
+   13–15 are optional for the pipeline: the code detects whether they exist and simply skips
+   recording history/snapshots until they are applied. Apply them BEFORE deploying the code
+   if you want recording to start on the first run.
 
    Skipping 4–12 doesn't break the core pipeline (fixtures/predictions still work), but BSD
    enrichment, H2H, player market value, and Change Intelligence will each silently produce

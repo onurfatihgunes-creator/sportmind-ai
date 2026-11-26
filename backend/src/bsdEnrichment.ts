@@ -1,4 +1,4 @@
-import { BSD_TIER1_LEAGUES } from './config.js';
+import { BSD_FIXTURE_LEAGUES, BSD_TIER1_LEAGUES } from './config.js';
 import {
   getCurrentSeason,
   getEventH2H,
@@ -15,6 +15,7 @@ import { normalizeTeamName } from './teamIdentity.js';
 import { supabase } from './supabaseClient.js';
 import { detectAvailabilityDelta, detectLineupStatusChange, type DetectedChange } from './analysisEngine.js';
 import { dedupeByKey, parseIncidentsDeduped, parseTeamMatchStats } from './matchStatsParsing.js';
+import { recordSquadSnapshot } from './squadSnapshots.js';
 
 /**
  * BSD enrichment — attaches lineups/player-availability/player-stats/raw team
@@ -342,6 +343,10 @@ async function enrichOneMatch(match: CandidateMatch, event: BsdEvent) {
   // persisted with real SportMind team ids (lineups fields don't need them).
   const lineups = await getEventLineups(event.id);
 
+  // V3 A3: an append-only, pre-kickoff-only record of what was known at this moment. Must run
+  // before the current-state tables below are overwritten; best-effort, never throws.
+  await recordSquadSnapshot(match.id, match.kickoff_at, lineups);
+
   // Must run BEFORE the upserts below — it needs to see the pre-this-run state.
   const staleAvailabilityIds = await detectAndLogSquadChanges(match, event, lineups);
 
@@ -478,4 +483,111 @@ export async function enrichWithBsd() {
   }
 
   console.log(`  BSD enrichment: ${matched} events matched, ${enriched} matches enriched, ${skippedNoLeague} leagues unresolved.`);
+
+  try {
+    await catchUpMissingStats();
+  } catch (error) {
+    console.error('  BSD stats catch-up failed, continuing:', error);
+  }
+}
+
+// ---- V3 A4: stats catch-up ------------------------------------------------------------------
+//
+// The enrichment pass above only looks 3 days back, so a match whose stats BSD publishes later
+// (or whose first fetch returned empty placeholders) never gets xG/shots. Measured Nov 2026:
+// La Liga had xG for 48/88 finished matches and the Champions League 48/78. MLS, Brasileirão
+// and the Championship (BSD is their fixture source, ids 'bsd-<eventId>') had no stats at all,
+// because the pass above only covers BSD_TIER1_LEAGUES.
+//
+// This pass costs ONE BSD request per match (the /stats/ endpoint, event id already known)
+// and is bounded: finished matches of the last STATS_CATCHUP_MAX_AGE_DAYS that still lack xG
+// for both sides, not retried within STATS_CATCHUP_RETRY_HOURS, at most
+// STATS_CATCHUP_MAX_REQUESTS_PER_RUN per run (BSD quota: 7,500/day).
+export const STATS_CATCHUP_MAX_AGE_DAYS = 21;
+export const STATS_CATCHUP_RETRY_HOURS = 20;
+export const STATS_CATCHUP_MAX_REQUESTS_PER_RUN = 150;
+const STATS_CATCHUP_MIN_HOURS_AFTER_KICKOFF = 3;
+
+export type StatsCatchupMatch = { id: string; competition: string; home_team_id: string; away_team_id: string; kickoff_at: string };
+
+/** Pure selection of which matches to (re)fetch stats for, oldest first. */
+export function selectStatsCatchup(
+  finished: readonly StatsCatchupMatch[],
+  completeIds: ReadonlySet<string>,
+  lastAttemptAt: ReadonlyMap<string, string>,
+  eventIdByMatch: ReadonlyMap<string, number>,
+  now: Date,
+  cap = STATS_CATCHUP_MAX_REQUESTS_PER_RUN,
+): { match: StatsCatchupMatch; eventId: number }[] {
+  const minAge = STATS_CATCHUP_MIN_HOURS_AFTER_KICKOFF * 3_600_000;
+  const maxAge = STATS_CATCHUP_MAX_AGE_DAYS * 86_400_000;
+  const retry = STATS_CATCHUP_RETRY_HOURS * 3_600_000;
+  const out: { match: StatsCatchupMatch; eventId: number }[] = [];
+  const sorted = [...finished].sort((a, b) => a.kickoff_at.localeCompare(b.kickoff_at));
+  for (const m of sorted) {
+    if (out.length >= cap) break;
+    const age = now.getTime() - new Date(m.kickoff_at).getTime();
+    if (age < minAge || age > maxAge) continue;
+    if (completeIds.has(m.id)) continue;
+    const last = lastAttemptAt.get(m.id);
+    if (last && now.getTime() - new Date(last).getTime() < retry) continue;
+    const eventId = m.id.startsWith('bsd-') ? Number(m.id.slice(4)) : eventIdByMatch.get(m.id);
+    if (!eventId || !Number.isFinite(eventId)) continue; // tier-1 match never matched to a BSD event
+    out.push({ match: m, eventId });
+  }
+  return out;
+}
+
+async function catchUpMissingStats() {
+  const now = new Date();
+  const since = new Date(now.getTime() - STATS_CATCHUP_MAX_AGE_DAYS * 86_400_000).toISOString();
+  const competitions = [...BSD_TIER1_LEAGUES, ...BSD_FIXTURE_LEAGUES].map((l) => l.competition);
+
+  const { data: finished, error } = await supabase
+    .from('matches')
+    .select('id, competition, home_team_id, away_team_id, kickoff_at')
+    .eq('sport', 'football')
+    .eq('status', 'finished')
+    .in('competition', competitions)
+    .gte('kickoff_at', since);
+  if (error) throw error;
+  if (!finished || finished.length === 0) return;
+
+  const ids = finished.map((m) => m.id);
+  const completeIds = new Set<string>();
+  const lastAttemptAt = new Map<string, string>();
+  const eventIdByMatch = new Map<string, number>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const [typed, raw, lineups] = await Promise.all([
+      supabase.from('team_match_stats').select('match_id, xg_actual').in('match_id', chunk),
+      supabase.from('match_stats_raw').select('match_id, bsd_event_id, updated_at').in('match_id', chunk),
+      supabase.from('match_lineups').select('match_id, bsd_event_id').in('match_id', chunk),
+    ]);
+    if (typed.error) throw typed.error;
+    if (raw.error) throw raw.error;
+    if (lineups.error) throw lineups.error;
+    const xgSides = new Map<string, number>();
+    for (const r of typed.data ?? []) if (r.xg_actual !== null) xgSides.set(r.match_id, (xgSides.get(r.match_id) ?? 0) + 1);
+    for (const [id, n] of xgSides) if (n >= 2) completeIds.add(id);
+    for (const r of raw.data ?? []) {
+      lastAttemptAt.set(r.match_id, r.updated_at);
+      eventIdByMatch.set(r.match_id, Number(r.bsd_event_id));
+    }
+    for (const r of lineups.data ?? []) if (!eventIdByMatch.has(r.match_id)) eventIdByMatch.set(r.match_id, Number(r.bsd_event_id));
+  }
+
+  const todo = selectStatsCatchup(finished, completeIds, lastAttemptAt, eventIdByMatch, now);
+  let filled = 0;
+  for (const { match, eventId } of todo) {
+    try {
+      const event = { id: eventId } as BsdEvent;
+      const raw = await persistRawStats(match.id, event);
+      await persistTypedTeamStats({ ...match, homeName: '', awayName: '' }, event, raw);
+      if (raw) filled++;
+    } catch (error) {
+      console.error(`  BSD stats catch-up failed for ${match.id} (event ${eventId}), continuing:`, error);
+    }
+  }
+  console.log(`  BSD stats catch-up: ${todo.length} requested (cap ${STATS_CATCHUP_MAX_REQUESTS_PER_RUN}), ${filled} returned stats, ${finished.length - completeIds.size} finished matches still without full xG in the last ${STATS_CATCHUP_MAX_AGE_DAYS} days.`);
 }

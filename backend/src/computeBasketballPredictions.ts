@@ -1,5 +1,6 @@
 import { MATERIALITY_THRESHOLD_PCT } from './config.js';
 import { supabase } from './supabaseClient.js';
+import { appendPredictionHistory, detectHistorySchema, historyRowFrom, isModelSwitch, modelVersion } from './predictionHistory.js';
 
 // `matchesCount` distinguishes real, team-specific evidence from the neutral-baseline
 // placeholder below — same fix and same reasoning as computePredictions.ts's football
@@ -110,9 +111,21 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
 // so the stored number is always a genuine pre-game one and stays evaluable.
 export async function computeBasketballPredictions() {
   const notStartedAfter = new Date().toISOString();
+  // V3 A1/A2: version + newest input the run could see. The model itself is unchanged.
+  const version = modelVersion('basketball', ENGINE_VERSION);
+  const schema = await detectHistorySchema();
+  const { data: newest } = await supabase
+    .from('matches')
+    .select('kickoff_at')
+    .eq('sport', 'basketball')
+    .eq('status', 'finished')
+    .order('kickoff_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const latestInputAt: string | null = newest?.kickoff_at ?? null;
   const { data: matches, error } = await supabase
     .from('matches')
-    .select('id, home_team_id, away_team_id')
+    .select('id, home_team_id, away_team_id, kickoff_at')
     .eq('status', 'scheduled')
     .eq('sport', 'basketball')
     .gt('kickoff_at', notStartedAfter);
@@ -120,14 +133,16 @@ export async function computeBasketballPredictions() {
 
   for (const match of matches ?? []) {
     const result = await computeForMatch(match.home_team_id, match.away_team_id);
+    const calculatedAt = new Date().toISOString();
 
     const { data: existing } = await supabase
       .from('predictions')
-      .select('home_win_pct')
+      .select(schema.predictionsVersioned ? 'home_win_pct, model_version' : 'home_win_pct')
       .eq('match_id', match.id)
-      .maybeSingle();
+      .maybeSingle<{ home_win_pct: number; model_version?: string | null }>();
 
     const { error: upsertError } = await supabase.from('predictions').upsert({
+      ...(schema.predictionsVersioned ? { model_version: version, input_data_timestamp: latestInputAt } : {}),
       match_id: match.id,
       home_win_pct: result.outcomes.home,
       draw_pct: 0,
@@ -137,11 +152,33 @@ export async function computeBasketballPredictions() {
       recent_avg_goals_home: result.recentAvgGoalsHome,
       recent_avg_goals_away: result.recentAvgGoalsAway,
       factors: result.factors,
-      computed_at: new Date().toISOString(),
+      computed_at: calculatedAt,
     });
     if (upsertError) throw upsertError;
 
-    if (existing && Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT) {
+    if (schema.historyTable) {
+      await appendPredictionHistory(
+        historyRowFrom({
+          matchId: match.id,
+          sport: 'basketball',
+          modelVersion: version,
+          status: 'published',
+          calculatedAt,
+          kickoffAt: match.kickoff_at,
+          outcomesPct: { home: result.outcomes.home, draw: 0, away: result.outcomes.away },
+          expectedHome: result.xgHome,
+          expectedAway: result.xgAway,
+          inputDataTimestamp: latestInputAt,
+          factors: result.factors,
+        }),
+      );
+    }
+
+    if (
+      existing &&
+      !isModelSwitch(existing.model_version, version, false) &&
+      Math.abs(existing.home_win_pct - result.outcomes.home) >= MATERIALITY_THRESHOLD_PCT
+    ) {
       const { error: logError } = await supabase.from('prediction_changes').insert({
         match_id: match.id,
         reason: 'recent_results_updated',
