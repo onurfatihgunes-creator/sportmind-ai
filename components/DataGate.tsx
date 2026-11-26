@@ -19,7 +19,10 @@ import { useAppData } from '@/contexts/DataContext';
 export default function DataGate({ children }: { children: ReactNode }) {
   const { status, retry } = useAppData();
   const [continued, setContinued] = useState(false);
+  // Once the data is ready the splash shows a Start button; the app opens when it is tapped.
+  const [started, setStarted] = useState(false);
 
-  if (status === 'ready' || continued) return <>{children}</>;
-  return <LoadingScreen state={status === 'failed' ? 'error' : 'loading'} onRetry={retry} onContinue={() => setContinued(true)} />;
+  if (continued || (status === 'ready' && started)) return <>{children}</>;
+  const state = status === 'failed' ? 'error' : status === 'ready' ? 'ready' : 'loading';
+  return <LoadingScreen state={state} onRetry={retry} onContinue={() => setContinued(true)} onStart={() => setStarted(true)} />;
 }

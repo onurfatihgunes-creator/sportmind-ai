@@ -22,16 +22,6 @@
   "disclaimer": {
     "full": "Yapay zekâ üretimi istatistiksel analiz. Sonuçlar öngörülemez."
   },
-  "welcome": {
-    "kicker": "SportMind AI",
-    "title": "Binlerce spor verisini tek bir akıllı analize dönüştürür.",
-    "body": "Form, performans ve maç verilerini her spor dalında analiz eder — karmaşık verileri anlaşılır içgörülere dönüştürür ve her sonucun arkasındaki gerekçeyi gösterir.",
-    "start": "Başla",
-    "skip": "Şimdilik atla",
-    "liveAnalysisLabel": "Canlı spor analizi",
-    "dataPointsLabel": "{{countFormatted}} veri noktası",
-    "passAccuracy": "Pas isabeti"
-  },
   "home": {
     "goodEvening": "İyi akşamlar",
     "matchOfTheDay": "Günün maçları",
@@ -323,12 +313,12 @@
     "goHome": "Ana ekrana dön!"
   },
   "loading": {
-    "statusAnalyses": "En güncel analizler yükleniyor…",
-    "statusSlow": "Hâlâ yükleniyor — bağlantın yavaş görünüyor…",
-    "errorTitle": "En güncel analizler yüklenemedi",
-    "errorBody": "Bağlantını kontrol edip tekrar dene. İstersen çevrimdışı görebildiklerinle de devam edebilirsin.",
+    "errorTitle": "Veriler yüklenemedi",
+    "errorBody": "Bağlantını kontrol et.",
     "retry": "Tekrar dene",
-    "continueOffline": "Çevrimdışı devam et"
+    "continueOffline": "Çevrimdışı devam et",
+    "matchData": "Maç verileri yükleniyor...",
+    "start": "Başla"
   },
   "configError": {
     "title": "SportMind doğru yapılandırılmamış",

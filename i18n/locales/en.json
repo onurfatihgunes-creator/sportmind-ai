@@ -22,16 +22,6 @@
   "disclaimer": {
     "full": "AI-generated analysis based on statistical data. Outcomes remain unpredictable."
   },
-  "welcome": {
-    "kicker": "SportMind AI",
-    "title": "Turns thousands of sports data points into a single, intelligent analysis.",
-    "body": "It analyzes form, performance, and match data across every sport — turning complex numbers into clear insights and showing the reasoning behind every result.",
-    "start": "Get started",
-    "skip": "Skip for now",
-    "liveAnalysisLabel": "Live sports analysis",
-    "dataPointsLabel": "{{countFormatted}} data points",
-    "passAccuracy": "Pass accuracy"
-  },
   "home": {
     "goodEvening": "Good evening",
     "matchOfTheDay": "Matches of the day",
@@ -323,12 +313,12 @@
     "goHome": "Go to home screen!"
   },
   "loading": {
-    "statusAnalyses": "Loading the latest analyses…",
-    "statusSlow": "Still loading — your connection seems slow…",
-    "errorTitle": "Couldn't load the latest analyses",
-    "errorBody": "Check your connection and try again. You can also continue and see what's available offline.",
+    "errorTitle": "Couldn't load data",
+    "errorBody": "Check your connection.",
     "retry": "Try again",
-    "continueOffline": "Continue offline"
+    "continueOffline": "Continue offline",
+    "matchData": "Loading match data...",
+    "start": "Start"
   },
   "configError": {
     "title": "SportMind isn't configured correctly",

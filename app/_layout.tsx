@@ -9,8 +9,7 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
@@ -26,8 +25,6 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 import { FollowedTeamsProvider } from '@/contexts/FollowedTeamsContext';
 import { EntitlementProvider } from '@/contexts/EntitlementContext';
 import { AppThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
-import OnboardingGate from '@/components/OnboardingGate';
-import { HAS_SEEN_WELCOME_KEY } from '@/constants/storageKeys';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -58,11 +55,9 @@ function RootLayoutInner() {
     Inter_700Bold,
   });
   const [i18nReady, setI18nReady] = useState(false);
-  const [hasSeenWelcome, setHasSeenWelcome] = useState<boolean | null>(null);
 
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
-    AsyncStorage.getItem(HAS_SEEN_WELCOME_KEY).then((value) => setHasSeenWelcome(value === 'true'));
     // Fire-and-forget: a no-op wherever isRevenueCatConfigured() is false
     // (no Android key, or not Android at all — see services/revenueCat.ts),
     // and nothing below depends on it having finished, so it never gates
@@ -74,26 +69,15 @@ function RootLayoutInner() {
     if (fontError) throw fontError;
   }, [fontError]);
 
-  // Ads start only once the welcome screen has been seen, so the consent form (EEA/UK) is never
-  // drawn over it, and never in the configuration-error state. No-op on web and when ADS_ENABLED
-  // is false. See services/ads/adsRuntime.ts.
-  useEffect(() => {
-    if (hasSeenWelcome === true && !isMissingProductionConfig) void startAds();
-  }, [hasSeenWelcome]);
-
   // themeLoaded: the stored appearance has been read, so the first paint is already in the
   // right colours (no default-then-switch flash).
-  const ready = fontsLoaded && i18nReady && hasSeenWelcome !== null && themeLoaded;
+  const ready = fontsLoaded && i18nReady && themeLoaded;
 
   // Only the configuration-error branch below has no SplashRelease, so it releases here.
   useEffect(() => {
     if (ready && isMissingProductionConfig) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  const markWelcomeSeen = useCallback(async () => {
-    await AsyncStorage.setItem(HAS_SEEN_WELCOME_KEY, 'true');
-    setHasSeenWelcome(true);
-  }, []);
 
   // Recomputed whenever the resolved scheme/colors change — this is the ONE place
   // React Navigation's own chrome (header/tab-bar defaults, focused-route background)
@@ -143,8 +127,8 @@ function RootLayoutInner() {
             <ProfileProvider>
               <EntitlementProvider>
                 <SplashRelease />
-                <OnboardingGate hasSeenWelcome={hasSeenWelcome === true} onFinishWelcome={markWelcomeSeen}>
                 <DataGate>
+                  <AdsStarter />
                   <Stack
                     screenOptions={{
                       headerShown: false,
@@ -152,7 +136,6 @@ function RootLayoutInner() {
                     }}
                   >
                     <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
                     <Stack.Screen name="match/[id]" />
                     <Stack.Screen name="team/[id]" />
                     <Stack.Screen name="team-insights/[teamId]" />
@@ -165,7 +148,6 @@ function RootLayoutInner() {
                     <Stack.Screen name="appearance" />
                   </Stack>
                 </DataGate>
-                </OnboardingGate>
               </EntitlementProvider>
             </ProfileProvider>
           </FollowedTeamsProvider>
@@ -176,9 +158,22 @@ function RootLayoutInner() {
 }
 
 /**
- * Releases the native splash as soon as the first real screen has painted — LoadingScreen while
- * the data loads, or Welcome on a first launch — two animation frames after it mounts. There is
- * no waiting on the data here: the LoadingScreen owns that wait, with real status and a Retry.
+ * Ads start only after the person has tapped Start on the splash (or continued offline), so the
+ * consent form (EEA/UK) is never drawn over the splash, and never in the configuration-error
+ * state (that branch never renders DataGate). No-op on web and when ADS_ENABLED is false. See
+ * services/ads/adsRuntime.ts.
+ */
+function AdsStarter() {
+  useEffect(() => {
+    void startAds();
+  }, []);
+  return null;
+}
+
+/**
+ * Releases the native splash as soon as the first real screen (the splash LoadingScreen) has
+ * painted — two animation frames after it mounts. There is no waiting on the data here: the
+ * LoadingScreen owns that wait, then offers Start.
  */
 function SplashRelease() {
   useEffect(() => {

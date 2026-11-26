@@ -22,16 +22,6 @@
   "disclaimer": {
     "full": "KI-generierte Analyse auf Basis statistischer Daten. Ergebnisse bleiben unvorhersehbar."
   },
-  "welcome": {
-    "kicker": "SportMind AI",
-    "title": "Verwandelt Tausende Sportdaten in eine einzige, intelligente Analyse.",
-    "body": "Analysiert Form, Leistung und Spieldaten in jeder Sportart — und macht komplexe Zahlen zu klaren Erkenntnissen, mit der Begründung hinter jedem Ergebnis.",
-    "start": "Loslegen",
-    "skip": "Später",
-    "liveAnalysisLabel": "Live-Sportanalyse",
-    "dataPointsLabel": "{{countFormatted}} Datenpunkte",
-    "passAccuracy": "Passgenauigkeit"
-  },
   "home": {
     "goodEvening": "Guten Abend",
     "matchOfTheDay": "Spiele des Tages",
@@ -323,12 +313,12 @@
     "goHome": "Zum Startbildschirm!"
   },
   "loading": {
-    "statusAnalyses": "Aktuelle Analysen werden geladen…",
-    "statusSlow": "Lädt noch – deine Verbindung scheint langsam…",
-    "errorTitle": "Aktuelle Analysen konnten nicht geladen werden",
-    "errorBody": "Prüfe deine Verbindung und versuche es erneut. Du kannst auch offline weitermachen und sehen, was verfügbar ist.",
+    "errorTitle": "Daten nicht geladen",
+    "errorBody": "Prüfe deine Verbindung.",
     "retry": "Erneut versuchen",
-    "continueOffline": "Offline fortfahren"
+    "continueOffline": "Offline fortfahren",
+    "matchData": "Spieldaten werden geladen...",
+    "start": "Starten"
   },
   "configError": {
     "title": "SportMind ist nicht korrekt konfiguriert",

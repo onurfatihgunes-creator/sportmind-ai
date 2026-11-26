@@ -15,11 +15,12 @@ jest.mock('@/components/LoadingScreen', () => {
   const { Text: T, Pressable } = require('react-native');
   return {
     __esModule: true,
-    default: ({ state, onRetry, onContinue }: { state: string; onRetry: () => void; onContinue: () => void }) => (
+    default: ({ state, onRetry, onContinue, onStart }: { state: string; onRetry: () => void; onContinue: () => void; onStart?: () => void }) => (
       <>
         <T>{`loading-screen:${state}`}</T>
         <Pressable testID="retry" onPress={onRetry} />
         <Pressable testID="continue" onPress={onContinue} />
+        <Pressable testID="start" onPress={onStart} />
       </>
     ),
   };
@@ -51,9 +52,12 @@ test('while loading, real content never mounts and the loading screen is shown â
   expect(texts(mount())).toEqual(['loading-screen:loading']);
 });
 
-test('once the data is ready (live), the real screen mounts', () => {
+test('once the data is ready the splash offers Start, and the real screen mounts only after it is tapped', () => {
   mockUseAppData.mockReturnValue({ status: 'ready', loading: false, isLive: true, retry });
-  expect(texts(mount())).toEqual(['real screen content']);
+  const r = mount();
+  expect(texts(r)).toEqual(['loading-screen:ready']);
+  act(() => r.root.findByProps({ testID: 'start' }).props.onPress());
+  expect(texts(r)).toEqual(['real screen content']);
 });
 
 test('a failed or timed-out load shows the error state, not the real screens and not silent demo data', () => {

@@ -4,7 +4,7 @@
  */
 import { Text } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
-import LoadingScreen, { SLOW_HINT_AFTER_MS } from './LoadingScreen';
+import LoadingScreen from './LoadingScreen';
 
 let mockReducedMotion = false;
 jest.mock('react-native-reanimated', () => ({
@@ -36,11 +36,11 @@ function mount(state: 'loading' | 'error', onRetry = jest.fn(), onContinue = jes
 const texts = (r: TestRenderer.ReactTestRenderer) =>
   r.root.findAllByType(Text).map((n) => (Array.isArray(n.props.children) ? n.props.children.join('') : String(n.props.children)));
 
-test('loading: brand, an indeterminate progress bar and the real stage — no percentage anywhere', () => {
+test('loading: splash art, an indeterminate spinner and "Loading match data..." — no percentage anywhere', () => {
   const { r } = mount('loading');
   const all = texts(r).join(' | ');
-  expect(all).toContain('SportMind');
-  expect(all).toContain('loading.statusAnalyses');
+  expect(r.root.findAll((n) => n.props.accessibilityLabel === 'SportMind').length).toBeGreaterThan(0);
+  expect(all).toContain('loading.matchData');
   expect(all).not.toMatch(/\d+\s*%/);
   const bar = r.root.findAll((n) => n.props.accessibilityRole === 'progressbar')[0];
   expect(bar).toBeDefined();
@@ -48,11 +48,11 @@ test('loading: brand, an indeterminate progress bar and the real stage — no pe
   expect(bar.props.accessibilityValue).toBeUndefined();
 });
 
-test('after SLOW_HINT_AFTER_MS of real waiting the status line says it is slow — nothing is faked', () => {
+test('the loading line stays exactly the artwork text for the whole wait', () => {
   const { r } = mount('loading');
+  act(() => jest.advanceTimersByTime(30_000));
+  expect(texts(r).join('|')).toContain('loading.matchData');
   expect(texts(r).join('|')).not.toContain('loading.statusSlow');
-  act(() => jest.advanceTimersByTime(SLOW_HINT_AFTER_MS + 10));
-  expect(texts(r).join('|')).toContain('loading.statusSlow');
 });
 
 test('error: plain message with Retry and Continue offline, wired to the callbacks', () => {
@@ -72,6 +72,20 @@ test('error: plain message with Retry and Continue offline, wired to the callbac
 test('reduced motion: still renders everything, just without the looping animations', () => {
   mockReducedMotion = true;
   const { r } = mount('loading');
-  expect(texts(r).join(' | ')).toContain('loading.statusAnalyses');
+  expect(texts(r).join(' | ')).toContain('loading.matchData');
   expect(r.root.findAll((n) => n.props.accessibilityRole === 'progressbar').length).toBeGreaterThan(0);
+});
+
+test('ready: the spinner and loading line give way to a Start button wired to onStart', () => {
+  const onStart = jest.fn();
+  let r!: TestRenderer.ReactTestRenderer;
+  act(() => {
+    r = TestRenderer.create(<LoadingScreen state="ready" onRetry={jest.fn()} onContinue={jest.fn()} onStart={onStart} />);
+  });
+  expect(r.root.findAll((n) => n.props.accessibilityRole === 'progressbar')).toHaveLength(0);
+  expect(texts(r).join(' | ')).not.toContain('loading.matchData');
+  const start = r.root.findAll((n) => n.props.accessibilityRole === 'button' && typeof n.props.onPress === 'function');
+  expect(start).toHaveLength(1);
+  act(() => start[0].props.onPress());
+  expect(onStart).toHaveBeenCalledTimes(1);
 });
