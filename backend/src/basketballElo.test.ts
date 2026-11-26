@@ -9,16 +9,16 @@ const g = (id: string, home: string, away: string, t: number, hs: number | null,
 
 test('pre-registered parameters are the documented ones (changing them restarts the shadow test)', () => {
   assert.equal(ELO_PARAMS.k, 20);
-  assert.equal(ELO_PARAMS.homeAdvantage, 100);
+  assert.equal(ELO_PARAMS.homeAdvantage, 40);
   assert.equal(ELO_PARAMS.backToBackPenalty, 25);
 });
 
-test('win probability: symmetric, 0.5 at equal strength, home advantage alone ~64%', () => {
+test('win probability: symmetric, 0.5 at equal strength, home advantage alone ~56%', () => {
   assert.equal(winProbability(0), 0.5);
   assert.ok(Math.abs(winProbability(150) + winProbability(-150) - 1) < 1e-12);
   const first = runElo([g('1', 'A', 'B', 0, null, null)]).get('1')!;
-  assert.ok(Math.abs(first.pHome - winProbability(100)) < 1e-12);
-  assert.ok(first.pHome > 0.63 && first.pHome < 0.65);
+  assert.ok(Math.abs(first.pHome - winProbability(40)) < 1e-12);
+  assert.ok(first.pHome > 0.55 && first.pHome < 0.56);
 });
 
 test('margin multiplier grows with the margin and shrinks for an expected (favourite) win', () => {
@@ -35,7 +35,7 @@ test('no leakage: a game never sees its own result', () => {
 test("a winner gains rating at the loser's expense", () => {
   const pre = runElo([g('1', 'A', 'B', 0, 120, 100), g('2', 'B', 'A', 2 * D, null, null)]);
   // A beat B at home; when B hosts A next, B gets less than the bare home-advantage probability
-  assert.ok(pre.get('2')!.pHome < winProbability(100));
+  assert.ok(pre.get('2')!.pHome < winProbability(40));
 });
 
 test('unfinished games get a probability but do not move ratings or rest', () => {

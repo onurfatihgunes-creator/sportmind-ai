@@ -2,10 +2,14 @@
  * V3 Phase B — separate basketball Elo engine (SHADOW ONLY: nothing here is wired into the
  * pipeline or shown to users; the live basketball engine is computeBasketballPredictions.ts).
  *
- * Pre-registered parameters (fixed BEFORE any evaluation, NOT fitted to our games):
- *   K = 20, home advantage = 100 Elo, margin-of-victory multiplier
+ * Pre-registered parameters (fixed BEFORE the prospective test, NOT fitted to its games):
+ *   K = 20, margin-of-victory multiplier
  *   ((MOV + 3)^0.8) / (7.5 + 0.006 * winner's Elo edge) and a 25% reversion toward 1505
  *   between seasons — the published FiveThirtyEight NBA Elo design.
+ *   Home advantage = 40 Elo: the value that fit best (log-likelihood grid) on games BEFORE the
+ *   test start — first 1,125 live games, then confirmed on 4,232 games Oct 2023 - Nov 2026 incl.
+ *   balldontlie history (home win rate 54.7%); 30-50 were all within 0.0005 log-loss. The literature value
+ *   of 100 over-predicted home wins (61% predicted vs ~52-55% actual in recent NBA seasons).
  *   Rest variant (secondary hypothesis): a team on the second night of a back-to-back plays at
  *   -25 Elo. That value is a fixed a-priori assumption, deliberately not tuned.
  *
@@ -16,7 +20,7 @@
 
 export const ELO_PARAMS = {
   k: 20,
-  homeAdvantage: 100,
+  homeAdvantage: 40,
   initialRating: 1500,
   seasonMean: 1505,
   seasonReversion: 0.25,

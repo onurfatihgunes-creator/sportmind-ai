@@ -2,9 +2,12 @@
  * V3 Phase B — basketball Elo SHADOW evaluation. READ-ONLY: selects only, never writes,
  * changes nothing users see. Run: npx tsx src/evaluateBasketballElo.ts  (add --json for raw output)
  *
- * PRE-REGISTERED PROTOCOL (fixed 2026-11-26, before any prospective game was played):
+ * PRE-REGISTERED PROTOCOL (fixed 2026-11-26, revised the same day BEFORE any prospective game:
+ * Elo home advantage set from pre-test games and the margin model added; start moved to 28 Nov):
  *   Prospective period : games with kickoff >= SHADOW_START. Only these decide.
- *   Primary hypothesis : Elo ('elo-v1', basketballElo.ts) beats the live engine ('basketball-v1').
+ *   Primary hypotheses : (A) Elo ('elo-v1', basketballElo.ts) and (B) margin ratings ('margin-v1',
+ *                        basketballRatings.ts) each beat the live engine ('basketball-v1').
+ *                        If both are accepted, the one with the lower Brier is proposed.
  *   Secondary          : the back-to-back variant ('elo-rest-v1') beats plain Elo.
  *   Live baseline      : the number users actually saw — the stored prediction computed before
  *                        kickoff (`predictions.computed_at < kickoff_at`; once the A1 migration
@@ -26,13 +29,14 @@
 import { supabase } from './supabaseClient.js';
 import { buildPrediction as buildLivePrediction } from './computeBasketballPredictions.js';
 import { runElo, type EloGame } from './basketballElo.js';
+import { runMarginRatings } from './basketballRatings.js';
 
-export const SHADOW_START = '2026-11-27T00:00:00Z';
+export const SHADOW_START = '2026-11-28T00:00:00Z';
 export const MIN_GAMES = 200;
 export const MIN_DAYS = 21;
 const BOOTSTRAP = 2000;
 
-type Row = { id: string; t: number; homeWon: 0 | 1; live: number | null; replay: number; elo: number; eloRest: number };
+type Row = { id: string; t: number; homeWon: 0 | 1; live: number | null; replay: number; elo: number; eloRest: number; margin: number };
 
 const PAGE = 1000;
 async function fetchAll<T>(table: string, select: string, orderBy: string, filter?: (q: any) => any): Promise<T[]> {
@@ -51,7 +55,7 @@ async function fetchAll<T>(table: string, select: string, orderBy: string, filte
 const brier = (p: number, y: number) => 2 * (p - y) ** 2; // two-class form of the multiclass Brier
 const logLoss = (p: number, y: number) => -Math.log(Math.min(1 - 1e-6, Math.max(1e-6, y ? p : 1 - p)));
 
-function metrics(rows: Row[], key: 'live' | 'replay' | 'elo' | 'eloRest') {
+function metrics(rows: Row[], key: 'live' | 'replay' | 'elo' | 'eloRest' | 'margin') {
   const rs = rows.filter((r) => r[key] !== null) as (Row & Record<typeof key, number>)[];
   const n = rs.length;
   if (n === 0) return { n: 0 };
@@ -81,7 +85,7 @@ function metrics(rows: Row[], key: 'live' | 'replay' | 'elo' | 'eloRest') {
 }
 
 /** Paired bootstrap (fixed seed) of mean(metric(a) - metric(b)); negative = a better. */
-function pairedDiff(rows: Row[], a: 'elo' | 'eloRest', b: 'live' | 'replay' | 'elo', fn: (p: number, y: number) => number) {
+function pairedDiff(rows: Row[], a: 'elo' | 'eloRest' | 'margin', b: 'live' | 'replay' | 'elo', fn: (p: number, y: number) => number) {
   const rs = rows.filter((r) => r[a] !== null && r[b] !== null);
   if (rs.length === 0) return null;
   const d = rs.map((r) => fn(r[a] as number, r.homeWon) - fn(r[b] as number, r.homeWon));
@@ -98,7 +102,7 @@ function pairedDiff(rows: Row[], a: 'elo' | 'eloRest', b: 'live' | 'replay' | 'e
   return { n: rs.length, mean: +mean.toFixed(4), ci95: [+boots[Math.floor(0.025 * BOOTSTRAP)].toFixed(4), +boots[Math.floor(0.975 * BOOTSTRAP)].toFixed(4)] as [number, number] };
 }
 
-function verdict(rows: Row[], a: 'elo' | 'eloRest', b: 'live' | 'elo') {
+function verdict(rows: Row[], a: 'elo' | 'eloRest' | 'margin', b: 'live' | 'elo') {
   const usable = rows.filter((r) => r[a] !== null && r[b] !== null);
   const days = usable.length ? (Math.max(...usable.map((r) => r.t)) - Date.parse(SHADOW_START)) / 86_400_000 : 0;
   const br = pairedDiff(rows, a, b, brier);
@@ -119,12 +123,24 @@ async function main() {
   );
   const predBy = new Map(preds.map((p) => [p.match_id, p]));
 
-  const games: EloGame[] = matches
-    .filter((m) => m.status !== 'postponed')
-    .map((m) => ({ id: m.id, home: m.home_team_id, away: m.away_team_id, t: Date.parse(m.kickoff_at), homeScore: m.status === 'finished' ? m.home_score : null, awayScore: m.status === 'finished' ? m.away_score : null }));
+  // Past seasons (balldontlie, historical_basketball_games) warm the ratings up before our live
+  // data starts; they are never scored themselves (rows below only come from `matches`).
+  const history = await fetchAll<{ id: string; kickoff_at: string; home_team_id: string; away_team_id: string; home_score: number; away_score: number }>(
+    'historical_basketball_games', 'id, kickoff_at, home_team_id, away_team_id, home_score, away_score', 'id',
+  ).catch(() => []);
+  const liveIds = new Set(matches.map((m) => m.id));
+  const games: EloGame[] = [
+    ...history.filter((h) => !liveIds.has(h.id)).map((h) => ({ id: h.id, home: h.home_team_id, away: h.away_team_id, t: Date.parse(h.kickoff_at), homeScore: h.home_score, awayScore: h.away_score })),
+    ...matches
+      .filter((m) => m.status !== 'postponed')
+      .map((m) => ({ id: m.id, home: m.home_team_id, away: m.away_team_id, t: Date.parse(m.kickoff_at), homeScore: m.status === 'finished' ? m.home_score : null, awayScore: m.status === 'finished' ? m.away_score : null })),
+  ];
+  const historyIds = new Set(history.map((h) => h.id));
   const pre = runElo(games);
+  const margins = runMarginRatings(games);
 
   const finished = games.filter((g) => g.homeScore !== null && g.awayScore !== null && g.homeScore !== g.awayScore).sort((a, b) => a.t - b.t);
+  const scored = finished.filter((g) => !historyIds.has(g.id)); // only our live games are evaluated
   // Live-engine replay (same formula as production, form = last 5 games before tip-off): used
   // only to enlarge the retrospective sample; the decision uses the stored live numbers.
   const lastFive = (team: string, before: number) => {
@@ -139,12 +155,12 @@ async function main() {
     return { winRate: out.filter((x) => x.w).length / out.length, avgPointsFor: out.reduce((s, x) => s + x.pf, 0) / out.length, avgPointsAgainst: out.reduce((s, x) => s + x.pa, 0) / out.length, matchesCount: out.length };
   };
 
-  const rows: Row[] = finished.map((g) => {
+  const rows: Row[] = scored.map((g) => {
     const p = predBy.get(g.id);
     const live = p && Date.parse(p.computed_at) < g.t && p.home_win_pct + p.away_win_pct > 0 ? p.home_win_pct / (p.home_win_pct + p.away_win_pct) : null;
     const r = buildLivePrediction(lastFive(g.home, g.t), lastFive(g.away, g.t));
     const e = pre.get(g.id)!;
-    return { id: g.id, t: g.t, homeWon: g.homeScore! > g.awayScore! ? 1 : 0, live, replay: r.outcomes.home / 100, elo: e.pHome, eloRest: e.pHomeRest };
+    return { id: g.id, t: g.t, homeWon: g.homeScore! > g.awayScore! ? 1 : 0, live, replay: r.outcomes.home / 100, elo: e.pHome, eloRest: e.pHomeRest, margin: margins.get(g.id)!.pHome };
   });
 
   const start = Date.parse(SHADOW_START);
@@ -153,19 +169,21 @@ async function main() {
   const retroSeason = retro.filter((r) => r.t >= Date.parse('2026-10-01T00:00:00Z'));
 
   const report = {
-    protocol: { SHADOW_START, MIN_GAMES, MIN_DAYS, primary: 'elo-v1 vs live basketball-v1', secondary: 'elo-rest-v1 vs elo-v1' },
+    protocol: { SHADOW_START, MIN_GAMES, MIN_DAYS, primary: 'elo-v1 and margin-v1 each vs live basketball-v1', secondary: 'elo-rest-v1 vs elo-v1' },
     prospective: {
       n: prospective.length,
       live: metrics(prospective, 'live'),
       elo: metrics(prospective, 'elo'),
       eloRest: metrics(prospective, 'eloRest'),
+      margin: metrics(prospective, 'margin'),
       primary: verdict(prospective, 'elo', 'live'),
+      primaryMargin: verdict(prospective, 'margin', 'live'),
       secondary: verdict(prospective, 'eloRest', 'elo'),
     },
     retrospective: {
       note: 'context only, not decisive; Elo warms up from the first game in the database (Dec 2025)',
-      withStoredLive: { live: metrics(retro, 'live'), elo: metrics(retro.filter((r) => r.live !== null), 'elo'), brierDiff: pairedDiff(retro, 'elo', 'live', brier), logLossDiff: pairedDiff(retro, 'elo', 'live', logLoss) },
-      season2026_27Replay: { replay: metrics(retroSeason, 'replay'), elo: metrics(retroSeason, 'elo'), eloRest: metrics(retroSeason, 'eloRest'), eloVsReplay: pairedDiff(retroSeason, 'elo', 'replay', brier), restVsElo: pairedDiff(retroSeason, 'eloRest', 'elo', brier) },
+      withStoredLive: { live: metrics(retro, 'live'), elo: metrics(retro.filter((r) => r.live !== null), 'elo'), margin: metrics(retro.filter((r) => r.live !== null), 'margin'), brierDiff: pairedDiff(retro, 'elo', 'live', brier), logLossDiff: pairedDiff(retro, 'elo', 'live', logLoss), marginBrierDiff: pairedDiff(retro, 'margin', 'live', brier), marginLogLossDiff: pairedDiff(retro, 'margin', 'live', logLoss) },
+      season2026_27Replay: { replay: metrics(retroSeason, 'replay'), elo: metrics(retroSeason, 'elo'), eloRest: metrics(retroSeason, 'eloRest'), margin: metrics(retroSeason, 'margin'), eloVsReplay: pairedDiff(retroSeason, 'elo', 'replay', brier), marginVsReplay: pairedDiff(retroSeason, 'margin', 'replay', brier), restVsElo: pairedDiff(retroSeason, 'eloRest', 'elo', brier) },
     },
   };
 
@@ -177,17 +195,19 @@ async function main() {
   console.log('=== BASKETBALL ELO SHADOW EVALUATION (read-only) ===');
   console.log(`Protocol: prospective from ${SHADOW_START}, decide at >= ${MIN_GAMES} games and >= ${MIN_DAYS} days.`);
   console.log(`\nPROSPECTIVE (decisive): ${prospective.length} finished games`);
-  line('live', report.prospective.live); line('elo', report.prospective.elo); line('elo+rest', report.prospective.eloRest);
-  console.log('  primary  :', JSON.stringify(report.prospective.primary));
+  line('live', report.prospective.live); line('elo', report.prospective.elo); line('elo+rest', report.prospective.eloRest); line('margin', report.prospective.margin);
+  console.log('  primary A (elo)   :', JSON.stringify(report.prospective.primary));
+  console.log('  primary B (margin):', JSON.stringify(report.prospective.primaryMargin));
   console.log('  secondary:', JSON.stringify(report.prospective.secondary));
   console.log('\nRETROSPECTIVE (context only)');
   const w = report.retrospective.withStoredLive;
-  line('live', w.live); line('elo', w.elo);
+  line('live', w.live); line('elo', w.elo); line('margin', w.margin);
   console.log('  elo - live  brier', JSON.stringify(w.brierDiff), ' logLoss', JSON.stringify(w.logLossDiff));
+  console.log('  margin - live brier', JSON.stringify(w.marginBrierDiff), ' logLoss', JSON.stringify(w.marginLogLossDiff));
   const s = report.retrospective.season2026_27Replay;
   console.log('  2026-27 season so far (live formula replayed):');
-  line('replay', s.replay); line('elo', s.elo); line('elo+rest', s.eloRest);
-  console.log('  elo - replay brier', JSON.stringify(s.eloVsReplay), ' | elo+rest - elo brier', JSON.stringify(s.restVsElo));
+  line('replay', s.replay); line('elo', s.elo); line('elo+rest', s.eloRest); line('margin', s.margin);
+  console.log('  elo - replay brier', JSON.stringify(s.eloVsReplay), ' | margin - replay brier', JSON.stringify(s.marginVsReplay), ' | elo+rest - elo brier', JSON.stringify(s.restVsElo));
   console.log('  elo calibration:', (s.elo as any).calibration?.join(' | '));
 }
 
