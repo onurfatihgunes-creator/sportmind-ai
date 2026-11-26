@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPrediction, ENGINE_VERSION } from './computeBasketballPredictions.js';
+import { buildPrediction, ENGINE_VERSION, withElo } from './computeBasketballPredictions.js';
 import { isDeterministic } from './evaluation.js';
 
 // Intelligence 6.1: same zero-form prediction-integrity fix as computePredictions.ts's
@@ -66,6 +66,19 @@ test('PROBABILITY INVARIANT (2-way): home+away always sums to exactly 100, never
   }
 });
 
-test('ENGINE VERSION: a code-level version proxy is documented and stable (v1) — no schema column exists for it', () => {
-  assert.equal(ENGINE_VERSION, 'v1');
+test('ENGINE VERSION: v2 = Elo win probability (v1 formula kept as the fallback)', () => {
+  assert.equal(ENGINE_VERSION, 'v2');
+});
+
+test('v2 withElo: outcomes come from the Elo probability, sum to 100, factor keys unchanged', () => {
+  const base = buildPrediction(TRUSTED_HOME, TRUSTED_AWAY);
+  const r = withElo(base, 0.634);
+  assert.equal(r.outcomes.home, 63);
+  assert.equal(r.outcomes.home + r.outcomes.away, 100);
+  assert.equal(r.outcomes.draw, 0);
+  assert.deepEqual(r.factors.map((f) => f.key), base.factors.map((f) => f.key));
+  const court = r.factors.find((f) => f.key === 'homeCourtAdvantage')!;
+  assert.equal(court.home + court.away, 100);
+  assert.ok(court.home > 50 && court.home < 60);
+  assert.equal(withElo(base, 0.999).outcomes.home, 99); // never a 100% certainty
 });

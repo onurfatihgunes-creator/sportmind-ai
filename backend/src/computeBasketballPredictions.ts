@@ -1,6 +1,7 @@
 import { MATERIALITY_THRESHOLD_PCT } from './config.js';
 import { supabase } from './supabaseClient.js';
 import { appendPredictionHistory, detectHistorySchema, historyRowFrom, isModelSwitch, modelVersion } from './predictionHistory.js';
+import { ELO_PARAMS, runElo, winProbability, type EloGame } from './basketballElo.js';
 
 // `matchesCount` distinguishes real, team-specific evidence from the neutral-baseline
 // placeholder below — same fix and same reasoning as computePredictions.ts's football
@@ -10,7 +11,13 @@ type FormStats = { winRate: number; avgPointsFor: number; avgPointsAgainst: numb
 // Intelligence 7.0 §t: same code-version proxy as computePredictions.ts's football
 // equivalent — see that constant's comment for why this is a plain string, not a schema
 // column or a `factors` payload field.
-export const ENGINE_VERSION = 'v1';
+// v2 (26 Nov 2026, owner decision to go live before the prospective test): win probability from
+// the Elo engine in basketballElo.ts (warmed up on balldontlie history). Retrospective: Brier
+// 0.423 vs 0.478 for the v1 formula on 270 games (95% CI of the difference -0.096..-0.023).
+// The v1 formula below stays as the fallback and still supplies expected points and the
+// form/points/defence factor bars.
+export const ENGINE_VERSION = 'v2';
+const ELO_MIN_FINISHED_GAMES = 500;
 
 const RECENT_GAMES = 5;
 // NBA home teams have historically won ~57-60% of games — used as a fixed prior, not
@@ -100,6 +107,50 @@ export function buildPrediction(home: FormStats, away: FormStats) {
   };
 }
 
+/** v2: Elo win probability on top of the v1 output; factor keys unchanged for the app. */
+export function withElo(base: ReturnType<typeof buildPrediction>, pHome: number) {
+  const home = Math.min(99, Math.max(1, Math.round(pHome * 100)));
+  const court = Math.round(winProbability(ELO_PARAMS.homeAdvantage) * 100);
+  return {
+    ...base,
+    outcomes: { home, draw: 0, away: 100 - home },
+    factors: base.factors.map((f) => (f.key === 'homeCourtAdvantage' ? { key: f.key, home: court, away: 100 - court } : f)),
+  };
+}
+
+async function selectAll<T>(table: string, select: string, filter: (q: any) => any): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await filter(supabase.from(table).select(select)).order('id').range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data as T[]));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+/** Pre-game Elo probabilities for every game, from history + finished live games before it. */
+export async function loadEloPregame(): Promise<Map<string, { pHome: number }> | null> {
+  const history = await selectAll<{ id: string; kickoff_at: string; home_team_id: string; away_team_id: string; home_score: number; away_score: number }>(
+    'historical_basketball_games', 'id, kickoff_at, home_team_id, away_team_id, home_score, away_score', (q) => q,
+  ).catch(() => []);
+  const live = await selectAll<{ id: string; status: string; kickoff_at: string; home_team_id: string; away_team_id: string; home_score: number | null; away_score: number | null }>(
+    'matches', 'id, status, kickoff_at, home_team_id, away_team_id, home_score, away_score', (q) => q.eq('sport', 'basketball').neq('status', 'postponed'),
+  );
+  const liveIds = new Set(live.map((m) => m.id));
+  const games: EloGame[] = [
+    ...history.filter((h) => !liveIds.has(h.id)).map((h) => ({ id: h.id, home: h.home_team_id, away: h.away_team_id, t: Date.parse(h.kickoff_at), homeScore: h.home_score, awayScore: h.away_score })),
+    ...live.map((m) => ({ id: m.id, home: m.home_team_id, away: m.away_team_id, t: Date.parse(m.kickoff_at), homeScore: m.status === 'finished' ? m.home_score : null, awayScore: m.status === 'finished' ? m.away_score : null })),
+  ];
+  const finished = games.filter((g) => g.homeScore !== null && g.awayScore !== null).length;
+  if (finished < ELO_MIN_FINISHED_GAMES) {
+    console.log(`Basketball: only ${finished} finished games for Elo — using the v1 formula.`);
+    return null;
+  }
+  console.log(`Basketball engine v2 (Elo): ${finished} finished games (${history.length} history).`);
+  return runElo(games);
+}
+
 async function computeForMatch(homeTeamId: string, awayTeamId: string) {
   const [home, away] = await Promise.all([getFormStats(homeTeamId), getFormStats(awayTeamId)]);
   return buildPrediction(home, away);
@@ -111,8 +162,7 @@ async function computeForMatch(homeTeamId: string, awayTeamId: string) {
 // so the stored number is always a genuine pre-game one and stays evaluable.
 export async function computeBasketballPredictions() {
   const notStartedAfter = new Date().toISOString();
-  // V3 A1/A2: version + newest input the run could see. The model itself is unchanged.
-  const version = modelVersion('basketball', ENGINE_VERSION);
+  const elo = await loadEloPregame();
   const schema = await detectHistorySchema();
   const { data: newest } = await supabase
     .from('matches')
@@ -132,7 +182,10 @@ export async function computeBasketballPredictions() {
   if (error) throw error;
 
   for (const match of matches ?? []) {
-    const result = await computeForMatch(match.home_team_id, match.away_team_id);
+    const base = await computeForMatch(match.home_team_id, match.away_team_id);
+    const pre = elo?.get(match.id);
+    const result = pre ? withElo(base, pre.pHome) : base;
+    const version = modelVersion('basketball', pre ? ENGINE_VERSION : 'v1');
     const calculatedAt = new Date().toISOString();
 
     const { data: existing } = await supabase
